@@ -186,6 +186,44 @@ Tauri desktop UI:
   Add after core pipeline can produce trustworthy preflight/package plans.
 ```
 
+## 6C. Agent Workflow Readiness
+
+Status:
+
+```text
+tooling pilot passed on a separate private synthetic repository
+product repository is not yet connected to remote CI or Firstmate coding
+```
+
+Confirmed on 2026-07-26:
+
+```text
+No-Mistakes can detect and repair a contract violation missed by author tests.
+Firstmate can dispatch a read-only Codex scout through Treehouse and Herdr,
+preserve a durable report and clean up the isolated worktree.
+A clean clone of this product repository compiles but cargo test fails 8
+ALSReader fixture tests because private ignored ALS files are unavailable.
+```
+
+Required before delegated product coding or remote CI:
+
+```text
+Generate small synthetic gzip/XML ALS fixtures for core parser behavior.
+Keep real user projects and the 20-file corpus outside Git.
+Make cargo test --workspace --locked pass in a clean clone.
+Run workflow guards in that clean clone.
+Only then register the product with Firstmate or configure a GitHub remote.
+```
+
+Operating recommendation:
+
+```text
+Use one Codex directly for small sequential tasks.
+Use No-Mistakes for safety-sensitive or contract-sensitive changes.
+Use Firstmate only when independent research/review or genuine parallel work
+repays its larger time and token cost.
+```
+
 ## 7. Research Evidence To Reuse
 
 ```text

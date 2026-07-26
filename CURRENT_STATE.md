@@ -97,7 +97,11 @@ Completed:
    `docs/archive/CURRENT_STATE.pre-audit-2026-07-26.md`.
 8. split ALS file decoding/I/O from reference extraction after the truthful
    quality guard exposed an oversized function;
-9. initialize a local Git repository and ignore private/generated corpora.
+9. initialize a local Git repository and ignore private/generated corpora;
+10. create the first local baseline commit (`6d4d093`) without configuring a
+    remote or publishing project data;
+11. validate `no-mistakes`, Firstmate, Treehouse, Herdr and Codex CLI on a
+    separate private synthetic pilot repository.
 
 ## 5. The One Next Product Step
 
@@ -126,9 +130,24 @@ native path and symlink policy across macOS and Windows
 Repository blocker:
 
 ```text
-the local Git repository has been initialized
-private experiments and binary audio/ALS data are ignored
-the first commit must wait for an explicit fixture privacy/license decision
+the local Git repository has a clean first baseline commit
+no project remote is configured and no product files have been published
+private experiments and binary audio/ALS data remain ignored
+a clean clone fails 8 ALSReader fixture tests because ignored private ALS
+fixtures are not present
+replace those private dependencies with committed synthetic gzip/XML ALS
+fixtures before remote CI or delegated coding in disposable worktrees
+```
+
+Automation pilot evidence:
+
+```text
+No-Mistakes caught an empty-input contract violation that author tests missed,
+fixed the implementation and test, reran checks and opened a private pilot PR
+Firstmate dispatched one read-only Codex scout in a Treehouse worktree and
+Herdr pane, preserved its report and cleaned up the worktree successfully
+the pilot also showed high overhead, so multi-agent delegation is for bounded
+parallel/research/review work, not every small edit
 ```
 
 Important later unknowns:
