@@ -1,0 +1,30 @@
+# Build and editor output
+/target/
+**/.DS_Store
+*.log
+
+# Local archives and generated bundles
+/Archiwum.zip
+*.zip
+
+# Private research corpus and generated experiment artifacts.
+# Keep these files locally; publish only sanitized summaries or synthetic fixtures.
+/experiments/
+
+# Ableton and audio files may contain private paths, project names, licensed
+# content, or user audio. They require an explicit privacy/license review before
+# becoming tracked fixtures.
+*.als
+*.asd
+*.wav
+*.wave
+*.aif
+*.aiff
+*.flac
+*.mp3
+*.m4a
+
+# Temporary files
+*.tmp
+*.temp
+*~

@@ -1,0 +1,14 @@
+[package]
+name = "rescue-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rescue"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+rescue_core = { path = "../../crates/rescue_core" }
+serde = "1"
+serde_json = "1"

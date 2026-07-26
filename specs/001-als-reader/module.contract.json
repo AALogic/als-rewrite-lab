@@ -1,0 +1,510 @@
+{
+  "id": "001-als-reader",
+  "status": "retrofit_guard_contract",
+  "pilot": true,
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": [
+      "Purpose",
+      "Enforcement Levels",
+      "Clean Code",
+      "SOLID In This Project",
+      "Modularity",
+      "Encapsulation",
+      "Communication Between Modules",
+      "Testability",
+      "Refactoring",
+      "Error Handling",
+      "Data Safety",
+      "Clear Architecture",
+      "Project Hard Rules",
+      "Module Review Template"
+    ]
+  },
+  "required_docs": [
+    "spec.md",
+    "plan.md",
+    "tasks.md",
+    "fixture-contract.md"
+  ],
+  "required_doc_min_chars": 20,
+  "required_doc_literals": {
+    "fixture-contract.md": [
+      "ALSReader must only report what the ALS file says.",
+      "ALSReader output does not contain exists_on_disk",
+      "historical references are separated from active audio references",
+      "PathVerifier will later test whether active audio paths exist on disk."
+    ],
+    "plan.md": [
+      "Run workflow_guard module-ready 001-als-reader.",
+      "Run workflow_guard verify-module 001-als-reader."
+    ]
+  },
+  "required_spec_literals": [
+    "ALSReadModel v0.2",
+    "User-facing JSON must not be treated as the full downstream contract.",
+    "raw_path, raw_relative_path and relative_path_type must preserve ALS values\nwithout guessing.",
+    "original_crc is a weak signal only and must not be treated as unique identity.",
+    "`ALSReader` does not check whether referenced sample files exist on disk."
+  ],
+  "blocking_markers": [
+    "Gate Status: UNKNOWN",
+    "Gate Status: AMBIGUOUS",
+    "Gate Status: CONFLICTING",
+    "Known Unknown: blocking",
+    "BLOCKING_UNKNOWN"
+  ],
+  "hidden_uncertainty_gate": true,
+  "hidden_uncertainty_phrases": [
+    "TBD",
+    "Question left open",
+    "do ustalenia",
+    "nie wiadomo",
+    "not sure",
+    "unclear"
+  ],
+  "allowed_uncertainty_markers": [
+    "Known Unknowns",
+    "Non-Blocking Future Work"
+  ],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "ENFORCED_BY_TEST: valid_als_returns_read_model_json",
+    "ENFORCED_BY_TEST: active_refs_are_not_historical_refs",
+    "ENFORCED_BY_TEST: relative_path_type_is_captured_raw",
+    "ENFORCED_BY_TEST: als_reader_v0_2_does_not_check_filesystem_paths",
+    "ENFORCED_BY_TEST: active_audio_refs_preserve_rewrite_relevant_fields",
+    "ENFORCED_BY_TEST: als_reader_does_not_infer_project_root_from_als_parent",
+    "ENFORCED_BY_TEST: xml_context_does_not_duplicate_the_observed_element",
+    "ENFORCED_BY_TEST: invalid_gzip_returns_structured_error",
+    "ENFORCED_BY_TEST: missing_file_returns_structured_error",
+    "ENFORCED_BY_TEST: gzip_with_invalid_xml_returns_structured_error",
+    "ENFORCED_BY_TEST: gzip_without_ableton_root_returns_structured_error",
+    "ENFORCED_BY_TEST: active_relative_path_type_zero_is_preserved",
+    "ENFORCED_BY_TEST: read_only_safety",
+    "ENFORCED_BY_TYPE: ALSReadModel",
+    "ENFORCED_BY_TYPE: SetMetadata",
+    "ENFORCED_BY_TYPE: ActiveAudioReference",
+    "ENFORCED_BY_TYPE: HistoricalReference",
+    "ENFORCED_BY_TYPE: NonAudioDependencySignal",
+    "ENFORCED_BY_TYPE: ALSReadWarning",
+    "ENFORCED_BY_TYPE: ALSReadError",
+    "ENFORCED_BY_GUARD: ENGINEERING_RULES.md version 0.1 referenced",
+    "ENFORCED_BY_GUARD: forbidden panic/unwrap/expect in product source",
+    "ENFORCED_BY_GUARD: forbidden destructive filesystem operations in product source",
+    "REVIEW_ONLY: names are understandable in the Ableton reader domain",
+    "REVIEW_ONLY: implementation avoids premature abstraction",
+    "REVIEW_ONLY: implementation follows ENGINEERING_RULES.md code review checklist",
+    "ENFORCED_BY_GUARD: required obligations checked before acceptance",
+    "ENFORCED_BY_GUARD: required tests are not ignored and have substance",
+    "ENFORCED_BY_GUARD: public contract exact field and type check",
+    "ENFORCED_BY_GUARD: scope ownership verbs blocked",
+    "ENFORCED_BY_GUARD: core source high-risk patterns blocked",
+    "ENFORCED_BY_GUARD: dependencies limited to allowed list",
+    "ENFORCED_BY_GUARD: hidden uncertainty phrases block build",
+    "DOCUMENTED_ONLY: module belongs to ALS inspection and dependency fact extraction flow",
+    "DOCUMENTED_ONLY: ALSReader reads ALS and emits ALSReadModel; it is not a verifier/classifier/matcher/planner/rewriter"
+  ],
+  "required_quality_obligations": [
+    "ENFORCED_BY_GUARD: ENGINEERING_RULES.md version 0.1 referenced",
+    "ENFORCED_BY_GUARD: forbidden panic/unwrap/expect in product source",
+    "ENFORCED_BY_GUARD: forbidden destructive filesystem operations in product source",
+    "REVIEW_ONLY: names are understandable in the Ableton reader domain",
+    "REVIEW_ONLY: implementation avoids premature abstraction",
+    "REVIEW_ONLY: implementation follows ENGINEERING_RULES.md code review checklist",
+    "ENFORCED_BY_GUARD: required obligations checked before acceptance",
+    "ENFORCED_BY_GUARD: required tests are not ignored and have substance",
+    "ENFORCED_BY_GUARD: public contract exact field and type check",
+    "ENFORCED_BY_GUARD: scope ownership verbs blocked",
+    "ENFORCED_BY_GUARD: core source high-risk patterns blocked",
+    "ENFORCED_BY_GUARD: dependencies limited to allowed list",
+    "ENFORCED_BY_GUARD: hidden uncertainty phrases block build"
+  ],
+  "required_tests": [
+    "valid_als_returns_read_model_json",
+    "active_refs_are_not_historical_refs",
+    "relative_path_type_is_captured_raw",
+    "als_reader_v0_2_does_not_check_filesystem_paths",
+    "active_audio_refs_preserve_rewrite_relevant_fields",
+    "als_reader_does_not_infer_project_root_from_als_parent",
+    "xml_context_does_not_duplicate_the_observed_element",
+    "filename_from_handles_windows_backslashes_on_macos",
+    "filename_from_handles_windows_unc_path_on_macos",
+    "filename_from_uses_relative_path_when_raw_path_is_empty",
+    "invalid_gzip_returns_structured_error",
+    "missing_file_returns_structured_error",
+    "compressed_als_size_limit_returns_structured_error",
+    "gzip_with_invalid_xml_returns_structured_error",
+    "gzip_without_ableton_root_returns_structured_error",
+    "active_relative_path_type_zero_is_preserved",
+    "read_only_safety"
+  ],
+  "public_contract": {
+    "ALSReadModel": [
+      "set_metadata",
+      "active_audio_references",
+      "historical_refs",
+      "non_audio_dependency_signals",
+      "warnings",
+      "errors"
+    ],
+    "SetMetadata": [
+      "source_als_path",
+      "source_als_filename",
+      "source_project_root",
+      "source_file_size",
+      "source_file_hash",
+      "analysis_started_at",
+      "analysis_completed_at",
+      "reader_version",
+      "als_read_model_version",
+      "ableton_document_version",
+      "ableton_creator_version",
+      "ableton_minor_version",
+      "ableton_schema_change_count",
+      "decompressed_xml_size",
+      "xml_root_name",
+      "sample_ref_count",
+      "active_audio_ref_count",
+      "historical_ref_count",
+      "non_audio_signal_count",
+      "warning_count",
+      "error_count"
+    ],
+    "ActiveAudioReference": [
+      "ref_id",
+      "source_kind",
+      "raw_path",
+      "raw_relative_path",
+      "relative_path_type",
+      "file_type",
+      "filename",
+      "extension",
+      "original_file_size",
+      "original_crc",
+      "default_duration",
+      "default_sample_rate",
+      "usage_context",
+      "xml_context",
+      "xml_locator",
+      "is_rewrite_candidate",
+      "rewrite_support_status",
+      "warnings"
+    ],
+    "HistoricalReference": [
+      "ref_id",
+      "source_kind",
+      "raw_path",
+      "raw_relative_path",
+      "relative_path_type",
+      "filename",
+      "extension",
+      "original_file_size",
+      "original_crc",
+      "xml_context",
+      "xml_locator",
+      "linked_active_ref_id",
+      "usage_note",
+      "warnings"
+    ],
+    "NonAudioDependencySignal": [
+      "signal_id",
+      "signal_kind",
+      "name",
+      "raw_path",
+      "raw_relative_path",
+      "relative_path_type",
+      "plugin_format",
+      "plugin_identifier",
+      "plugin_version",
+      "xml_context",
+      "xml_locator",
+      "support_status",
+      "warnings"
+    ],
+    "ALSReadWarning": [
+      "warning_id",
+      "warning_code",
+      "severity",
+      "message",
+      "xml_context",
+      "related_ref_id",
+      "evidence_status"
+    ],
+    "ALSReadError": [
+      "error_code",
+      "message",
+      "path"
+    ]
+  },
+  "public_contract_mode": "exact",
+  "public_contract_field_types": {
+    "ALSReadModel": {
+      "set_metadata": "SetMetadata",
+      "active_audio_references": "Vec<ActiveAudioReference>",
+      "historical_refs": "Vec<HistoricalReference>",
+      "non_audio_dependency_signals": "Vec<NonAudioDependencySignal>",
+      "warnings": "Vec<ALSReadWarning>",
+      "errors": "Vec<ALSReadError>"
+    },
+    "SetMetadata": {
+      "source_als_path": "String",
+      "source_als_filename": "Option<String>",
+      "source_project_root": "Option<String>",
+      "source_file_size": "u64",
+      "source_file_hash": "String",
+      "analysis_started_at": "String",
+      "analysis_completed_at": "String",
+      "reader_version": "String",
+      "als_read_model_version": "String",
+      "ableton_document_version": "Option<String>",
+      "ableton_creator_version": "Option<String>",
+      "ableton_minor_version": "Option<String>",
+      "ableton_schema_change_count": "Option<String>",
+      "decompressed_xml_size": "usize",
+      "xml_root_name": "String",
+      "sample_ref_count": "usize",
+      "active_audio_ref_count": "usize",
+      "historical_ref_count": "usize",
+      "non_audio_signal_count": "usize",
+      "warning_count": "usize",
+      "error_count": "usize"
+    },
+    "ActiveAudioReference": {
+      "ref_id": "usize",
+      "source_kind": "String",
+      "raw_path": "Option<String>",
+      "raw_relative_path": "Option<String>",
+      "relative_path_type": "Option<String>",
+      "file_type": "Option<String>",
+      "filename": "Option<String>",
+      "extension": "Option<String>",
+      "original_file_size": "Option<String>",
+      "original_crc": "Option<String>",
+      "default_duration": "Option<String>",
+      "default_sample_rate": "Option<String>",
+      "usage_context": "String",
+      "xml_context": "String",
+      "xml_locator": "String",
+      "is_rewrite_candidate": "bool",
+      "rewrite_support_status": "String",
+      "warnings": "Vec<ALSReadWarning>"
+    },
+    "HistoricalReference": {
+      "ref_id": "usize",
+      "source_kind": "String",
+      "raw_path": "Option<String>",
+      "raw_relative_path": "Option<String>",
+      "relative_path_type": "Option<String>",
+      "filename": "Option<String>",
+      "extension": "Option<String>",
+      "original_file_size": "Option<String>",
+      "original_crc": "Option<String>",
+      "xml_context": "String",
+      "xml_locator": "String",
+      "linked_active_ref_id": "Option<usize>",
+      "usage_note": "String",
+      "warnings": "Vec<ALSReadWarning>"
+    },
+    "NonAudioDependencySignal": {
+      "signal_id": "usize",
+      "signal_kind": "String",
+      "name": "Option<String>",
+      "raw_path": "Option<String>",
+      "raw_relative_path": "Option<String>",
+      "relative_path_type": "Option<String>",
+      "plugin_format": "Option<String>",
+      "plugin_identifier": "Option<String>",
+      "plugin_version": "Option<String>",
+      "xml_context": "String",
+      "xml_locator": "String",
+      "support_status": "String",
+      "warnings": "Vec<ALSReadWarning>"
+    },
+    "ALSReadWarning": {
+      "warning_id": "usize",
+      "warning_code": "String",
+      "severity": "String",
+      "message": "String",
+      "xml_context": "Option<String>",
+      "related_ref_id": "Option<usize>",
+      "evidence_status": "String"
+    },
+    "ALSReadError": {
+      "error_code": "String",
+      "message": "String",
+      "path": "Option<String>"
+    }
+  },
+  "forbidden_scope_verbs": [
+    "scan",
+    "copy",
+    "rewrite",
+    "match",
+    "classify",
+    "render",
+    "delete",
+    "remove"
+  ],
+  "forbidden_scope_terms": [
+    "package",
+    "ui",
+    "button",
+    "resolved",
+    "match",
+    "classifier"
+  ],
+  "forbidden_output_fields": [
+    "exists_on_disk",
+    "source_category",
+    "storage_state",
+    "resolved_path",
+    "match_candidates",
+    "copy_decision",
+    "rewrite_decision"
+  ],
+  "forbidden_imports": [
+    "std::net",
+    "std::process"
+  ],
+  "forbidden_source_patterns": [
+    {
+      "label": "panic instead of structured error",
+      "literal": "panic!("
+    },
+    {
+      "label": "unwrap instead of structured handling",
+      "literal": ".unwrap("
+    },
+    {
+      "label": "expect instead of structured handling",
+      "literal": ".expect("
+    },
+    {
+      "label": "destructive remove_file",
+      "literal": "remove_file"
+    },
+    {
+      "label": "destructive remove_dir",
+      "literal": "remove_dir"
+    },
+    {
+      "label": "destructive rename",
+      "literal": "rename("
+    },
+    {
+      "label": "network access in reader public contract",
+      "literal": "std::net"
+    },
+    {
+      "label": "process execution in reader public contract",
+      "literal": "std::process"
+    },
+    {
+      "label": "shell command execution",
+      "literal": "Command::new"
+    },
+    {
+      "label": "unsafe code requires explicit review",
+      "literal": "unsafe"
+    },
+    {
+      "label": "placeholder todo",
+      "literal": "todo!"
+    },
+    {
+      "label": "placeholder unimplemented",
+      "literal": "unimplemented!"
+    },
+    {
+      "label": "hardcoded macOS user path",
+      "literal": "/Users/"
+    }
+  ],
+  "guarded_source_globs": [
+    "crates/rescue_core/src/**/*.rs"
+  ],
+  "forbidden_guarded_source_patterns": [
+    {
+      "label": "destructive remove_file",
+      "literal": "remove_file"
+    },
+    {
+      "label": "destructive remove_dir",
+      "literal": "remove_dir"
+    },
+    {
+      "label": "destructive rename",
+      "literal": "rename("
+    },
+    {
+      "label": "network access in rescue_core",
+      "literal": "std::net"
+    },
+    {
+      "label": "process execution in rescue_core",
+      "literal": "std::process"
+    },
+    {
+      "label": "shell command execution in rescue_core",
+      "literal": "Command::new"
+    },
+    {
+      "label": "unsafe code in rescue_core",
+      "literal": "unsafe"
+    },
+    {
+      "label": "placeholder todo in rescue_core",
+      "literal": "todo!"
+    },
+    {
+      "label": "placeholder unimplemented in rescue_core",
+      "literal": "unimplemented!"
+    },
+    {
+      "label": "hardcoded macOS user path in rescue_core",
+      "literal": "/Users/"
+    }
+  ],
+  "expected_source_files": [
+    "crates/rescue_core/src/als_reader.rs",
+    "crates/rescue_core/src/models.rs",
+    "crates/rescue_core/src/path_text.rs"
+  ],
+  "quality_source_globs": [
+    "crates/rescue_core/src/als_reader.rs",
+    "crates/rescue_core/src/als_reader_impl.rs",
+    "crates/rescue_core/src/als_reader_io.rs",
+    "crates/rescue_core/src/path_text.rs"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "allowed_dependency_names": [
+    "clap",
+    "flate2",
+    "rescue_core",
+    "roxmltree",
+    "serde",
+    "serde_json",
+    "sha2",
+    "thiserror"
+  ],
+  "quality_limits": {
+    "max_source_file_lines": 450,
+    "max_function_lines": 60
+  },
+  "verification_commands": [
+    "cargo fmt --check",
+    "cargo check --workspace",
+    "cargo test --workspace"
+  ],
+  "closeout_required": [
+    "tests_recorded",
+    "guard_result_recorded",
+    "tasks_updated",
+    "current_state_updated",
+    "remaining_risks_stated"
+  ]
+}

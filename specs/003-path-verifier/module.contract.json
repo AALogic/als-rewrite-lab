@@ -1,0 +1,292 @@
+{
+  "id": "003-path-verifier",
+  "status": "blocked_pending_evidence",
+  "pilot": true,
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": [
+      "Purpose",
+      "Enforcement Levels",
+      "Clean Code",
+      "SOLID In This Project",
+      "Modularity",
+      "Encapsulation",
+      "Communication Between Modules",
+      "Testability",
+      "Refactoring",
+      "Error Handling",
+      "Data Safety",
+      "Clear Architecture",
+      "Project Hard Rules",
+      "Module Review Template"
+    ]
+  },
+  "required_docs": [
+    "spec.md",
+    "plan.md",
+    "tasks.md",
+    "fixture-contract.md"
+  ],
+  "required_doc_min_chars": 100,
+  "required_doc_literals": {
+    "fixture-contract.md": [
+      "PathObservation checks explicit candidate paths only.",
+      "PathObservation does not search the whole disk.",
+      "PathObservation does not deduplicate reference occurrences.",
+      "PathObservation does not select a candidate.",
+      "PathObservation does not rewrite ALS."
+    ],
+    "plan.md": [
+      "Run workflow_guard module-ready 003-path-verifier.",
+      "Run workflow_guard verify-module 003-path-verifier."
+    ]
+  },
+  "required_spec_literals": [
+    "PathObservationResult v0.2",
+    "DependencyRef v0.1",
+    "path availability != expected asset identity",
+    "never infer Project root",
+    "never select asset identity",
+    "return selected_path_candidate",
+    "return verified_exact_path"
+  ],
+  "blocking_markers": [
+    "Gate Status: UNKNOWN",
+    "Gate Status: AMBIGUOUS",
+    "Gate Status: CONFLICTING",
+    "Known Unknown: blocking",
+    "BLOCKING_UNKNOWN"
+  ],
+  "hidden_uncertainty_gate": true,
+  "hidden_uncertainty_phrases": [
+    "TBD",
+    "Question left open",
+    "do ustalenia",
+    "nie wiadomo",
+    "not sure",
+    "unclear"
+  ],
+  "allowed_uncertainty_markers": [
+    "Non-blocking future work"
+  ],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: E-01 confirms admitted RelativePathType candidate rules",
+    "DOCUMENTED_ONLY: synthetic cross-platform fixture matrix is accepted",
+    "ENFORCED_BY_GUARD: blocking markers removed only after evidence review",
+    "ENFORCED_BY_TEST: confirmed_project_root_produces_relative_candidate",
+    "ENFORCED_BY_TEST: absent_project_root_produces_no_relative_candidate",
+    "ENFORCED_BY_TEST: both_safe_candidates_are_preserved_without_selection",
+    "ENFORCED_BY_TEST: existing_regular_file_is_observed_without_identity_claim",
+    "ENFORCED_BY_TEST: missing_candidate_is_observed",
+    "ENFORCED_BY_TEST: directory_candidate_is_observed",
+    "ENFORCED_BY_TEST: symlink_is_reported_and_not_followed",
+    "ENFORCED_BY_TEST: parent_escape_candidate_is_rejected",
+    "ENFORCED_BY_TEST: size_mismatch_does_not_select_or_resolve_asset",
+    "ENFORCED_BY_TEST: foreign_platform_path_is_preserved_but_not_checked",
+    "ENFORCED_BY_TEST: duplicate_reference_occurrences_are_not_deduplicated",
+    "ENFORCED_BY_TEST: raw_paths_are_preserved_exactly",
+    "ENFORCED_BY_TEST: path_observation_is_metadata_only",
+    "ENFORCED_BY_TEST: fake_dependency_assessment_consumes_all_observations",
+    "ENFORCED_BY_TYPE: PathObservationContext",
+    "ENFORCED_BY_TYPE: PathObservationResult",
+    "ENFORCED_BY_TYPE: PathObservationMetadata",
+    "ENFORCED_BY_TYPE: DependencyPathObservation",
+    "ENFORCED_BY_TYPE: CandidatePathObservation",
+    "ENFORCED_BY_TYPE: PathObservationWarning",
+    "ENFORCED_BY_TYPE: PathObservationError",
+    "DOCUMENTED_ONLY: DependencyRef v0.1 is a ReferenceOccurrence compatibility model",
+    "DOCUMENTED_ONLY: PathObservation does not select or verify asset identity"
+  ],
+  "required_quality_obligations": [
+    "ENFORCED_BY_GUARD: ENGINEERING_RULES.md version 0.1 referenced",
+    "ENFORCED_BY_GUARD: required obligations checked before acceptance",
+    "ENFORCED_BY_GUARD: required tests are not ignored and have substance",
+    "ENFORCED_BY_GUARD: public contract exact field and type check",
+    "ENFORCED_BY_GUARD: scope ownership verbs blocked",
+    "ENFORCED_BY_GUARD: core source high-risk patterns blocked",
+    "ENFORCED_BY_GUARD: dependencies limited to allowed list",
+    "ENFORCED_BY_GUARD: hidden uncertainty phrases block build",
+    "REVIEW_ONLY: names describe observations, not verification or identity",
+    "REVIEW_ONLY: implementation avoids premature abstraction",
+    "REVIEW_ONLY: implementation follows ENGINEERING_RULES.md"
+  ],
+  "required_tests": [
+    "confirmed_project_root_produces_relative_candidate",
+    "absent_project_root_produces_no_relative_candidate",
+    "both_safe_candidates_are_preserved_without_selection",
+    "existing_regular_file_is_observed_without_identity_claim",
+    "missing_candidate_is_observed",
+    "directory_candidate_is_observed",
+    "symlink_is_reported_and_not_followed",
+    "parent_escape_candidate_is_rejected",
+    "size_mismatch_does_not_select_or_resolve_asset",
+    "foreign_platform_path_is_preserved_but_not_checked",
+    "duplicate_reference_occurrences_are_not_deduplicated",
+    "raw_paths_are_preserved_exactly",
+    "path_observation_is_metadata_only",
+    "fake_dependency_assessment_consumes_all_observations"
+  ],
+  "public_contract": {
+    "PathObservationContext": [
+      "host_platform",
+      "confirmed_project_root",
+      "project_root_basis"
+    ],
+    "PathObservationResult": [
+      "observation_metadata",
+      "dependency_observations",
+      "warnings",
+      "errors"
+    ],
+    "PathObservationMetadata": [
+      "observer_version",
+      "path_observation_model_version",
+      "input_dependency_ref_version",
+      "source_als_path",
+      "source_file_hash",
+      "project_root_basis",
+      "dependency_count",
+      "candidate_count",
+      "regular_file_count",
+      "missing_count",
+      "unknown_count",
+      "warning_count",
+      "error_count"
+    ],
+    "DependencyPathObservation": [
+      "dependency_id",
+      "als_ref_id",
+      "raw_path",
+      "raw_relative_path",
+      "parsed_raw_path",
+      "parsed_raw_relative_path",
+      "candidates",
+      "availability_summary",
+      "identity_status",
+      "warnings"
+    ],
+    "CandidatePathObservation": [
+      "candidate_id",
+      "candidate_basis",
+      "candidate_path",
+      "platform_status",
+      "safety_status",
+      "availability_status",
+      "entry_kind",
+      "size_evidence_status",
+      "observed_file_size",
+      "expected_file_size",
+      "evidence_notes",
+      "warnings"
+    ],
+    "PathObservationWarning": [
+      "warning_id",
+      "warning_code",
+      "severity",
+      "message",
+      "dependency_id",
+      "als_ref_id",
+      "candidate_id",
+      "evidence_status"
+    ],
+    "PathObservationError": [
+      "error_code",
+      "message",
+      "input_dependency_ref_version"
+    ]
+  },
+  "public_contract_mode": "exact",
+  "expected_source_files": [
+    "crates/rescue_core/src/path_observation.rs",
+    "crates/rescue_core/src/path_observation_impl.rs"
+  ],
+  "quality_source_globs": [
+    "crates/rescue_core/src/path_observation*.rs"
+  ],
+  "guarded_source_globs": [
+    "crates/rescue_core/src/**/*.rs"
+  ],
+  "forbidden_output_fields": [
+    "selected_path_candidate",
+    "verified_exact_path",
+    "resolved_path",
+    "source_category",
+    "match_candidates",
+    "target_package_path",
+    "copy_operation",
+    "rewrite_operation",
+    "new_als_path"
+  ],
+  "forbidden_scope_verbs": [
+    "scan",
+    "match",
+    "copy",
+    "rewrite",
+    "plan",
+    "delete",
+    "remove",
+    "resolve",
+    "select"
+  ],
+  "forbidden_scope_terms": [
+    "AssetIndex",
+    "SampleMatcher",
+    "PackagePlan",
+    "CopyOperation",
+    "RewriteOperation",
+    "ResolutionDecision"
+  ],
+  "forbidden_guarded_source_patterns": [
+    {
+      "literal": "unwrap(",
+      "label": "unwrap"
+    },
+    {
+      "literal": "expect(",
+      "label": "expect"
+    },
+    {
+      "literal": "panic!",
+      "label": "panic"
+    },
+    {
+      "literal": "std::fs::remove_file",
+      "label": "remove_file"
+    },
+    {
+      "literal": "std::fs::remove_dir",
+      "label": "remove_dir"
+    },
+    {
+      "literal": "std::fs::rename",
+      "label": "rename"
+    },
+    {
+      "literal": "std::fs::copy",
+      "label": "copy"
+    },
+    {
+      "literal": "std::fs::write",
+      "label": "write"
+    }
+  ],
+  "allowed_dependency_names": [
+    "clap",
+    "flate2",
+    "rescue_core",
+    "roxmltree",
+    "serde",
+    "serde_json",
+    "sha2",
+    "thiserror"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "quality_limits": {
+    "max_source_file_lines": 260,
+    "max_function_lines": 70
+  }
+}

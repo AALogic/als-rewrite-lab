@@ -1,0 +1,451 @@
+{
+  "id": "002-dependency-extractor",
+  "status": "ready_for_module_ready_guard",
+  "pilot": true,
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": [
+      "Purpose",
+      "Enforcement Levels",
+      "Clean Code",
+      "SOLID In This Project",
+      "Modularity",
+      "Encapsulation",
+      "Communication Between Modules",
+      "Testability",
+      "Refactoring",
+      "Error Handling",
+      "Data Safety",
+      "Clear Architecture",
+      "Project Hard Rules",
+      "Module Review Template"
+    ]
+  },
+  "required_docs": [
+    "spec.md",
+    "plan.md",
+    "tasks.md",
+    "fixture-contract.md"
+  ],
+  "required_doc_min_chars": 20,
+  "required_doc_literals": {
+    "fixture-contract.md": [
+      "DependencyExtractor normalizes active audio refs.",
+      "DependencyExtractor does not verify disk existence.",
+      "DependencyExtractor does not classify source category.",
+      "DependencyExtractor does not deduplicate."
+    ],
+    "plan.md": [
+      "Run workflow_guard module-ready 002-dependency-extractor.",
+      "Run workflow_guard verify-module 002-dependency-extractor."
+    ]
+  },
+  "required_spec_literals": [
+    "DependencyExtractionResult v0.1",
+    "ALSReadModel.set_metadata.als_read_model_version must be 0.2.",
+    "`DependencyExtractor v0.1` handles only active audio samples.",
+    "This module is a normalizer, not a verifier, classifier, matcher, planner or\nrewriter.",
+    "original_crc must not be treated as proof of file identity.",
+    "DependencyExtractor v0.1 must not parse or coerce those values into numeric\ntypes."
+  ],
+  "blocking_markers": [
+    "Gate Status: UNKNOWN",
+    "Gate Status: AMBIGUOUS",
+    "Gate Status: CONFLICTING",
+    "Known Unknown: blocking",
+    "BLOCKING_UNKNOWN"
+  ],
+  "hidden_uncertainty_gate": true,
+  "hidden_uncertainty_phrases": [
+    "TBD",
+    "Question left open",
+    "do ustalenia",
+    "nie wiadomo",
+    "not sure",
+    "unclear"
+  ],
+  "allowed_uncertainty_markers": [
+    "Known Unknowns",
+    "Non-Blocking Future Work"
+  ],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "ENFORCED_BY_TEST: valid_model_extracts_audio_dependencies",
+    "ENFORCED_BY_TEST: zero_active_refs_is_valid",
+    "ENFORCED_BY_TEST: one_active_ref_becomes_one_dependency_ref",
+    "ENFORCED_BY_TEST: duplicate_refs_are_not_deduplicated",
+    "ENFORCED_BY_TEST: incomplete_ref_is_preserved_with_warning",
+    "ENFORCED_BY_TEST: historical_refs_are_ignored_with_summary",
+    "ENFORCED_BY_TEST: non_audio_signals_are_ignored_with_summary",
+    "ENFORCED_BY_TEST: unsupported_als_read_model_version_returns_error",
+    "ENFORCED_BY_TEST: input_with_fatal_reader_errors_returns_no_trusted_model_error",
+    "ENFORCED_BY_TEST: output_is_deterministic",
+    "ENFORCED_BY_TEST: forbidden_downstream_fields_are_absent",
+    "ENFORCED_BY_TEST: raw_scalar_values_remain_strings",
+    "ENFORCED_BY_TEST: fake_path_observation_consumes_dependency_result",
+    "ENFORCED_BY_TYPE: DependencyExtractionResult",
+    "ENFORCED_BY_TYPE: DependencyExtractionMetadata",
+    "ENFORCED_BY_TYPE: DependencyRef",
+    "ENFORCED_BY_TYPE: IgnoredInputSummary",
+    "ENFORCED_BY_TYPE: DependencyExtractionWarning",
+    "ENFORCED_BY_TYPE: DependencyExtractionError",
+    "ENFORCED_BY_GUARD: ENGINEERING_RULES.md version 0.1 referenced",
+    "ENFORCED_BY_GUARD: forbidden panic/unwrap/expect in product source",
+    "ENFORCED_BY_GUARD: forbidden destructive filesystem operations in product source",
+    "REVIEW_ONLY: names are understandable in the Ableton dependency domain",
+    "REVIEW_ONLY: implementation avoids premature abstraction",
+    "REVIEW_ONLY: implementation follows ENGINEERING_RULES.md code review checklist",
+    "ENFORCED_BY_GUARD: required obligations checked before acceptance",
+    "ENFORCED_BY_GUARD: required tests are not ignored and have substance",
+    "ENFORCED_BY_GUARD: public contract exact field and type check",
+    "ENFORCED_BY_GUARD: scope ownership verbs blocked",
+    "ENFORCED_BY_GUARD: core source high-risk patterns blocked",
+    "ENFORCED_BY_GUARD: dependencies limited to allowed list",
+    "ENFORCED_BY_GUARD: hidden uncertainty phrases block build",
+    "DOCUMENTED_ONLY: module belongs to Mass Collect / dependency reporting flow",
+    "DOCUMENTED_ONLY: DependencyExtractor is a normalizer, not verifier/classifier/matcher/planner/rewriter"
+  ],
+  "required_quality_obligations": [
+    "ENFORCED_BY_GUARD: ENGINEERING_RULES.md version 0.1 referenced",
+    "ENFORCED_BY_GUARD: forbidden panic/unwrap/expect in product source",
+    "ENFORCED_BY_GUARD: forbidden destructive filesystem operations in product source",
+    "REVIEW_ONLY: names are understandable in the Ableton dependency domain",
+    "REVIEW_ONLY: implementation avoids premature abstraction",
+    "REVIEW_ONLY: implementation follows ENGINEERING_RULES.md code review checklist",
+    "ENFORCED_BY_GUARD: required obligations checked before acceptance",
+    "ENFORCED_BY_GUARD: required tests are not ignored and have substance",
+    "ENFORCED_BY_GUARD: public contract exact field and type check",
+    "ENFORCED_BY_GUARD: scope ownership verbs blocked",
+    "ENFORCED_BY_GUARD: core source high-risk patterns blocked",
+    "ENFORCED_BY_GUARD: dependencies limited to allowed list",
+    "ENFORCED_BY_GUARD: hidden uncertainty phrases block build"
+  ],
+  "required_tests": [
+    "valid_model_extracts_audio_dependencies",
+    "zero_active_refs_is_valid",
+    "one_active_ref_becomes_one_dependency_ref",
+    "duplicate_refs_are_not_deduplicated",
+    "incomplete_ref_is_preserved_with_warning",
+    "historical_refs_are_ignored_with_summary",
+    "non_audio_signals_are_ignored_with_summary",
+    "unsupported_als_read_model_version_returns_error",
+    "input_with_fatal_reader_errors_returns_no_trusted_model_error",
+    "output_is_deterministic",
+    "forbidden_downstream_fields_are_absent",
+    "raw_scalar_values_remain_strings",
+    "fake_path_observation_consumes_dependency_result"
+  ],
+  "public_contract": {
+    "DependencyExtractionResult": [
+      "extraction_metadata",
+      "dependencies",
+      "ignored_input_summary",
+      "warnings",
+      "errors"
+    ],
+    "DependencyExtractionMetadata": [
+      "extractor_version",
+      "dependency_ref_version",
+      "input_als_read_model_version",
+      "source_als_path",
+      "source_project_root",
+      "source_file_hash",
+      "dependency_count",
+      "warning_count",
+      "error_count"
+    ],
+    "DependencyRef": [
+      "dependency_id",
+      "dependency_kind",
+      "als_ref_id",
+      "source_kind",
+      "raw_path",
+      "raw_relative_path",
+      "relative_path_type",
+      "file_type",
+      "filename",
+      "extension",
+      "original_file_size",
+      "original_crc",
+      "default_duration",
+      "default_sample_rate",
+      "usage_context",
+      "xml_context",
+      "rewrite_support_status",
+      "extraction_status",
+      "path_basis",
+      "evidence_status",
+      "evidence_notes",
+      "warnings"
+    ],
+    "IgnoredInputSummary": [
+      "historical_refs_ignored_count",
+      "non_audio_dependency_signals_ignored_count",
+      "input_warnings_seen_count",
+      "input_errors_seen_count",
+      "ignored_scope_notes"
+    ],
+    "DependencyExtractionWarning": [
+      "warning_id",
+      "warning_code",
+      "severity",
+      "message",
+      "dependency_id",
+      "als_ref_id",
+      "evidence_status"
+    ],
+    "DependencyExtractionError": [
+      "error_code",
+      "message",
+      "input_model_version"
+    ]
+  },
+  "public_contract_mode": "exact",
+  "public_contract_field_types": {
+    "DependencyExtractionResult": {
+      "extraction_metadata": "DependencyExtractionMetadata",
+      "dependencies": "Vec<DependencyRef>",
+      "ignored_input_summary": "IgnoredInputSummary",
+      "warnings": "Vec<DependencyExtractionWarning>",
+      "errors": "Vec<DependencyExtractionError>"
+    },
+    "DependencyExtractionMetadata": {
+      "extractor_version": "String",
+      "dependency_ref_version": "String",
+      "input_als_read_model_version": "String",
+      "source_als_path": "String",
+      "source_project_root": "Option<String>",
+      "source_file_hash": "String",
+      "dependency_count": "usize",
+      "warning_count": "usize",
+      "error_count": "usize"
+    },
+    "DependencyRef": {
+      "dependency_id": "String",
+      "dependency_kind": "String",
+      "als_ref_id": "usize",
+      "source_kind": "String",
+      "raw_path": "Option<String>",
+      "raw_relative_path": "Option<String>",
+      "relative_path_type": "Option<String>",
+      "file_type": "Option<String>",
+      "filename": "Option<String>",
+      "extension": "Option<String>",
+      "original_file_size": "Option<String>",
+      "original_crc": "Option<String>",
+      "default_duration": "Option<String>",
+      "default_sample_rate": "Option<String>",
+      "usage_context": "String",
+      "xml_context": "String",
+      "rewrite_support_status": "String",
+      "extraction_status": "String",
+      "path_basis": "String",
+      "evidence_status": "String",
+      "evidence_notes": "Vec<String>",
+      "warnings": "Vec<DependencyExtractionWarning>"
+    },
+    "IgnoredInputSummary": {
+      "historical_refs_ignored_count": "usize",
+      "non_audio_dependency_signals_ignored_count": "usize",
+      "input_warnings_seen_count": "usize",
+      "input_errors_seen_count": "usize",
+      "ignored_scope_notes": "Vec<String>"
+    },
+    "DependencyExtractionWarning": {
+      "warning_id": "usize",
+      "warning_code": "String",
+      "severity": "String",
+      "message": "String",
+      "dependency_id": "Option<String>",
+      "als_ref_id": "Option<usize>",
+      "evidence_status": "String"
+    },
+    "DependencyExtractionError": {
+      "error_code": "String",
+      "message": "String",
+      "input_model_version": "String"
+    }
+  },
+  "forbidden_scope_verbs": [
+    "scan",
+    "copy",
+    "rewrite",
+    "match",
+    "classify",
+    "render",
+    "delete",
+    "remove"
+  ],
+  "forbidden_scope_terms": [
+    "plugin",
+    "vst",
+    "preset",
+    "package",
+    "ui",
+    "button",
+    "disk",
+    "filesystem"
+  ],
+  "forbidden_output_fields": [
+    "resolved_path",
+    "existence_status",
+    "source_category",
+    "risk_flags",
+    "match_candidates",
+    "copy_decision",
+    "rewrite_decision"
+  ],
+  "forbidden_imports": [
+    "std::fs",
+    "roxmltree",
+    "flate2"
+  ],
+  "forbidden_source_patterns": [
+    {
+      "label": "panic instead of structured error",
+      "literal": "panic!("
+    },
+    {
+      "label": "unwrap instead of structured handling",
+      "literal": ".unwrap("
+    },
+    {
+      "label": "expect instead of structured handling",
+      "literal": ".expect("
+    },
+    {
+      "label": "destructive remove_file",
+      "literal": "remove_file"
+    },
+    {
+      "label": "destructive remove_dir",
+      "literal": "remove_dir"
+    },
+    {
+      "label": "destructive rename",
+      "literal": "rename("
+    },
+    {
+      "label": "direct filesystem write",
+      "literal": "write("
+    },
+    {
+      "label": "network access in pure core module",
+      "literal": "std::net"
+    },
+    {
+      "label": "process execution in pure core module",
+      "literal": "std::process"
+    },
+    {
+      "label": "shell command execution",
+      "literal": "Command::new"
+    },
+    {
+      "label": "unsafe code requires explicit review",
+      "literal": "unsafe"
+    },
+    {
+      "label": "placeholder todo",
+      "literal": "todo!"
+    },
+    {
+      "label": "placeholder unimplemented",
+      "literal": "unimplemented!"
+    },
+    {
+      "label": "nondeterministic time use",
+      "literal": "SystemTime::now"
+    },
+    {
+      "label": "nondeterministic random use",
+      "literal": "rand"
+    },
+    {
+      "label": "hardcoded macOS user path",
+      "literal": "/Users/"
+    }
+  ],
+  "guarded_source_globs": [
+    "crates/rescue_core/src/**/*.rs"
+  ],
+  "forbidden_guarded_source_patterns": [
+    {
+      "label": "destructive remove_file",
+      "literal": "remove_file"
+    },
+    {
+      "label": "destructive remove_dir",
+      "literal": "remove_dir"
+    },
+    {
+      "label": "destructive rename",
+      "literal": "rename("
+    },
+    {
+      "label": "network access in rescue_core",
+      "literal": "std::net"
+    },
+    {
+      "label": "process execution in rescue_core",
+      "literal": "std::process"
+    },
+    {
+      "label": "shell command execution in rescue_core",
+      "literal": "Command::new"
+    },
+    {
+      "label": "unsafe code in rescue_core",
+      "literal": "unsafe"
+    },
+    {
+      "label": "placeholder todo in rescue_core",
+      "literal": "todo!"
+    },
+    {
+      "label": "placeholder unimplemented in rescue_core",
+      "literal": "unimplemented!"
+    },
+    {
+      "label": "hardcoded macOS user path in rescue_core",
+      "literal": "/Users/"
+    }
+  ],
+  "expected_source_files": [
+    "crates/rescue_core/src/dependency_extractor.rs"
+  ],
+  "quality_source_globs": [
+    "crates/rescue_core/src/dependency_extractor.rs",
+    "crates/rescue_core/src/dependency_extractor_impl.rs"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "allowed_dependency_names": [
+    "clap",
+    "flate2",
+    "rescue_core",
+    "roxmltree",
+    "serde",
+    "serde_json",
+    "sha2",
+    "thiserror"
+  ],
+  "quality_limits": {
+    "max_source_file_lines": 320,
+    "max_function_lines": 60
+  },
+  "verification_commands": [
+    "cargo fmt --check",
+    "cargo check --workspace",
+    "cargo test --workspace"
+  ],
+  "closeout_required": [
+    "tests_recorded",
+    "guard_result_recorded",
+    "tasks_updated",
+    "current_state_updated",
+    "remaining_risks_stated"
+  ]
+}

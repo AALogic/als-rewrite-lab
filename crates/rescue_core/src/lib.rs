@@ -1,0 +1,23 @@
+mod als_reader;
+mod als_reader_impl;
+mod als_reader_io;
+mod dependency_extractor;
+mod dependency_extractor_impl;
+mod models;
+mod path_parser;
+mod path_text;
+
+pub use als_reader::{
+    analyze_als, ALS_READER_VERSION, ALS_READ_MODEL_VERSION, MAX_COMPRESSED_ALS_BYTES,
+    MAX_DECOMPRESSED_XML_BYTES,
+};
+pub use dependency_extractor::{
+    extract_dependencies, DependencyExtractionError, DependencyExtractionMetadata,
+    DependencyExtractionResult, DependencyExtractionWarning, DependencyRef, IgnoredInputSummary,
+    DEPENDENCY_EXTRACTOR_VERSION, DEPENDENCY_REF_VERSION,
+};
+pub use models::{
+    ALSError, ALSReadError, ALSReadModel, ALSReadWarning, ActiveAudioReference,
+    HistoricalReference, NonAudioDependencySignal, SetMetadata,
+};
+pub use path_parser::{parse_als_path, AlsPathKind, ParsedAlsPath, RawAlsPath};

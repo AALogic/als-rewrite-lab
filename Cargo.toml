@@ -1,0 +1,6 @@
+[workspace]
+members = [
+  "crates/rescue_core",
+  "cli/rescue-cli",
+]
+resolver = "2"

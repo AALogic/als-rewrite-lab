@@ -1,0 +1,44 @@
+flowchart TD
+    User["User selects one Ableton project"]
+    Context["ProjectDiscovery or explicit context\nProject root is evidence, not parent(ALS)"]
+    ALSReader["001 ALSReader\nread gzip XML\nemit ALSReadModel"]
+    DependencyExtractor["002 DependencyExtractor\nemit ReferenceOccurrence-compatible DependencyRef"]
+    PathObservation["003 PathObservation\nrecord every safe path candidate\nno selection"]
+    DependencyAssessment["DependencyAssessment\ngroup RequiredAsset\nassess availability"]
+    ReadOnlyReport["Read-only report\navailable / unavailable / unknown / unsupported"]
+
+    AssetInventory["Later: AssetInventory\nscan selected scopes"]
+    AssetResolution["Later: AssetResolution\nrank evidence and record decisions"]
+    PackagePlanner["Later: PackagePlanner\nbuild explicit operation plan"]
+    StagingExecutor["Later: StagingExecutor\ncopy into staging"]
+    ALSRewriter["Later: supported ALSRewriter\nrewrite copied ALS only"]
+    Validator["Later: Validator\nvalidate package and semantic diff"]
+    Ledger["Later: PrivateLedger + PackageManifest"]
+
+    User --> Context
+    User --> ALSReader
+    Context --> PathObservation
+    ALSReader --> DependencyExtractor
+    DependencyExtractor --> PathObservation
+    DependencyExtractor --> DependencyAssessment
+    PathObservation --> DependencyAssessment
+    DependencyAssessment --> ReadOnlyReport
+
+    DependencyAssessment -. "later" .-> AssetInventory
+    AssetInventory --> AssetResolution
+    AssetResolution --> PackagePlanner
+    PackagePlanner --> StagingExecutor
+    StagingExecutor --> ALSRewriter
+    ALSRewriter --> Validator
+    Validator --> Ledger
+
+    Original["Original ALS and media\nread-only"]
+    Original -. "read only" .-> ALSReader
+
+    Safety1["Path availability is not asset identity"]
+    Safety2["No plan means no write"]
+    Safety3["No validation means no promotion"]
+
+    Safety1 -.-> PathObservation
+    Safety2 -.-> PackagePlanner
+    Safety3 -.-> Validator
