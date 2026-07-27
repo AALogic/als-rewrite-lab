@@ -27,11 +27,11 @@ and raw RelativePathType preservation without requiring private projects.
 The following files remain an optional private evidence corpus:
 
 ```text
-tests/fixtures/als/cziki_before_cas.als
-tests/fixtures/als/cziki_after_cas.als
-tests/fixtures/als/template_zero_active.als
-tests/fixtures/als/kombinacja_piejo.als
-experiments/2026-06-02_als_structure_corpus_20/copies/14__POLISHBOYS_WWA_11.10_GOSCINKA.als
+tests/fixtures/als/private_fixture_001_before_collect.als
+tests/fixtures/als/private_fixture_001_after_collect.als
+tests/fixtures/als/synthetic_fixture_zero_active.als
+tests/fixtures/als/private_fixture_002_external_refs.als
+<private-corpus-root>/private_corpus_fixture_014.als
 ```
 
 Synthetic ALSReadModel fixtures may be constructed in Rust tests for:
@@ -45,7 +45,7 @@ duplicate ref edge cases if needed
 
 ## 3. Expected Fixture Behavior
 
-### 3.1 `kombinacja_piejo.als`
+### 3.1 `private_fixture_002_external_refs.als`
 
 Purpose:
 
@@ -80,7 +80,7 @@ original_crc is preserved as value, not identity proof
 path_basis is raw_path_and_raw_relative_path for refs with both path fields
 ```
 
-### 3.2 `template_zero_active.als`
+### 3.2 `synthetic_fixture_zero_active.als`
 
 Purpose:
 
@@ -103,7 +103,7 @@ Rule:
 Zero dependencies is valid.
 ```
 
-### 3.3 `cziki_before_cas.als`
+### 3.3 `private_fixture_001_before_collect.als`
 
 Purpose:
 
@@ -130,7 +130,7 @@ DependencyExtractor does not add source_category
 DependencyExtractor does not add existence_status
 ```
 
-### 3.4 `cziki_after_cas.als`
+### 3.4 `private_fixture_001_after_collect.als`
 
 Purpose:
 
@@ -152,7 +152,7 @@ No package readiness decision.
 Fixture:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/copies/14__POLISHBOYS_WWA_11.10_GOSCINKA.als
+<private-corpus-root>/private_corpus_fixture_014.als
 ```
 
 Expected:

@@ -58,6 +58,8 @@ the original ALS path.
 
 Only `auto_accepted` decisions can become executable copy/rewrite operations.
 Every selected occurrence and active reference must exist exactly once.
+Laboratory rewrite mode requires at least one approved rewrite operation; a
+zero-reference or otherwise operation-free plan is blocked before execution.
 
 ## Copy Planning
 
@@ -94,7 +96,8 @@ blocked
 ```
 
 Any unresolved requirement, unsupported reference, target collision or invalid
-handoff blocks execution.
+handoff blocks execution. Laboratory mode also blocks when no approved rewrite
+operation exists.
 
 ## Safety
 
@@ -119,6 +122,7 @@ same-name different-content collision blocks
 unsupported Live/version/type/locator blocks rewrite
 unknown or unapproved rewrite support evidence blocks rewrite
 outdated resolution policy blocks planning
+zero-reference laboratory plans block before execution
 copy-only mode contains no rewrite operations
 same input produces the same plan
 tests, clippy and module guard pass

@@ -2,7 +2,7 @@ use crate::{LaboratoryPackageError, LaboratoryPackageRequest};
 use rescue_analyzer::ProjectDiscoveryResult;
 use std::fs;
 use std::io;
-use std::path::{Component, Path};
+use std::path::{Component, Path, PathBuf};
 
 pub(crate) fn validate_request(request: &LaboratoryPackageRequest) -> Vec<LaboratoryPackageError> {
     let mut errors = Vec::new();
@@ -139,20 +139,82 @@ pub(crate) fn validate_discovered_project(
             "Project discovery did not produce one confirmed Ableton Project root",
         ));
     }
-    if [
+    let resolved_project_root = match fs::canonicalize(project_root) {
+        Ok(path) => path,
+        Err(_) => {
+            return Some(project_error(
+                "PIPELINE_OUTPUT_SCOPE_UNVERIFIED",
+                "The confirmed Project root could not be resolved for output isolation",
+            ))
+        }
+    };
+    for path in [
         &request.staging_root,
         &request.target_project_root,
         &request.private_ledger_path,
-    ]
-    .iter()
-    .any(|path| path.starts_with(project_root))
-    {
-        return Some(project_error(
-            "PIPELINE_OUTPUT_INSIDE_SOURCE_PROJECT",
-            "Staging, target, and private ledger paths must remain outside the source Project root",
-        ));
+    ] {
+        match resolved_parent(path)
+            .and_then(|parent| resolved_path_starts_with(&parent, &resolved_project_root))
+        {
+            Ok(true) => {
+                return Some(project_error(
+                    "PIPELINE_OUTPUT_INSIDE_SOURCE_PROJECT",
+                    "Staging, target, and private ledger paths must remain outside the source Project root",
+                ))
+            }
+            Ok(false) => {}
+            Err(_) => {
+                return Some(project_error(
+                    "PIPELINE_OUTPUT_SCOPE_UNVERIFIED",
+                    "An output parent could not be resolved for Project isolation",
+                ))
+            }
+        }
     }
     None
+}
+
+fn resolved_parent(path: &Path) -> io::Result<PathBuf> {
+    let parent = path.parent().ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "output path does not have a parent",
+        )
+    })?;
+    fs::canonicalize(parent)
+}
+
+fn resolved_path_starts_with(path: &Path, root: &Path) -> io::Result<bool> {
+    let mut path_components = path.components();
+    for root_component in root.components() {
+        let Some(path_component) = path_components.next() else {
+            return Ok(false);
+        };
+        if !components_equal(path_component, root_component)? {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+fn components_equal(left: Component<'_>, right: Component<'_>) -> io::Result<bool> {
+    let left = left.as_os_str().to_str().ok_or_else(non_unicode_path)?;
+    let right = right.as_os_str().to_str().ok_or_else(non_unicode_path)?;
+    Ok(left.to_lowercase() == right.to_lowercase())
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+fn components_equal(left: Component<'_>, right: Component<'_>) -> io::Result<bool> {
+    Ok(left == right)
+}
+
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+fn non_unicode_path() -> io::Error {
+    io::Error::new(
+        io::ErrorKind::InvalidData,
+        "resolved path is not valid Unicode",
+    )
 }
 
 fn path_is_occupied(path: &Path) -> bool {

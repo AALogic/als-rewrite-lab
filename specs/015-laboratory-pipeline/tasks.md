@@ -9,7 +9,10 @@
 - [x] ENFORCED_BY_TEST: existing_target_is_rejected_before_any_write
 - [x] ENFORCED_BY_TEST: dangling_output_symlink_is_rejected_before_any_write
 - [x] ENFORCED_BY_TEST: outputs_inside_confirmed_project_root_are_rejected
+- [x] ENFORCED_BY_TEST: ancestor_symlink_into_project_is_rejected
+- [x] ENFORCED_BY_TEST: case_variant_project_path_is_rejected
 - [x] ENFORCED_BY_TEST: unknown_project_root_blocks_before_inventory_and_writes
+- [x] ENFORCED_BY_TEST: zero_reference_project_blocks_before_staging
 - [x] ENFORCED_BY_TEST: unbounded_filesystem_root_is_rejected
 - [x] ENFORCED_BY_TEST: unsupported_live_version_blocks_before_staging
 - [x] ENFORCED_BY_TYPE: LaboratoryPackageRequest
@@ -17,6 +20,7 @@
 - [x] ENFORCED_BY_TYPE: LaboratoryPackageError
 - [x] REVIEW_ONLY: orchestration contains no duplicated ALS or matching policy
 - [x] REVIEW_ONLY: no write-capable stage runs before a ready package plan
+- [x] REVIEW_ONLY: completed discovery evidence is retained on output-scope rejection
 - [x] DOCUMENTED_ONLY: successful static validation still requires manual Ableton verification
 - [x] ENFORCED_BY_TEST: laboratory_command_requires_explicit_write_flag
 - [x] ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs

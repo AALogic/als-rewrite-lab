@@ -24,14 +24,14 @@ do not modify copied ALS files
 ## Tested Copies
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/copies/11__FILIP-SB-REMIX.als
-experiments/2026-06-02_als_structure_corpus_20/copies/14__POLISHBOYS_WWA_11.10_GOSCINKA.als
-experiments/2026-06-02_als_structure_corpus_20/copies/20__acidsynth.als
+<private-corpus-root>/private_corpus_fixture_011.als
+<private-corpus-root>/private_corpus_fixture_014.als
+<private-corpus-root>/private_corpus_fixture_020.als
 ```
 
 ## Results
 
-### 11__FILIP-SB-REMIX.als
+### private_corpus_fixture_011.als
 
 ```text
 read_only_hash_unchanged: true
@@ -48,7 +48,7 @@ contains_active_path_missing_warning: false
 relative_path_type_counts: 1 -> 9
 ```
 
-### 14__POLISHBOYS_WWA_11.10_GOSCINKA.als
+### private_corpus_fixture_014.als
 
 ```text
 read_only_hash_unchanged: true
@@ -68,13 +68,13 @@ relative_path_type_counts: 0 -> 1100, 3 -> 700
 First observed active `RelativePathType 0` example:
 
 ```text
-raw_path: Samples/Processed/Consolidate/MKS KICK [2023-05-20 174929]-1-1-1.aif
+raw_path: Samples/Processed/Consolidate/<private-audio-file>.aif
 raw_relative_path: ""
 xml_context: SampleRef/FileRef
 rewrite_support_status: requires_test
 ```
 
-### 20__acidsynth.als
+### private_corpus_fixture_020.als
 
 ```text
 read_only_hash_unchanged: true

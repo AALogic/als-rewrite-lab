@@ -17,34 +17,48 @@ pub(crate) struct ReadStage {
     pub preflight: PreflightReport,
 }
 
+pub(crate) struct ReadFailure {
+    pub discovery: ProjectDiscoveryResult,
+    pub error: LaboratoryPackageError,
+}
+
 pub(crate) fn read_and_assess(
     request: &LaboratoryPackageRequest,
-) -> Result<ReadStage, LaboratoryPackageError> {
+) -> Result<ReadStage, ReadFailure> {
     let discovery = discover_project(&ProjectDiscoveryRequest {
         source_als_path: request.source_als_path.clone(),
     });
     if !discovery.errors.is_empty() {
-        return Err(error(
-            "PIPELINE_PROJECT_DISCOVERY_FAILED",
-            "project_discovery",
-            "Project discovery returned errors",
+        return Err(failure(
+            &discovery,
+            error(
+                "PIPELINE_PROJECT_DISCOVERY_FAILED",
+                "project_discovery",
+                "Project discovery returned errors",
+            ),
         ));
     }
     if let Some(error) =
         crate::laboratory_pipeline_inputs::validate_discovered_project(request, &discovery)
     {
-        return Err(error);
+        return Err(failure(&discovery, error));
     }
     let als_read_model = analyze_als(&request.source_als_path).map_err(|read_error| {
         let info = read_error.to_info();
-        error(&info.error_code, "als_reader", &info.message)
+        failure(
+            &discovery,
+            error(&info.error_code, "als_reader", &info.message),
+        )
     })?;
     let extraction = extract_dependencies(&als_read_model);
     if !extraction.errors.is_empty() {
-        return Err(error(
-            "PIPELINE_DEPENDENCY_EXTRACTION_FAILED",
-            "dependency_extraction",
-            "Dependency extraction returned errors",
+        return Err(failure(
+            &discovery,
+            error(
+                "PIPELINE_DEPENDENCY_EXTRACTION_FAILED",
+                "dependency_extraction",
+                "Dependency extraction returned errors",
+            ),
         ));
     }
     let path_observations = observe_dependency_paths(
@@ -59,26 +73,35 @@ pub(crate) fn read_and_assess(
         },
     );
     if !path_observations.errors.is_empty() {
-        return Err(error(
-            "PIPELINE_PATH_OBSERVATION_FAILED",
-            "path_observation",
-            "Path observation returned errors",
+        return Err(failure(
+            &discovery,
+            error(
+                "PIPELINE_PATH_OBSERVATION_FAILED",
+                "path_observation",
+                "Path observation returned errors",
+            ),
         ));
     }
     let assessment = assess_dependencies(&extraction, &path_observations);
     if !assessment.errors.is_empty() {
-        return Err(error(
-            "PIPELINE_DEPENDENCY_ASSESSMENT_FAILED",
-            "dependency_assessment",
-            "Dependency assessment returned errors",
+        return Err(failure(
+            &discovery,
+            error(
+                "PIPELINE_DEPENDENCY_ASSESSMENT_FAILED",
+                "dependency_assessment",
+                "Dependency assessment returned errors",
+            ),
         ));
     }
     let preflight = build_preflight_report(&discovery, &assessment);
     if !preflight.errors.is_empty() {
-        return Err(error(
-            "PIPELINE_PREFLIGHT_FAILED",
-            "preflight",
-            "Preflight report returned errors",
+        return Err(failure(
+            &discovery,
+            error(
+                "PIPELINE_PREFLIGHT_FAILED",
+                "preflight",
+                "Preflight report returned errors",
+            ),
         ));
     }
     Ok(ReadStage {
@@ -98,6 +121,13 @@ fn current_host_platform() -> &'static str {
         "macos"
     } else {
         "posix"
+    }
+}
+
+fn failure(discovery: &ProjectDiscoveryResult, error: LaboratoryPackageError) -> ReadFailure {
+    ReadFailure {
+        discovery: discovery.clone(),
+        error,
     }
 }
 

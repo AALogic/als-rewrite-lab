@@ -14,9 +14,9 @@ that every unrelated semantic value stayed unchanged?
 Private copied artifacts:
 
 ~~~text
-01_cziki_before_cas.als
-02_cziki_after_cas.als
-03_cziki_reconstructed.als
+private_fixture_001_before_collect.als
+private_fixture_001_after_collect.als
+private_fixture_001_reconstructed.als
 ~~~
 
 The evidence harness is `tools/als_semantic_diff.py`. It compares active

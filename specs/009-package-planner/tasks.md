@@ -21,6 +21,7 @@ Date: 2026-07-27
 - [x] ENFORCED_BY_TEST: unsupported_relative_path_type_blocks_rewrite
 - [x] ENFORCED_BY_TEST: unknown_rewrite_support_blocks_rewrite
 - [x] ENFORCED_BY_TEST: outdated_resolution_policy_blocks_plan
+- [x] ENFORCED_BY_TEST: zero_reference_laboratory_plan_is_blocked
 - [x] ENFORCED_BY_TEST: locator_mismatch_blocks_rewrite
 - [x] ENFORCED_BY_TEST: copy_only_mode_has_no_rewrite_operations
 - [x] ENFORCED_BY_TEST: package_plan_is_deterministic

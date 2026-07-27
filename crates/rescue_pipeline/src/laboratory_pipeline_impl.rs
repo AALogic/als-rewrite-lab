@@ -16,10 +16,11 @@ pub(crate) fn run_laboratory_package_impl(
     }
     let read = match crate::laboratory_pipeline_read::read_and_assess(request) {
         Ok(read) => read,
-        Err(error) => {
+        Err(failure) => {
             result.run_status = "read_stage_failed".to_string();
-            result.completed_stage = error.stage.clone();
-            result.errors.push(error);
+            result.completed_stage = failure.error.stage.clone();
+            result.discovery = Some(failure.discovery);
+            result.errors.push(failure.error);
             return result;
         }
     };

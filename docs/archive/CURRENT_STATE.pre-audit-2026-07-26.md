@@ -216,7 +216,7 @@ Aktywne audio refs sa w SampleRef/FileRef.
 
 SourceContext/OriginalFileRef jest historia/provenance i nie musi byc zmieniany w minimalnym rewrite.
 
-Dla self-contained projektu minimalny Path-only rewrite zadzialal na kopii cziki Project -> COXED twoja kolej.
+Dla self-contained projektu minimalny Path-only rewrite zadzialal na kopii private_fixture_001 -> private_fixture_003_rewrite_result.
 
 Oryginalne projekty maja pozostac nietkniete.
 
@@ -284,7 +284,7 @@ Historical v0.1 cargo fmt --check: PASS.
 Historical v0.1 cargo test: PASS, 5 tests passed.
 
 Historical v0.1 manual CLI smoke test:
-  cargo run -q -p rescue-cli -- analyze tests/fixtures/als/kombinacja_piejo.als --json
+  cargo run -q -p rescue-cli -- analyze tests/fixtures/als/private_fixture_002_external_refs.als --json
   PASS, JSON zwrocil sample_ref_count 11 i active_file_ref_count 11.
 
 PROJECT_MAP.md zostal dodany jako mapa domen i granic odpowiedzialnosci.
@@ -340,7 +340,7 @@ cargo fmt --check po ALSReadModel v0.2: PASS.
 cargo test po ALSReadModel v0.2: PASS, 7 tests passed.
 
 Manual CLI smoke test po ALSReadModel v0.2:
-  cargo run -q -p rescue-cli -- analyze tests/fixtures/als/kombinacja_piejo.als --json
+  cargo run -q -p rescue-cli -- analyze tests/fixtures/als/private_fixture_002_external_refs.als --json
   PASS, JSON zwrocil set_metadata, active_audio_references, historical_refs
   i non_audio_dependency_signals.
 
@@ -609,21 +609,21 @@ Nie robi:
 Fixture contract ma pierwsze oczekiwane liczby:
 
 ```text
-cziki_after_cas:
+private_fixture_001_after_collect:
   SampleRef 153
   active FileRef 153
   RelativePathType: 3 -> 33, 5 -> 120
 
-cziki_before_cas_copy:
+private_fixture_001_before_collect:
   SampleRef 153
   active FileRef 153
   RelativePathType: 1 -> 33, 5 -> 120
 
-template_zero_active:
+synthetic_fixture_zero_active:
   SampleRef 0
   active FileRef 0
 
-kombinacja_piejo:
+private_fixture_002_external_refs:
   SampleRef 11
   active FileRef 11
   unique active paths 4

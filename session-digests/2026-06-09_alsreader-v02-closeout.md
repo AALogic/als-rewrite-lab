@@ -33,7 +33,7 @@ Commands run:
 cargo fmt --check
 cargo test --workspace
 cargo check --workspace
-cargo run -q -p rescue-cli -- analyze tests/fixtures/als/kombinacja_piejo.als --json
+cargo run -q -p rescue-cli -- analyze tests/fixtures/als/private_fixture_002_external_refs.als --json
 ```
 
 Results:

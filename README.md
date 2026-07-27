@@ -64,8 +64,9 @@ private ledgers. `.gitignore` blocks common Ableton and audio extensions, but th
 primary controls are keeping all real test material outside this repository and
 running `python3 tools/private_path_guard.py` before every publication.
 
-The guard checks the current tracked and untracked tree. It does not sanitize
-existing Git objects. Before this repository is handed to another laptop, the
-canonical repository maintainer must scrub sensitive paths and real data from
-all reachable history, verify the result from a fresh clone, and retire any
-pre-scrub clone or reference that can still reach the old objects.
+The guard checks the current tracked and untracked tree, tracked symlink target
+payloads, private home paths, and configured private-corpus identifiers. It does
+not sanitize existing Git objects. Before this repository is handed to another
+laptop, the canonical repository maintainer must scrub sensitive paths and real
+data from all reachable history, verify the result from a fresh clone, and
+retire any pre-scrub clone or reference that can still reach the old objects.

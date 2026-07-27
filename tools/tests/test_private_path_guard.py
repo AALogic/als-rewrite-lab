@@ -1,4 +1,7 @@
+import os
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -10,6 +13,15 @@ import private_path_guard  # noqa: E402
 
 
 class PrivatePathGuardTest(unittest.TestCase):
+    def initialize_repository(self, repository: Path) -> None:
+        subprocess.run(
+            ["git", "init", "-q"],
+            cwd=repository,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
     def test_detects_private_home_paths(self) -> None:
         macos_path = "/" + "Users/" + "actual-person/Project/Set.als"
         linux_path = "/" + "home/" + "actual-person/audio.wav"
@@ -35,7 +47,49 @@ class PrivatePathGuardTest(unittest.TestCase):
 
         self.assertEqual(private_path_guard.text_violations(text), [])
 
-    def test_repository_tree_contains_no_private_home_paths(self) -> None:
+    def test_detects_private_experiment_provenance(self) -> None:
+        text = "experiments/" + "2026-01-01_private/copies/" + "sensitive-set.als"
+
+        violations = private_path_guard.text_violations(text)
+
+        self.assertTrue(
+            any(violation.category == "private_provenance" for violation in violations)
+        )
+
+    def test_detects_configured_private_identifier_in_tracked_path(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_repository:
+            repository = Path(raw_repository)
+            self.initialize_repository(repository)
+            tracked = repository / "sensitive_corpus.als"
+            tracked.write_text("synthetic", encoding="utf-8")
+            subprocess.run(["git", "add", "--", tracked.name], cwd=repository, check=True)
+            hashes = frozenset(
+                {private_path_guard.identifier_hash("sensitive corpus")}
+            )
+
+            violations = private_path_guard.scan_repository(repository, hashes)
+
+        self.assertTrue(
+            any(violation.category == "private_identifier" for violation in violations)
+        )
+
+    @unittest.skipIf(sys.platform == "win32", "tracked symlink fixture requires Unix")
+    def test_scans_tracked_symlink_target_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_repository:
+            repository = Path(raw_repository)
+            self.initialize_repository(repository)
+            tracked = repository / "private-link"
+            target = "/" + "Users/" + "actual-person/private.als"
+            os.symlink(target, tracked)
+            subprocess.run(["git", "add", "--", tracked.name], cwd=repository, check=True)
+
+            violations = private_path_guard.scan_repository(repository)
+
+        self.assertTrue(
+            any(violation.category == "macos_home" for violation in violations)
+        )
+
+    def test_repository_tree_passes_private_data_policy(self) -> None:
         repository = TOOLS_DIR.parent
 
         self.assertEqual(private_path_guard.scan_repository(repository), [])

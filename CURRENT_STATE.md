@@ -89,6 +89,8 @@ user-selection input, and ALSReader still reports active references as
 PackagePlanner therefore block the laboratory pipeline before staging. The
 write modules remain implemented and isolated, but the composed pipeline no
 longer turns path/name/size evidence or unknown rewrite context into writes.
+Laboratory plans with no approved rewrite operations are also blocked before
+staging instead of creating a copy that cannot complete the rewrite stage.
 
 ## 4. Historical Real Laboratory Evidence
 
@@ -163,6 +165,8 @@ no automatic choice from partial inventory
 no automatic choice without expected content identity or explicit user selection
 no automatic choice for tied or low-confidence candidates
 no write when Project root discovery is unknown or outputs are inside that root
+no write when an output parent resolves through an alias or case variant into that root
+no laboratory write when the plan contains zero approved rewrite operations
 no rewrite unless the ALS handoff explicitly marks the reference supported
 no rewrite outside the supported ruleset and exact source snapshot
 no promotion before independent validation and manifests

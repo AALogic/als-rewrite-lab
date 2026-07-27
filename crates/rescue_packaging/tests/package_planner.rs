@@ -326,6 +326,32 @@ fn unresolved_decision_blocks_plan() {
 }
 
 #[test]
+fn zero_reference_laboratory_plan_is_blocked() {
+    let model = als_model(0);
+    let assessment = assessment(Vec::new());
+    let inventory = inventory(&[]);
+    let resolution = resolution(&[], &[], &[]);
+    let plan = plan_package(
+        &request("laboratory_rescue_rewrite"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "blocked");
+    assert!(plan
+        .copy_operations
+        .iter()
+        .all(|operation| operation.operation_kind == "copy_als"));
+    assert!(plan.rewrite_operations.is_empty());
+    assert!(plan
+        .errors
+        .iter()
+        .any(|error| error.error_code == "PACKAGE_REWRITE_OPERATIONS_EMPTY"));
+}
+
+#[test]
 fn target_equal_to_source_is_rejected() {
     let (model, assessment, inventory, resolution) = valid_inputs(1);
     let mut request = request("copy_only");

@@ -698,10 +698,10 @@ documented as ALSReadModel serialization.
 Existing fixture copies:
 
 ```text
-tests/fixtures/als/cziki_after_cas.als
-tests/fixtures/als/cziki_before_cas.als
-tests/fixtures/als/template_zero_active.als
-tests/fixtures/als/kombinacja_piejo.als
+tests/fixtures/als/private_fixture_001_after_collect.als
+tests/fixtures/als/private_fixture_001_before_collect.als
+tests/fixtures/als/synthetic_fixture_zero_active.als
+tests/fixtures/als/private_fixture_002_external_refs.als
 tests/fixtures/invalid/not_gzip.als
 ```
 

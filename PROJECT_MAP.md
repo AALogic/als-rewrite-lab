@@ -99,7 +99,8 @@ an explicit user decision, a candidate remains unselected.
 ### `rescue_packaging`
 
 Owns immutable copy and rewrite plans, target collision checks, ruleset gates,
-and exact operation preconditions. It performs no filesystem writes.
+exact operation preconditions, and rejection of operation-free laboratory
+plans. It performs no filesystem writes.
 
 ### `rescue_execution`
 
@@ -136,8 +137,9 @@ It re-verifies all inputs and files. It does not merge, overwrite, or clean.
 
 Owns ordering and fail-closed handoff of the modules above for one laboratory
 run. It requires a confirmed source Project root and keeps every output outside
-that root. It contains no duplicate ALS parsing, matching, planning, or rewrite
-policy.
+that root after resolving filesystem aliases and platform case behavior. It
+retains completed discovery evidence when that boundary blocks a run and
+contains no duplicate ALS parsing, matching, planning, or rewrite policy.
 
 ### CLI
 

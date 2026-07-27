@@ -17,6 +17,7 @@ unsupported Live version
 unsupported RelativePathType
 unknown or requires-test rewrite support evidence
 outdated resolution policy
+zero active references in laboratory rewrite mode
 missing or mismatched locator/ref
 copy-only mode
 unchanged input/output determinism

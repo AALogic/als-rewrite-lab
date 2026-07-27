@@ -370,7 +370,7 @@ Tu mieszka laboratorium.
 Przyklady:
 
 ```text
-experiments/2026-05-30_blabla_stemiki_2_before_cas/
+experiments/<private-fixture-experiment>/
 experiments/2026-05-31_cas_downloads_wav/
 experiments/2026-05-31_duplicate_filenames/
 ```

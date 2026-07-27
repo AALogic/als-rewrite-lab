@@ -662,7 +662,7 @@ ALSReader nie robi:
 
 ```text
 Wejscie:
-cziki.als
+private_fixture_001.als
 
 Oczekiwane:
 153 SampleRef

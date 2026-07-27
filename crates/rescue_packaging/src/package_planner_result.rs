@@ -16,8 +16,16 @@ pub(crate) fn build_plan(
     copies: Vec<CopyOperation>,
     rewrites: Vec<RewriteOperation>,
     unresolved: Vec<UnresolvedPackageRequirement>,
-    errors: Vec<PackagePlanError>,
+    mut errors: Vec<PackagePlanError>,
 ) -> PackagePlan {
+    if request.planning_mode == "laboratory_rescue_rewrite" && rewrites.is_empty() {
+        errors.push(PackagePlanError {
+            error_code: "PACKAGE_REWRITE_OPERATIONS_EMPTY".to_string(),
+            message: "Laboratory execution requires at least one approved rewrite operation"
+                .to_string(),
+            path: None,
+        });
+    }
     let status = if !errors.is_empty() || !unresolved.is_empty() {
         "blocked"
     } else if request.planning_mode == "copy_only" {

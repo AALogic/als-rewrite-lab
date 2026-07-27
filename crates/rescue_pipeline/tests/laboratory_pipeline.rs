@@ -45,6 +45,15 @@ fn xml_for(path: &Path, minor: &str, creator: &str) -> String {
     )
 }
 
+fn zero_reference_xml(minor: &str, creator: &str) -> String {
+    format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<Ableton MajorVersion="5" MinorVersion="{minor}" Creator="{creator}" SchemaChangeCount="7">
+  <LiveSet/>
+</Ableton>"#
+    )
+}
+
 fn fixture() -> Fixture {
     let temp = tempfile::tempdir().expect("tempdir");
     let source_root = temp.path().join("source");
@@ -130,6 +139,30 @@ fn confirmed_project_root_is_preserved_in_blocked_result() {
         Some(fixture.source_root.as_path())
     );
     assert_eq!(result.completed_stage, "package_planning");
+}
+
+#[test]
+fn zero_reference_project_blocks_before_staging() {
+    let fixture = fixture();
+    fs::write(
+        &fixture.source_als,
+        gzip(&zero_reference_xml("11.0_11300", "Ableton Live 11.3.43")),
+    )
+    .expect("ALS");
+    let result = run_laboratory_package(&request(&fixture));
+
+    assert_eq!(result.run_status, "resolution_or_plan_blocked");
+    assert!(result
+        .package_plan
+        .as_ref()
+        .expect("plan")
+        .errors
+        .iter()
+        .any(|error| error.error_code == "PACKAGE_REWRITE_OPERATIONS_EMPTY"));
+    assert!(result.staging.is_none());
+    assert!(!fixture.staging_root.exists());
+    assert!(!fixture.target_root.exists());
+    assert!(!fixture.ledger_path.exists());
 }
 
 #[test]
@@ -244,8 +277,71 @@ fn outputs_inside_confirmed_project_root_are_rejected() {
             .errors
             .iter()
             .any(|error| error.error_code == "PIPELINE_OUTPUT_INSIDE_SOURCE_PROJECT"));
+        assert_eq!(
+            result
+                .discovery
+                .as_ref()
+                .expect("discovery")
+                .confirmed_project_root
+                .as_deref(),
+            Some(fixture.source_root.as_path())
+        );
         assert!(result.inventory.is_none());
     }
+}
+
+#[cfg(unix)]
+#[test]
+fn ancestor_symlink_into_project_is_rejected() {
+    use std::os::unix::fs::symlink;
+
+    let fixture = fixture();
+    let alias_root = fixture._temp.path().join("alias");
+    symlink(fixture._temp.path(), &alias_root).expect("ancestor alias");
+    let mut request = request(&fixture);
+    request.staging_root = alias_root.join("source").join("unsafe.staging");
+    let result = run_laboratory_package(&request);
+
+    assert_eq!(result.run_status, "read_stage_failed");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| error.error_code == "PIPELINE_OUTPUT_INSIDE_SOURCE_PROJECT"));
+    assert_eq!(
+        result
+            .discovery
+            .as_ref()
+            .expect("discovery")
+            .confirmed_project_root
+            .as_deref(),
+        Some(fixture.source_root.as_path())
+    );
+    assert!(!request.staging_root.exists());
+    assert!(!fixture.target_root.exists());
+    assert!(!fixture.ledger_path.exists());
+}
+
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[test]
+fn case_variant_project_path_is_rejected() {
+    let fixture = fixture();
+    let case_variant_root = fixture._temp.path().join("SOURCE");
+    if fs::symlink_metadata(&case_variant_root).is_err() {
+        return;
+    }
+    let mut request = request(&fixture);
+    request.target_project_root = case_variant_root.join("unsafe-target");
+    let result = run_laboratory_package(&request);
+
+    assert_eq!(result.run_status, "read_stage_failed");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| error.error_code == "PIPELINE_OUTPUT_INSIDE_SOURCE_PROJECT"));
+    assert!(result.discovery.is_some());
+    assert!(!fixture.staging_root.exists());
+    assert!(!request.target_project_root.exists());
+    assert!(!fixture.ledger_path.exists());
 }
 
 #[test]
@@ -298,6 +394,14 @@ fn unknown_project_root_blocks_before_inventory_and_writes() {
     assert_eq!(
         result.errors[0].error_code,
         "PIPELINE_PROJECT_ROOT_UNCONFIRMED"
+    );
+    assert_eq!(
+        result
+            .discovery
+            .as_ref()
+            .expect("discovery")
+            .discovery_status,
+        "unknown"
     );
     assert!(result.inventory.is_none());
     assert!(!fixture.staging_root.exists());

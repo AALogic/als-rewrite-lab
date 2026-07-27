@@ -59,10 +59,12 @@ No write-capable module is called before the package plan is ready.
 - A dangling symlink or inaccessible output entry is treated as occupied.
 - Output scopes must be isolated from the source and from one another.
 - Project discovery must confirm exactly one structural Ableton Project root,
-  and every output must remain outside it.
+  and filesystem-resolved output parents, including aliases and case variants,
+  must remain outside it.
 - The pipeline never removes, merges, cleans, or overwrites user data.
 - Ambiguous or unresolved dependencies block before staging.
 - Unsupported rewrite evidence blocks before staging.
+- A laboratory plan with zero approved rewrite operations blocks before staging.
 - Successful static validation yields `ready_for_manual_ableton_check`; it is
   not proof that Ableton opened the result successfully.
 
@@ -83,12 +85,13 @@ ledger paths.
 
 ## Acceptance Criteria
 
-Tests prove that unconfirmed candidate identity, unknown Project roots, outputs
-inside a confirmed source Project, missing or ambiguous samples, existing or
-symlink outputs, unbounded scans, and unsupported Live versions all block
-before staging. Write modules retain their isolated tests, but the composed
-pipeline does not claim a successful package until the missing decision and
-rewrite-support contracts exist.
+Tests prove that unconfirmed candidate identity, unknown Project roots, lexical
+or aliased outputs inside a confirmed source Project, zero-reference plans,
+missing or ambiguous samples, existing or symlink outputs, unbounded scans, and
+unsupported Live versions all block before staging. Completed discovery
+evidence remains in blocked results. Write modules retain their isolated tests,
+but the composed pipeline does not claim a successful package until the missing
+decision and rewrite-support contracts exist.
 
 ## Does Not Do
 
