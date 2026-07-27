@@ -361,11 +361,11 @@ ALSReader v0.2 hardening po review GPT:
   cargo test: PASS, 11 tests passed
 
 Eksperyment ALS Structure Corpus 20 zostal wykonany i zapisany:
-  experiments/2026-06-02_als_structure_corpus_20/
+  <private-corpus-root>/
   session-digests/2026-06-02_als-structure-corpus-20.md
 
 Eksperyment OriginalCrc sample subset zostal wykonany i zapisany:
-  experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/
+  <private-corpus-root>/crc_probe_sample_subset/
   session-digests/2026-06-09_original-crc-probe-sample-subset.md
 
 Wynik:
@@ -376,8 +376,8 @@ Wynik:
   dla tych 21 probek
 
 Eksperyment OriginalCrc hypothesis probe zostal wykonany i zapisany:
-  experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/hypothesis_probe/
-  experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/fast_full_payload_probe/
+  <private-corpus-root>/crc_probe_sample_subset/hypothesis_probe/
+  <private-corpus-root>/crc_probe_sample_subset/fast_full_payload_probe/
   session-digests/2026-06-09_original-crc-hypothesis-probe.md
 
 Wynik:
@@ -389,7 +389,7 @@ Wynik:
 
 Plan nastepnego testu OriginalCrc zostal zapisany:
   PRODUCT_SPEC.md, sekcja 11.6 OriginalCrc Controlled Ableton Test
-  experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/controlled_ableton_original_crc_test_plan.md
+  <private-corpus-root>/crc_probe_sample_subset/controlled_ableton_original_crc_test_plan.md
 
 Cel planu:
   sprawdzic w kontrolowanym projekcie Abletona, czy OriginalCrc reaguje na
@@ -398,12 +398,12 @@ Cel planu:
 
 Eksperyment OriginalCrc static direction dataset zostal wykonany i zapisany:
   tools/experiments/python/original_crc_static_direction_dataset.py
-  experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset/
-  experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced/
+  <private-corpus-root>/original_crc_static_direction_dataset/
+  <private-corpus-root>/original_crc_static_direction_dataset_balanced/
   session-digests/2026-06-09_original-crc-static-direction-dataset.md
 
 Rekomendowany dataset do kolejnych statycznych testow:
-  experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced/
+  <private-corpus-root>/original_crc_static_direction_dataset_balanced/
 
 Wynik balanced:
   copied ALS files: 8
@@ -421,7 +421,7 @@ Bezpieczenstwo:
 
 Eksperyment OriginalCrc static analysis probe zostal wykonany:
   tools/experiments/python/original_crc_static_analysis_probe.py
-  experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced/static_analysis_probe/
+  <private-corpus-root>/original_crc_static_direction_dataset_balanced/static_analysis_probe/
   session-digests/2026-06-09_original-crc-static-analysis-probe.md
 
 Testy wykonane:
@@ -1244,7 +1244,7 @@ Nawigator: przeczytaj CURRENT_STATE.md, PRODUCT_SPINE.md, AGENTS.md, AI_CONTRACT
 Jesli wracamy do eksperymentu ALS corpus:
 
 ```text
-Nawigator: przeczytaj experiments/2026-06-02_als_structure_corpus_20/README.md,
+Nawigator: przeczytaj <private-corpus-root>/README.md,
 findings.md oraz session-digests/2026-06-02_als-structure-corpus-20.md.
 Chce uzyc tych wynikow jako dowodu w ALSReader Contract Review.
 ```

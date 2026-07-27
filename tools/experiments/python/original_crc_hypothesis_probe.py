@@ -312,20 +312,19 @@ def main() -> None:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=ROOT
-        / "experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/crc_probe_sample_subset_manifest.json",
+        required=True,
     )
     parser.add_argument(
         "--out-dir",
         type=Path,
-        default=ROOT
-        / "experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/hypothesis_probe",
     )
+    parser.add_argument("--source-root", type=Path, default=ROOT)
     args = parser.parse_args()
+    out_dir = args.out_dir or args.manifest.parent / "hypothesis_probe"
 
     manifest = json.loads(args.manifest.read_text())
     samples = flatten_samples(manifest)
-    args.out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     match_rows = []
     per_sample = []
@@ -338,7 +337,7 @@ def main() -> None:
         if not str(original_crc_raw or "").isdigit():
             continue
         target = int(original_crc_raw)
-        copied_path = ROOT / sample["copied_sample_path"]
+        copied_path = args.source_root / sample["copied_sample_path"]
         data = copied_path.read_bytes()
         contexts = data_contexts(data)
         sample_matches = []
@@ -393,7 +392,7 @@ def main() -> None:
     strong_candidates = [row for row in ranked if row["match_count"] >= 2]
 
     report = {
-        "manifest": str(args.manifest.relative_to(ROOT)),
+        "manifest": str(args.manifest),
         "sample_count": len(samples),
         "total_candidates_per_sample": total_candidates_per_sample,
         "total_match_rows": len(match_rows),
@@ -413,11 +412,11 @@ def main() -> None:
         },
     }
 
-    (args.out_dir / "original_crc_hypothesis_report.json").write_text(
+    (out_dir / "original_crc_hypothesis_report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n"
     )
 
-    with (args.out_dir / "original_crc_hypothesis_matches.csv").open("w", newline="") as f:
+    with (out_dir / "original_crc_hypothesis_matches.csv").open("w", newline="") as f:
         writer = csv.DictWriter(
             f,
             fieldnames=[
@@ -478,7 +477,7 @@ def main() -> None:
             "",
         ]
     )
-    (args.out_dir / "README.md").write_text("\n".join(summary_lines))
+    (out_dir / "README.md").write_text("\n".join(summary_lines))
 
     print(json.dumps(report, indent=2, ensure_ascii=False))
 

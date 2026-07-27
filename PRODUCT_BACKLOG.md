@@ -227,7 +227,7 @@ repays its larger time and token cost.
 ## 7. Research Evidence To Reuse
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/
+<private-corpus-root>/
   20 copied ALS files
   findings.md
   structure_report.md

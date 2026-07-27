@@ -32,7 +32,7 @@ private_corpus_fixture_017.als
 ## Output Location
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/
+<private-corpus-root>/crc_probe_sample_subset/
 ```
 
 Main files:
