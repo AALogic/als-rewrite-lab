@@ -77,7 +77,13 @@ class PrivatePathGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as raw_repository:
             repository = Path(raw_repository)
             self.initialize_repository(repository)
-            tracked_names = ("fixture.ALS", "fixture.OgG", "fixture.AaC")
+            tracked_names = (
+                "fixture.ALS",
+                "fixture.OgG",
+                "fixture.AaC",
+                "fixture-upper.SD2",
+                "fixture-lower.sd2",
+            )
             for tracked_name in tracked_names:
                 (repository / tracked_name).write_bytes(b"media\0payload")
             subprocess.run(

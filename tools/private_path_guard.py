@@ -69,6 +69,7 @@ PROHIBITED_TRACKED_MEDIA_EXTENSIONS = frozenset(
         ".m4a",
         ".mp3",
         ".ogg",
+        ".sd2",
         ".wav",
         ".wave",
     }

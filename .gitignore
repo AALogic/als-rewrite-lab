@@ -25,6 +25,7 @@
 *.m4a
 *.ogg
 *.aac
+*.[sS][dD]2
 
 # Temporary files
 *.tmp
