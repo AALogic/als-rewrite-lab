@@ -80,6 +80,17 @@ class ModuleDependencyScopeTest(unittest.TestCase):
         finally:
             guard.ROOT = original_root
 
+    def test_workspace_inherited_dependency_uses_package_name(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manifest = Path(temp_dir) / "Cargo.toml"
+            manifest.write_text(
+                "[package]\nname = \"fixture\"\nversion = \"0.1.0\"\n"
+                "[dependencies]\nsha2.workspace = true\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(guard.cargo_dependency_names([manifest]), {"sha2"})
+
 
 class QualitySourceCoverageTest(unittest.TestCase):
     def test_private_implementation_file_is_checked_by_quality_glob(self) -> None:

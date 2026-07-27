@@ -243,6 +243,8 @@ def cargo_dependency_names(cargo_paths: Iterable[Path]) -> Set[str]:
             if "=" not in stripped:
                 continue
             name = stripped.split("=", 1)[0].strip()
+            if name.endswith(".workspace"):
+                name = name.removesuffix(".workspace")
             if name and all(ch not in name for ch in " {}[]"):
                 names.add(name)
     return names

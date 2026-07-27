@@ -54,6 +54,6 @@
     {"literal": "unwrap(", "label": "unwrap"},
     {"literal": "expect(", "label": "expect"}
   ],
-  "allowed_dependency_names": ["clap", "flate2", "rescue_analyzer", "rescue_core", "roxmltree", "serde", "serde_json", "sha2", "thiserror"],
+  "allowed_dependency_names": ["clap", "flate2", "rescue_analyzer", "rescue_core", "rescue_pipeline", "roxmltree", "serde", "serde_json", "sha2", "thiserror"],
   "quality_limits": {"max_source_file_lines": 320, "max_function_lines": 70}
 }
