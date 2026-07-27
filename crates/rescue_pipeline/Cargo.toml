@@ -1,0 +1,23 @@
+[package]
+name = "rescue_pipeline"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rescue_analyzer = { path = "../rescue_analyzer" }
+rescue_catalog = { path = "../rescue_catalog" }
+rescue_core = { path = "../rescue_core" }
+rescue_execution = { path = "../rescue_execution" }
+rescue_manifest = { path = "../rescue_manifest" }
+rescue_packaging = { path = "../rescue_packaging" }
+rescue_promotion = { path = "../rescue_promotion" }
+rescue_resolution = { path = "../rescue_resolution" }
+rescue_rewriter = { path = "../rescue_rewriter" }
+rescue_validation = { path = "../rescue_validation" }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+flate2 = "1"
+roxmltree = "0.20"
+tempfile = "3"
+

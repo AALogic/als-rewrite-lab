@@ -1,0 +1,21 @@
+# Tasks: 015 LaboratoryPipeline
+
+- [x] Define LaboratoryPackageRequest v0.1.
+- [x] Define LaboratoryPackageResult v0.1.
+- [x] ENFORCED_BY_TEST: complete_pipeline_creates_promoted_project_for_manual_check
+- [x] ENFORCED_BY_TEST: promoted_als_contains_final_and_relative_paths
+- [x] ENFORCED_BY_TEST: missing_sample_blocks_before_staging
+- [x] ENFORCED_BY_TEST: ambiguous_same_name_candidates_block_before_staging
+- [x] ENFORCED_BY_TEST: existing_target_is_rejected_before_any_write
+- [x] ENFORCED_BY_TEST: unbounded_filesystem_root_is_rejected
+- [x] ENFORCED_BY_TEST: unsupported_live_version_blocks_before_staging
+- [x] ENFORCED_BY_TEST: portable_manifest_redacts_every_laboratory_absolute_path
+- [x] ENFORCED_BY_TYPE: LaboratoryPackageRequest
+- [x] ENFORCED_BY_TYPE: LaboratoryPackageResult
+- [x] ENFORCED_BY_TYPE: LaboratoryPackageError
+- [x] REVIEW_ONLY: orchestration contains no duplicated ALS or matching policy
+- [x] REVIEW_ONLY: no write-capable stage runs before a ready package plan
+- [x] DOCUMENTED_ONLY: successful static validation still requires manual Ableton verification
+- [ ] Add an explicit laboratory CLI command and parser tests.
+- [ ] Run the pipeline on a copied real ALS and preserve private evidence.
+- [ ] Perform and record manual Ableton verification when UI control is available.

@@ -10,6 +10,7 @@ members = [
   "crates/rescue_validation",
   "crates/rescue_manifest",
   "crates/rescue_promotion",
+  "crates/rescue_pipeline",
   "cli/rescue-cli",
 ]
 resolver = "2"

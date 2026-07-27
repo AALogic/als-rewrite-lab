@@ -1,0 +1,66 @@
+{
+  "id": "015-laboratory-pipeline",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
+  },
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["LaboratoryPackageRequest v0.1", "LaboratoryPackageResult v0.1", "ready_for_manual_ableton_check"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "ENFORCED_BY_TEST: complete_pipeline_creates_promoted_project_for_manual_check",
+    "ENFORCED_BY_TEST: promoted_als_contains_final_and_relative_paths",
+    "ENFORCED_BY_TEST: missing_sample_blocks_before_staging",
+    "ENFORCED_BY_TEST: ambiguous_same_name_candidates_block_before_staging",
+    "ENFORCED_BY_TEST: existing_target_is_rejected_before_any_write",
+    "ENFORCED_BY_TEST: unbounded_filesystem_root_is_rejected",
+    "ENFORCED_BY_TEST: unsupported_live_version_blocks_before_staging",
+    "ENFORCED_BY_TEST: portable_manifest_redacts_every_laboratory_absolute_path",
+    "ENFORCED_BY_TYPE: LaboratoryPackageRequest",
+    "ENFORCED_BY_TYPE: LaboratoryPackageResult",
+    "ENFORCED_BY_TYPE: LaboratoryPackageError",
+    "REVIEW_ONLY: orchestration contains no duplicated ALS or matching policy",
+    "REVIEW_ONLY: no write-capable stage runs before a ready package plan",
+    "DOCUMENTED_ONLY: successful static validation still requires manual Ableton verification"
+  ],
+  "required_tests": [
+    "complete_pipeline_creates_promoted_project_for_manual_check",
+    "promoted_als_contains_final_and_relative_paths",
+    "missing_sample_blocks_before_staging",
+    "ambiguous_same_name_candidates_block_before_staging",
+    "existing_target_is_rejected_before_any_write",
+    "unbounded_filesystem_root_is_rejected",
+    "unsupported_live_version_blocks_before_staging",
+    "portable_manifest_redacts_every_laboratory_absolute_path"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "LaboratoryPackageRequest": ["run_id", "source_als_path", "scan_roots", "max_scan_entries", "staging_root", "target_project_root", "private_ledger_path"],
+    "LaboratoryPackageResult": ["pipeline_version", "run_id", "run_status", "completed_stage", "discovery", "als_read_model", "extraction", "path_observations", "assessment", "preflight", "inventory", "resolution", "package_plan", "staging", "rewrite", "validation", "manifests", "promotion", "errors"],
+    "LaboratoryPackageError": ["error_code", "stage", "message"]
+  },
+  "expected_source_files": [
+    "crates/rescue_pipeline/src/laboratory_pipeline.rs",
+    "crates/rescue_pipeline/src/laboratory_pipeline_impl.rs",
+    "crates/rescue_pipeline/src/laboratory_pipeline_inputs.rs",
+    "crates/rescue_pipeline/src/laboratory_pipeline_read.rs",
+    "crates/rescue_pipeline/src/laboratory_pipeline_resolve.rs",
+    "crates/rescue_pipeline/src/laboratory_pipeline_write.rs"
+  ],
+  "quality_source_globs": ["crates/rescue_pipeline/src/*.rs"],
+  "guarded_source_globs": ["crates/rescue_pipeline/src/*.rs"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "remove_dir_all", "label": "recursive deletion"},
+    {"literal": "remove_file", "label": "file deletion"},
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"}
+  ],
+  "allowed_dependency_names": ["rescue_analyzer", "rescue_catalog", "rescue_core", "rescue_execution", "rescue_manifest", "rescue_packaging", "rescue_promotion", "rescue_resolution", "rescue_rewriter", "rescue_validation", "serde", "flate2", "roxmltree", "tempfile"],
+  "quality_limits": {"max_source_file_lines": 360, "max_function_lines": 105}
+}

@@ -1,0 +1,91 @@
+# Module Specification: 015 LaboratoryPipeline
+
+## Purpose
+
+LaboratoryPipeline composes the confirmed, single-project modules into one
+bounded vertical slice. It proves that their public contracts can carry one
+project from read-only discovery through a promoted rescue copy without
+modifying source files.
+
+## Gate Status
+
+CONFIRMED for explicit laboratory paths, one selected ALS, bounded audio scan
+roots, and the currently supported Live 11 rewrite profile.
+
+## Inputs
+
+`LaboratoryPackageRequest v0.1` contains:
+
+- a non-empty run ID;
+- one existing, regular, non-symlink ALS source path;
+- one or more explicitly selected, bounded, non-symlink scan roots;
+- a finite scan-entry limit;
+- fresh and isolated staging, final-target, and private-ledger paths.
+
+Every path is native `PathBuf` data. Platform-specific path interpretation
+remains inside the modules that own it.
+
+## Ordered Flow
+
+1. Validate the complete request before reading or writing.
+2. Discover and select exactly the requested ALS.
+3. Read ALS and preserve its analysis snapshot.
+4. Extract active audio dependencies.
+5. Observe recorded paths without searching or mutating them.
+6. Assess which audio assets are required.
+7. Build a read-only preflight report.
+8. Inventory only the explicitly selected roots.
+9. Resolve inventory occurrences against required assets.
+10. Build an immutable package plan.
+11. Execute verified copies in a fresh staging directory.
+12. Rewrite only approved, snapshot-bound FileRef fields in the staged ALS.
+13. Validate files and semantic ALS differences independently.
+14. Write a private ledger outside the package and a redacted portable
+    manifest inside it.
+15. Promote validated staging to an absent final target.
+
+Each stage consumes only public contracts. The pipeline stops after the first
+blocking or failed stage and retains all completed stage outputs in its result.
+No write-capable module is called before the package plan is ready.
+
+## Safety Boundary
+
+- Source ALS and source audio are read-only throughout the flow.
+- `/` and equivalent unbounded scan roots are rejected.
+- Staging, final target, or private ledger paths that already exist are
+  rejected before ALS reading.
+- Output scopes must be isolated from the source and from one another.
+- The pipeline never removes, merges, cleans, or overwrites user data.
+- Ambiguous or unresolved dependencies block before staging.
+- Unsupported rewrite evidence blocks before staging.
+- Successful static validation yields `ready_for_manual_ableton_check`; it is
+  not proof that Ableton opened the result successfully.
+
+## Outputs
+
+`LaboratoryPackageResult v0.1` contains the run status, the last completed
+stage, every available public stage result, and structured pipeline errors.
+Absent outputs mean that their stages did not run; the pipeline does not
+fabricate successful placeholders.
+
+## Determinism And Retry
+
+Given identical source bytes, scan content, paths, limits, rulesets, and fresh
+output locations, planning and generated contents are deterministic. A failed
+run never reuses a partial final target. A successful run may be inspected or
+verified by downstream tooling, but a new laboratory run uses new output and
+ledger paths.
+
+## Acceptance Criteria
+
+Tests prove a complete promotion while sources remain byte-identical, correct
+final ALS paths, blocking before staging for missing or ambiguous samples,
+existing-target protection, bounded scan enforcement, unsupported Live-version
+blocking, and redaction of laboratory absolute paths from the portable
+manifest.
+
+## Does Not Do
+
+No GUI, full-disk scan, batch processing, cleanup, deletion, VST or preset
+portability, automatic Ableton launch, user acceptance, or production support
+claim. It does not duplicate domain rules owned by the composed modules.

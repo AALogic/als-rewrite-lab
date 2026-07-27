@@ -368,6 +368,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "rescue_pipeline"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "rescue_analyzer",
+ "rescue_catalog",
+ "rescue_core",
+ "rescue_execution",
+ "rescue_manifest",
+ "rescue_packaging",
+ "rescue_promotion",
+ "rescue_resolution",
+ "rescue_rewriter",
+ "rescue_validation",
+ "roxmltree",
+ "serde",
+ "tempfile",
+]
+
+[[package]]
 name = "rescue_promotion"
 version = "0.1.0"
 dependencies = [
