@@ -36,7 +36,7 @@ fn required_asset(
                 candidate_basis: "recorded_raw_absolute_path".to_string(),
                 candidate_path: (*path).to_string(),
                 platform_status: "checkable_on_current_platform".to_string(),
-                safety_status: "accepted".to_string(),
+                safety_status: "safe_for_metadata_read".to_string(),
                 availability_status: "existing_regular_file".to_string(),
                 entry_kind: "regular_file".to_string(),
                 size_evidence_status: "matches_expected_size".to_string(),
@@ -147,6 +147,24 @@ fn exact_path_name_and_size_auto_accepts() {
     assert_eq!(result.proposals[0].candidates[0].score, 100);
     assert_eq!(result.decisions[0].decision_status, "auto_accepted");
     assert!(!result.decisions[0].requires_user_confirmation);
+}
+
+#[test]
+fn path_observer_status_v0_2_is_consumed_without_translation() {
+    let assessment = assessment(required_asset(
+        Some("kick.wav"),
+        Some("100"),
+        None,
+        &["/audio/kick.wav"],
+    ));
+    let inventory = inventory("complete", &[("/audio/kick.wav", "kick.wav", 100, "aaa")]);
+    let result = resolve_assets(&assessment, &inventory);
+
+    assert!(result.proposals[0].candidates[0]
+        .evidence
+        .iter()
+        .any(|evidence| evidence.evidence_code == "exact_observed_native_path"));
+    assert_eq!(result.decisions[0].decision_status, "auto_accepted");
 }
 
 #[test]

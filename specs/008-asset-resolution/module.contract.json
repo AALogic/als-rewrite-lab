@@ -17,6 +17,7 @@
     "REVIEW_ONLY: resolution remains a pure function",
     "REVIEW_ONLY: ambiguous candidates never auto-select",
     "ENFORCED_BY_TEST: exact_path_name_and_size_auto_accepts",
+    "ENFORCED_BY_TEST: path_observer_status_v0_2_is_consumed_without_translation",
     "ENFORCED_BY_TEST: name_and_size_only_requires_confirmation",
     "ENFORCED_BY_TEST: same_name_different_content_remains_distinct",
     "ENFORCED_BY_TEST: high_score_tie_blocks_automatic_resolution",
@@ -35,7 +36,7 @@
     "ENFORCED_BY_TYPE: AssetResolutionWarning",
     "ENFORCED_BY_TYPE: AssetResolutionError"
   ],
-  "required_tests": ["exact_path_name_and_size_auto_accepts", "name_and_size_only_requires_confirmation", "same_name_different_content_remains_distinct", "high_score_tie_blocks_automatic_resolution", "no_candidate_remains_unresolved", "original_crc_alone_does_not_create_candidate", "partial_inventory_blocks_auto_acceptance", "untrusted_upstream_fails_closed", "resolution_output_is_deterministic", "fake_package_planner_consumes_resolution_decisions"],
+  "required_tests": ["exact_path_name_and_size_auto_accepts", "path_observer_status_v0_2_is_consumed_without_translation", "name_and_size_only_requires_confirmation", "same_name_different_content_remains_distinct", "high_score_tie_blocks_automatic_resolution", "no_candidate_remains_unresolved", "original_crc_alone_does_not_create_candidate", "partial_inventory_blocks_auto_acceptance", "untrusted_upstream_fails_closed", "resolution_output_is_deterministic", "fake_package_planner_consumes_resolution_decisions"],
   "required_tests_must_not_be_ignored": true,
   "required_tests_must_have_substance": true,
   "public_contract_mode": "exact",

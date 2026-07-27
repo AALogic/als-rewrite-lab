@@ -13,6 +13,7 @@ Date: 2026-07-27
 ## Contract
 
 - [x] ENFORCED_BY_TEST: exact_path_name_and_size_auto_accepts
+- [x] ENFORCED_BY_TEST: path_observer_status_v0_2_is_consumed_without_translation
 - [x] ENFORCED_BY_TEST: name_and_size_only_requires_confirmation
 - [x] ENFORCED_BY_TEST: same_name_different_content_remains_distinct
 - [x] ENFORCED_BY_TEST: high_score_tie_blocks_automatic_resolution

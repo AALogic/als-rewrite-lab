@@ -58,7 +58,7 @@ pub(crate) fn scored_candidate(
 fn has_exact_observed_path(asset: &RequiredAsset, path: &Path) -> bool {
     asset.candidate_observations.iter().any(|candidate| {
         candidate.availability_status == "existing_regular_file"
-            && candidate.safety_status == "accepted"
+            && candidate.safety_status == "safe_for_metadata_read"
             && Path::new(&candidate.candidate_path) == path
     })
 }

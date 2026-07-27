@@ -22,7 +22,9 @@ data or rewrites ALS.
 An inventory occurrence is a candidate only when at least one is true:
 
 ```text
-its native path exactly equals an accepted existing path observation
+its native path exactly equals an existing observation whose PathObservation
+v0.2 statuses are `safety_status = safe_for_metadata_read` and
+`availability_status = existing_regular_file`
 its filename equals the recorded filename
 its filename is ASCII-case-insensitively equal to the recorded filename
 ```
@@ -32,7 +34,7 @@ All candidates remain visible and deterministically ordered.
 ## Scoring Policy v0.1
 
 ```text
-exact accepted observed native path: +50
+exact safe-for-metadata-read existing native path: +50
 exact case-sensitive filename:       +20
 ASCII case-insensitive filename:     +10
 exact extension:                     +5
