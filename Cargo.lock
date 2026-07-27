@@ -343,6 +343,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "rescue_manifest"
+version = "0.1.0"
+dependencies = [
+ "rescue_execution",
+ "rescue_packaging",
+ "rescue_rewriter",
+ "rescue_validation",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "rescue_packaging"
 version = "0.1.0"
 dependencies = [

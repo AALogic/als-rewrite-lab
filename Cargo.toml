@@ -8,6 +8,7 @@ members = [
   "crates/rescue_execution",
   "crates/rescue_rewriter",
   "crates/rescue_validation",
+  "crates/rescue_manifest",
   "cli/rescue-cli",
 ]
 resolver = "2"
