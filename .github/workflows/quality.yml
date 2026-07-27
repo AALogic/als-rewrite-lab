@@ -1,0 +1,79 @@
+name: quality
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Run workspace tests
+        run: cargo test --workspace --locked
+
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+  workflow-contracts:
+    name: Workflow contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Test workflow guard
+        run: python3 -m unittest discover -s tools/tests -p "test_*.py"
+
+      - name: Verify module contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          modules=(
+            001-als-reader
+            002-dependency-extractor
+            003-path-verifier
+            004-project-discovery
+            005-dependency-assessment
+            006-preflight-report
+            007-asset-inventory
+            008-asset-resolution
+            009-package-planner
+            010-staging-executor
+            011-als-rewriter
+            012-package-validator
+            013-ledger-and-manifest
+            014-package-promoter
+            015-laboratory-pipeline
+          )
+          for module in "${modules[@]}"; do
+            python3 tools/workflow_guard.py verify-module "$module"
+          done
