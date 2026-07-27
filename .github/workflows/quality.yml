@@ -49,16 +49,11 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Test workflow guard
         run: python3 -m unittest discover -s tools/tests -p "test_*.py"
 
-      - name: Fetch advertised refs for privacy scan
-        run: git fetch --force --prune origin "+refs/*:refs/privacy-verification/*"
-
-      - name: Check private data policy
+      - name: Check current-tree private data policy
         run: python3 tools/private_path_guard.py
 
       - name: Verify module contracts

@@ -62,21 +62,27 @@ current rewrite ruleset must reject unsupported Live versions rather than guess.
 Never commit real ALS files, audio, Ableton analysis files, local path dumps, or
 private ledgers. `.gitignore` blocks common Ableton and audio extensions, but the
 primary controls are keeping all real test material outside this repository and
-running `python3 tools/private_path_guard.py` before every publication.
+running `python3 tools/private_path_guard.py` before every private preparatory PR
+or Windows read-only laboratory handoff.
 
-The guard checks the staged index and untracked worktree, then scans paths and
-object contents reachable from every local Git ref. It checks private home paths,
-private-corpus identifiers, UTF-8 and UTF-16 path dumps, and rejects unscannable
-tracked binary content. It also rejects tracked Ableton and common audio
-extensions case-insensitively before decoding payloads, including OGG, AAC, and
-SD2. Eligible objects are size-checked before their contents are streamed, and
-oversized objects fail closed without loading their payloads. Shallow clones
-fail because they cannot prove complete history. No tracked synthetic media or
-binary fixture is allowlisted; tests create synthetic media only in temporary
-directories.
+The default guard checks the staged index and untracked worktree. It checks
+private home paths, private-corpus identifiers, UTF-8 and UTF-16 path dumps, and
+rejects unscannable tracked binary content. It also rejects tracked Ableton and
+common audio extensions case-insensitively before decoding payloads, including
+OGG, AAC, and SD2. Eligible objects are size-checked before their contents are
+streamed, and oversized objects fail closed without loading their payloads. No
+tracked synthetic media or binary fixture is allowlisted; tests create synthetic
+media only in temporary directories.
 
-The guard detects unsafe history; it does not rewrite it. Publication and
-Windows handoff remain blocked while it reports any `reachable_*` violation.
-The canonical maintainer must scrub every affected ref between gate runs,
-retire pre-scrub refs and clones, and record a passing result from a fresh full
-clone as described in [the blocked-history recovery procedure](docs/setup/WINDOWS_TEST_LAB.md#blocked-history-recovery).
+Before a public or commercial release, run the explicit full-history audit:
+
+```sh
+python3 tools/private_path_guard.py --release-history
+```
+
+That mode scans paths and object contents reachable from every local Git ref;
+shallow clones fail because they cannot prove complete history. The audit
+detects unsafe history but does not rewrite it. Legacy `reachable_*` findings do
+not block a private preparatory PR or read-only Windows laboratory handoff, but
+they must be resolved before any public or commercial release as described in
+[the release-history recovery procedure](docs/setup/WINDOWS_TEST_LAB.md#blocked-release-history-recovery).

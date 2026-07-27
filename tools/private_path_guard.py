@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import os
 import re
@@ -598,12 +599,15 @@ def scan_reachable_history(
 
     objects = git_reachable_objects(repository)
     for entry in git_history_entries(repository, objects):
+        marker_id = (
+            entry.object_id if entry.object_type == "blob" else entry.snapshot_id
+        )
         for violation in path_violations(entry.path, private_identifier_hashes):
-            violations.append(reachable_violation(violation, entry.snapshot_id))
+            violations.append(reachable_violation(violation, marker_id))
         if is_prohibited_tracked_media(entry.path):
             violations.append(
                 PrivatePathViolation(
-                    reachable_object_path(entry.snapshot_id),
+                    reachable_object_path(marker_id),
                     1,
                     "reachable_tracked_private_media",
                 )
@@ -614,7 +618,7 @@ def scan_reachable_history(
         if entry.mode not in GIT_BLOB_MODES or entry.object_type != "blob":
             violations.append(
                 PrivatePathViolation(
-                    reachable_object_path(entry.snapshot_id),
+                    reachable_object_path(marker_id),
                     1,
                     "reachable_unsupported_tracked_mode",
                 )
@@ -672,17 +676,36 @@ def scan_publication(
     return violations
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Check repository entries for private data."
+    )
+    parser.add_argument(
+        "--release-history",
+        action="store_true",
+        help=(
+            "also scan all objects reachable from local Git refs; required before "
+            "a public or commercial release"
+        ),
+    )
+    args = parser.parse_args(argv)
     repository = Path(__file__).resolve().parents[1]
-    violations = scan_publication(repository)
+    violations = (
+        scan_publication(repository)
+        if args.release_history
+        else scan_repository(repository)
+    )
     if violations:
         for violation in violations:
             print(f"{violation.path}:{violation.line}: {violation.category}")
         print(f"private-path guard: FAIL ({len(violations)} violation(s))")
-        if any(
+        if args.release_history and any(
             violation.category.startswith("reachable_") for violation in violations
         ):
-            print("publication blocked: reachable Git history is not sanitized")
+            print(
+                "public/commercial release blocked: reachable Git history is not "
+                "sanitized"
+            )
             print(
                 "recovery: rewrite every affected canonical ref outside the active "
                 "gate, then remove pre-scrub refs and clones"
@@ -693,7 +716,7 @@ def main() -> int:
             )
             print(
                 "recovery procedure: "
-                "docs/setup/WINDOWS_TEST_LAB.md#blocked-history-recovery"
+                "docs/setup/WINDOWS_TEST_LAB.md#blocked-release-history-recovery"
             )
         return 1
     completed = subprocess.run(
@@ -703,10 +726,18 @@ def main() -> int:
         stdout=subprocess.PIPE,
         text=True,
     )
-    print(
-        "private-path guard: PASS "
-        f"(staged, untracked, and reachable history at {completed.stdout.strip()})"
-    )
+    commit = completed.stdout.strip()
+    if args.release_history:
+        print(
+            "private-path guard: PASS "
+            f"(staged, untracked, and reachable history at {commit})"
+        )
+    else:
+        print(
+            "private-path guard: PASS "
+            f"(staged index and untracked worktree at {commit}; "
+            "reachable history not audited)"
+        )
     return 0
 
 

@@ -63,29 +63,41 @@ rustup --version
 python --version
 ```
 
-## Canonical Repository Release Gate
+## Private Preparatory Handoff Gate
 
-The canonical repository must remain private. Before another laptop receives a
-clone, its maintainer must complete all of the following outside this test lab:
+The canonical repository must remain private. Before a private preparatory PR or
+read-only Windows laboratory handoff, run:
 
-1. Run `python3 tools/private_path_guard.py` against the publication tree.
-2. Rewrite every reachable Git ref that contains real ALS/audio data or private
-   absolute paths; deleting a current-tree file is not enough.
-3. Remove or quarantine pre-scrub remote refs, tags, and clones that still make
-   the old objects reachable.
-4. Create a fresh clone from the canonical remote, inspect all advertised refs,
-   rerun the private-path guard, and record the verified commit SHA.
+```powershell
+python tools/private_path_guard.py
+```
+
+This mandatory preparatory check scans the staged index and untracked worktree.
+Keep the remote private and record the reviewed commit SHA. Legacy private data
+that is reachable only from older Git history does not block this private,
+read-only handoff.
+
+## Public Or Commercial Release History Audit
+
+Before any public or commercial release, run the explicit full-history mode in
+a fresh, non-shallow clone containing every advertised ref:
+
+```powershell
+python tools/private_path_guard.py --release-history
+```
 
 This review worktree does not rewrite canonical history. Windows handoff remains
-blocked until the maintainer records that the history scrub and fresh-clone
-verification passed.
+private and preparatory while legacy reachable-history findings remain. Public
+or commercial release remains blocked until the maintainer records that the
+history scrub and fresh-clone verification passed.
 
-### Blocked History Recovery
+### Blocked Release-History Recovery
 
-If `python3 tools/private_path_guard.py` reports a `reachable_*` violation,
-stop the active gate without pushing, tagging, or cloning onto the Windows
-laptop. The `<reachable-object-...>` marker contains the full Git object ID but
-does not print the private value.
+If `python3 tools/private_path_guard.py --release-history` reports a
+`reachable_*` violation, stop the public or commercial release. This does not
+block a private preparatory PR or read-only Windows laboratory clone. The
+`<reachable-object-...>` marker contains the full Git object ID but does not
+print the private value.
 
 History rewriting is a separate, coordinated maintenance operation between
 gate runs. In a dedicated maintenance clone, fetch every advertised namespace
@@ -100,12 +112,31 @@ git for-each-ref --format="%(objectname) %(refname)" |
   Set-Content C:\RescueLab\evidence\pre-scrub-refs.txt
 ```
 
-Use each reported object ID to locate every commit that introduced or removed
-it:
+Classify each reported object ID before locating its history. Regular-file path
+and tracked-media violations report a blob ID. Private commit or annotated-tag
+text reports that commit or tag ID; snapshot-only metadata such as a gitlink
+path reports the containing commit:
 
 ```powershell
-git log --all --find-object=<full-object-id> --oneline
+$ObjectId = "<full-object-id>"
+$ObjectType = git cat-file -t $ObjectId
+if ($ObjectType -eq "blob") {
+  git log --all --find-object=$ObjectId --oneline
+} elseif ($ObjectType -eq "commit") {
+  git show --name-status --format=fuller $ObjectId
+  git branch --all --contains $ObjectId
+  git tag --contains $ObjectId
+} elseif ($ObjectType -eq "tag") {
+  git show --no-patch $ObjectId
+} else {
+  throw "Unexpected reported Git object type: $ObjectType"
+}
 ```
+
+For a blob, review every commit returned by `--find-object`, including both its
+introduction and removal. For a commit or tag, inspect the reported object and
+every ref that contains it. Keep the command output private because local
+history inspection can reveal the value that the guard intentionally redacts.
 
 Rewrite every affected canonical branch and tag with a reviewed history-rewrite
 procedure that removes prohibited ALS/audio blobs and replaces private text.
@@ -128,7 +159,7 @@ if ((git rev-parse --is-shallow-repository) -ne "false") {
   throw "Fresh-clone verification is shallow"
 }
 git switch --detach refs/privacy-verification/heads/codex/overnight-safe-vertical-slice
-python tools/private_path_guard.py |
+python tools/private_path_guard.py --release-history |
   Tee-Object C:\RescueLab\evidence\fresh-clone-private-path-guard.txt
 if ($LASTEXITCODE -ne 0) { throw "Canonical history remains unsafe" }
 git rev-parse HEAD |
@@ -137,9 +168,8 @@ git for-each-ref --format="%(objectname) %(refname)" refs/privacy-verification |
   Set-Content C:\RescueLab\evidence\fresh-clone-advertised-refs.txt
 ```
 
-The three evidence files, for the same reviewed commit, are the release-gate
-record. Only a full `PASS` may unblock the Windows clone and later publication
-steps.
+The three evidence files, for the same reviewed commit, are the public/commercial
+release-gate record. Only a full `PASS` may unblock those release steps.
 
 ## Clone The Canonical Repository
 

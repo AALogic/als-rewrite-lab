@@ -3,6 +3,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest import mock
 
@@ -200,7 +202,9 @@ class PrivatePathGuardTest(unittest.TestCase):
             any(violation.category == "macos_home" for violation in violations)
         )
 
-    def test_publication_scan_checks_private_data_in_other_ref(self) -> None:
+    def test_preparatory_mode_passes_clean_tree_while_release_detects_history(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as raw_repository:
             repository = Path(raw_repository)
             self.initialize_repository(repository)
@@ -229,13 +233,113 @@ class PrivatePathGuardTest(unittest.TestCase):
                 check=True,
             )
 
+            script_path = repository / "tools" / "private_path_guard.py"
+            with mock.patch.object(private_path_guard, "__file__", str(script_path)):
+                preparatory_output = StringIO()
+                with redirect_stdout(preparatory_output):
+                    preparatory_status = private_path_guard.main([])
+                release_output = StringIO()
+                with redirect_stdout(release_output):
+                    release_status = private_path_guard.main(["--release-history"])
+
+        self.assertEqual(preparatory_status, 0)
+        self.assertIn("reachable history not audited", preparatory_output.getvalue())
+        self.assertEqual(release_status, 1)
+        self.assertIn("reachable_macos_home", release_output.getvalue())
+        self.assertIn(
+            "public/commercial release blocked",
+            release_output.getvalue(),
+        )
+        self.assertIn(
+            "#blocked-release-history-recovery",
+            release_output.getvalue(),
+        )
+
+    def test_publication_scan_reports_deleted_media_blob_for_recovery(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_repository:
+            repository = Path(raw_repository)
+            self.initialize_repository(repository)
+            tracked = repository / "private_audio_fixture_001.wav"
+            tracked.write_bytes(b"synthetic media")
+            subprocess.run(
+                ["git", "add", "--", tracked.name], cwd=repository, check=True
+            )
+            self.commit(repository, "historical media")
+            subprocess.run(
+                ["git", "rm", "-q", "--", tracked.name],
+                cwd=repository,
+                check=True,
+            )
+            self.commit(repository, "sanitized tip")
+
             self.assertEqual(private_path_guard.scan_repository(repository), [])
             violations = private_path_guard.scan_publication(repository)
+            media_violation = next(
+                violation
+                for violation in violations
+                if violation.category == "reachable_tracked_private_media"
+            )
+            marker = media_violation.path.as_posix()
+            object_id = marker.removeprefix("<reachable-object-").removesuffix(">")
+            object_type = subprocess.run(
+                ["git", "cat-file", "-t", object_id],
+                cwd=repository,
+                check=True,
+                stdout=subprocess.PIPE,
+                text=True,
+            ).stdout.strip()
+            recovery_commits = subprocess.run(
+                ["git", "log", "--all", f"--find-object={object_id}", "--oneline"],
+                cwd=repository,
+                check=True,
+                stdout=subprocess.PIPE,
+                text=True,
+            ).stdout.splitlines()
 
+        self.assertEqual(object_type, "blob")
+        self.assertEqual(len(recovery_commits), 2)
+
+    def test_publication_scan_passes_full_history_and_rejects_shallow_clone(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            repository = root / "source"
+            repository.mkdir()
+            self.initialize_repository(repository)
+            tracked = repository / "notes.txt"
+            tracked.write_text("sanitized one", encoding="utf-8")
+            subprocess.run(
+                ["git", "add", "--", tracked.name], cwd=repository, check=True
+            )
+            self.commit(repository, "sanitized root")
+            tracked.write_text("sanitized two", encoding="utf-8")
+            subprocess.run(
+                ["git", "add", "--", tracked.name], cwd=repository, check=True
+            )
+            self.commit(repository, "sanitized update")
+            shallow = root / "shallow"
+            subprocess.run(
+                [
+                    "git",
+                    "clone",
+                    "-q",
+                    "--depth",
+                    "1",
+                    repository.as_uri(),
+                    str(shallow),
+                ],
+                check=True,
+            )
+
+            full_violations = private_path_guard.scan_publication(repository)
+            shallow_violations = private_path_guard.scan_publication(shallow)
+
+        self.assertEqual(full_violations, [])
         self.assertTrue(
             any(
-                violation.category == "reachable_macos_home"
-                for violation in violations
+                violation.category == "reachable_history_is_shallow"
+                for violation in shallow_violations
             )
         )
 
