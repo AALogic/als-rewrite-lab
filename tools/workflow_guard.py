@@ -87,10 +87,11 @@ def extract_balanced_block(text: str, opening_brace_index: int) -> str:
 
 def rust_test_cases() -> Dict[str, RustTestCase]:
     cases: Dict[str, RustTestCase] = {}
-    tests_root = ROOT / "crates" / "rescue_core" / "tests"
-    if not tests_root.exists():
+    crates_root = ROOT / "crates"
+    if not crates_root.exists():
         return cases
-    for path in tests_root.rglob("*.rs"):
+    test_paths = sorted(crates_root.glob("*/tests/**/*.rs"))
+    for path in test_paths:
         text = read_text(path)
         for match in re.finditer(
             r"(?P<attrs>(?:\s*#\[[^\]]+\]\s*)*)\s*fn\s+(?P<name>[a-zA-Z0-9_]+)\s*\([^)]*\)\s*\{",

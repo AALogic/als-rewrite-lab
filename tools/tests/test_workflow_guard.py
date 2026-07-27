@@ -10,6 +10,33 @@ sys.path.insert(0, str(TOOLS_DIR))
 import workflow_guard as guard  # noqa: E402
 
 
+class WorkspaceTestDiscoveryTest(unittest.TestCase):
+    def test_rust_tests_are_discovered_across_workspace_crates(self) -> None:
+        original_root = guard.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                for crate, test_name in (
+                    ("rescue_core", "core_contract_is_kept"),
+                    ("rescue_analyzer", "analyzer_contract_is_kept"),
+                ):
+                    tests_dir = root / "crates" / crate / "tests"
+                    tests_dir.mkdir(parents=True)
+                    (tests_dir / "contract.rs").write_text(
+                        f"#[test]\nfn {test_name}() {{}}\n",
+                        encoding="utf-8",
+                    )
+
+                guard.ROOT = root
+
+                self.assertEqual(
+                    set(guard.rust_test_cases()),
+                    {"core_contract_is_kept", "analyzer_contract_is_kept"},
+                )
+        finally:
+            guard.ROOT = original_root
+
+
 class QualitySourceCoverageTest(unittest.TestCase):
     def test_private_implementation_file_is_checked_by_quality_glob(self) -> None:
         original_root = guard.ROOT
