@@ -80,6 +80,7 @@ ALLOWED_TRACKED_MEDIA_FIXTURES: frozenset[str] = frozenset()
 ALLOWED_TRACKED_BINARY_FILES: frozenset[str] = frozenset()
 GIT_BLOB_MODES = frozenset({"100644", "100755", "120000"})
 GITLINK_MODE = "160000"
+GIT_SCANNABLE_OBJECT_TYPES = frozenset({"blob", "commit", "tag"})
 MAX_TRACKED_BLOB_BYTES = 8 * 1024 * 1024
 ALLOWED_TEXT_CONTROL_CHARACTERS = frozenset({"\t", "\n", "\r", "\f"})
 
@@ -144,6 +145,22 @@ class GitIndexEntry:
     mode: str
     object_id: str
     stage: int
+
+
+@dataclass(frozen=True)
+class GitObjectMetadata:
+    object_id: str
+    object_type: str
+    size: int
+
+
+@dataclass(frozen=True)
+class GitHistoryEntry:
+    snapshot_id: str
+    path: Path
+    mode: str
+    object_type: str
+    object_id: str
 
 
 def identifier_hash(value: str) -> str:
@@ -212,10 +229,12 @@ def git_index_entries(repository: Path) -> list[GitIndexEntry]:
     return entries
 
 
-def git_index_blob_sizes(repository: Path, object_ids: list[str]) -> dict[str, int]:
+def git_object_metadata(
+    repository: Path, object_ids: list[str]
+) -> list[GitObjectMetadata]:
     object_ids = list(dict.fromkeys(object_ids))
     if not object_ids:
-        return {}
+        return []
     completed = subprocess.run(
         ["git", "cat-file", "--batch-check"],
         cwd=repository,
@@ -226,22 +245,33 @@ def git_index_blob_sizes(repository: Path, object_ids: list[str]) -> dict[str, i
     output_lines = completed.stdout.splitlines()
     if len(output_lines) != len(object_ids):
         raise RuntimeError("git cat-file returned incomplete blob metadata")
-    sizes = {}
+    metadata = []
     for object_id, output_line in zip(object_ids, output_lines):
         header = output_line.split(b" ")
-        if (
-            len(header) != 3
-            or header[0].decode("ascii") != object_id
-            or header[1] != b"blob"
-        ):
-            raise RuntimeError("git index entry does not reference a blob")
-        sizes[object_id] = int(header[2])
-    return sizes
+        if len(header) != 3 or header[0].decode("ascii") != object_id:
+            raise RuntimeError("git cat-file returned invalid object metadata")
+        metadata.append(
+            GitObjectMetadata(
+                object_id=object_id,
+                object_type=header[1].decode("ascii"),
+                size=int(header[2]),
+            )
+        )
+    return metadata
 
 
-def git_index_blob_contents(
-    repository: Path, object_ids: list[str]
-) -> Iterator[tuple[str, bytes]]:
+def git_index_blob_sizes(repository: Path, object_ids: list[str]) -> dict[str, int]:
+    metadata = git_object_metadata(repository, object_ids)
+    if any(item.object_type != "blob" for item in metadata):
+        raise RuntimeError("git index entry does not reference a blob")
+    return {item.object_id: item.size for item in metadata}
+
+
+def git_object_contents(
+    repository: Path,
+    object_ids: list[str],
+    allowed_types: frozenset[str],
+) -> Iterator[tuple[str, str, bytes]]:
     object_ids = list(dict.fromkeys(object_ids))
     if not object_ids:
         return
@@ -261,19 +291,20 @@ def git_index_blob_contents(
             process.stdin.write(f"{object_id}\n".encode("ascii"))
             process.stdin.flush()
             header = process.stdout.readline().rstrip(b"\n").split(b" ")
+            object_type = header[1].decode("ascii") if len(header) == 3 else ""
             if (
                 len(header) != 3
                 or header[0].decode("ascii") != object_id
-                or header[1] != b"blob"
+                or object_type not in allowed_types
             ):
-                raise RuntimeError("git index entry does not reference a blob")
+                raise RuntimeError("git object has an unexpected type")
             size = int(header[2])
             if size > MAX_TRACKED_BLOB_BYTES:
-                raise RuntimeError("git cat-file returned an oversized blob")
+                raise RuntimeError("git cat-file returned an oversized object")
             content = process.stdout.read(size)
             if len(content) != size or process.stdout.read(1) != b"\n":
-                raise RuntimeError("git cat-file returned an incomplete blob")
-            yield object_id, content
+                raise RuntimeError("git cat-file returned an incomplete object")
+            yield object_id, object_type, content
         process.stdin.close()
         stderr = process.stderr.read()
         return_code = process.wait()
@@ -295,6 +326,15 @@ def git_index_blob_contents(
         process.stderr.close()
 
 
+def git_index_blob_contents(
+    repository: Path, object_ids: list[str]
+) -> Iterator[tuple[str, bytes]]:
+    for object_id, _, content in git_object_contents(
+        repository, object_ids, frozenset({"blob"})
+    ):
+        yield object_id, content
+
+
 def untracked_repository_files(repository: Path) -> list[Path]:
     completed = subprocess.run(
         ["git", "ls-files", "--others", "--exclude-standard", "-z"],
@@ -307,6 +347,75 @@ def untracked_repository_files(repository: Path) -> list[Path]:
         for raw_path in completed.stdout.split(b"\0")
         if raw_path
     ]
+
+
+def git_repository_is_shallow(repository: Path) -> bool:
+    completed = subprocess.run(
+        ["git", "rev-parse", "--is-shallow-repository"],
+        cwd=repository,
+        check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    return completed.stdout.strip() == "true"
+
+
+def git_reachable_objects(repository: Path) -> list[GitObjectMetadata]:
+    completed = subprocess.run(
+        ["git", "rev-list", "--objects", "--all", "--no-object-names"],
+        cwd=repository,
+        check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    return git_object_metadata(repository, completed.stdout.splitlines())
+
+
+def git_history_entries(
+    repository: Path, objects: list[GitObjectMetadata]
+) -> list[GitHistoryEntry]:
+    roots = [item.object_id for item in objects if item.object_type == "commit"]
+    object_types = {item.object_id: item.object_type for item in objects}
+    completed = subprocess.run(
+        ["git", "for-each-ref", "--format=%(objectname) %(*objectname)"],
+        cwd=repository,
+        check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    for line in completed.stdout.splitlines():
+        for object_id in line.split():
+            if object_types.get(object_id) == "tree":
+                roots.append(object_id)
+
+    entries: dict[tuple[str, str, str, str], GitHistoryEntry] = {}
+    for root in dict.fromkeys(roots):
+        completed = subprocess.run(
+            ["git", "ls-tree", "-r", "-z", "--full-tree", root],
+            cwd=repository,
+            check=True,
+            stdout=subprocess.PIPE,
+        )
+        for raw_entry in completed.stdout.split(b"\0"):
+            if not raw_entry:
+                continue
+            raw_metadata, raw_path = raw_entry.split(b"\t", 1)
+            raw_mode, raw_type, raw_object_id = raw_metadata.split(b" ", 2)
+            entry = GitHistoryEntry(
+                snapshot_id=root,
+                path=Path(os.fsdecode(raw_path)),
+                mode=raw_mode.decode("ascii"),
+                object_type=raw_type.decode("ascii"),
+                object_id=raw_object_id.decode("ascii"),
+            )
+            key = (
+                entry.path.as_posix(),
+                entry.mode,
+                entry.object_type,
+                entry.object_id,
+            )
+            entries.setdefault(key, entry)
+    return list(entries.values())
 
 
 def utf16_encoding(content: bytes) -> str | None:
@@ -459,15 +568,145 @@ def scan_repository(
     return violations
 
 
+def reachable_object_path(object_id: str) -> Path:
+    return Path(f"<reachable-object-{object_id}>")
+
+
+def reachable_violation(
+    violation: PrivatePathViolation, object_id: str
+) -> PrivatePathViolation:
+    return PrivatePathViolation(
+        reachable_object_path(object_id),
+        violation.line,
+        f"reachable_{violation.category}",
+    )
+
+
+def scan_reachable_history(
+    repository: Path,
+    private_identifier_hashes: frozenset[str] = PRIVATE_IDENTIFIER_HASHES,
+) -> list[PrivatePathViolation]:
+    violations = []
+    if git_repository_is_shallow(repository):
+        violations.append(
+            PrivatePathViolation(
+                Path("<reachable-history>"),
+                1,
+                "reachable_history_is_shallow",
+            )
+        )
+
+    objects = git_reachable_objects(repository)
+    for entry in git_history_entries(repository, objects):
+        for violation in path_violations(entry.path, private_identifier_hashes):
+            violations.append(reachable_violation(violation, entry.snapshot_id))
+        if is_prohibited_tracked_media(entry.path):
+            violations.append(
+                PrivatePathViolation(
+                    reachable_object_path(entry.snapshot_id),
+                    1,
+                    "reachable_tracked_private_media",
+                )
+            )
+            continue
+        if entry.mode == GITLINK_MODE and entry.object_type == "commit":
+            continue
+        if entry.mode not in GIT_BLOB_MODES or entry.object_type != "blob":
+            violations.append(
+                PrivatePathViolation(
+                    reachable_object_path(entry.snapshot_id),
+                    1,
+                    "reachable_unsupported_tracked_mode",
+                )
+            )
+
+    bounded_object_ids = []
+    for item in objects:
+        if item.object_type == "tree":
+            continue
+        if item.object_type not in GIT_SCANNABLE_OBJECT_TYPES:
+            violations.append(
+                PrivatePathViolation(
+                    reachable_object_path(item.object_id),
+                    1,
+                    "reachable_unsupported_object_type",
+                )
+            )
+            continue
+        if item.size > MAX_TRACKED_BLOB_BYTES:
+            violations.append(
+                PrivatePathViolation(
+                    reachable_object_path(item.object_id),
+                    1,
+                    "reachable_oversized_object",
+                )
+            )
+            continue
+        bounded_object_ids.append(item.object_id)
+
+    if bounded_object_ids:
+        for object_id, _, content in git_object_contents(
+            repository,
+            bounded_object_ids,
+            GIT_SCANNABLE_OBJECT_TYPES,
+        ):
+            object_path = reachable_object_path(object_id)
+            for violation in content_violations(
+                content,
+                object_path,
+                private_identifier_hashes,
+                fail_closed=True,
+            ):
+                violations.append(reachable_violation(violation, object_id))
+    return violations
+
+
+def scan_publication(
+    repository: Path,
+    private_identifier_hashes: frozenset[str] = PRIVATE_IDENTIFIER_HASHES,
+) -> list[PrivatePathViolation]:
+    violations = scan_repository(repository, private_identifier_hashes)
+    violations.extend(
+        scan_reachable_history(repository, private_identifier_hashes)
+    )
+    return violations
+
+
 def main() -> int:
     repository = Path(__file__).resolve().parents[1]
-    violations = scan_repository(repository)
+    violations = scan_publication(repository)
     if violations:
         for violation in violations:
             print(f"{violation.path}:{violation.line}: {violation.category}")
         print(f"private-path guard: FAIL ({len(violations)} violation(s))")
+        if any(
+            violation.category.startswith("reachable_") for violation in violations
+        ):
+            print("publication blocked: reachable Git history is not sanitized")
+            print(
+                "recovery: rewrite every affected canonical ref outside the active "
+                "gate, then remove pre-scrub refs and clones"
+            )
+            print(
+                "recovery: make a fresh full clone, fetch and prune all refs and "
+                "tags, rerun this guard, and record `git rev-parse HEAD`"
+            )
+            print(
+                "recovery procedure: "
+                "docs/setup/WINDOWS_TEST_LAB.md#blocked-history-recovery"
+            )
         return 1
-    print("private-path guard: PASS")
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repository,
+        check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    print(
+        "private-path guard: PASS "
+        f"(staged, untracked, and reachable history at {completed.stdout.strip()})"
+    )
     return 0
 
 

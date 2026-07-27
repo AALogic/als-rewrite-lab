@@ -23,6 +23,23 @@ class PrivatePathGuardTest(unittest.TestCase):
             stderr=subprocess.DEVNULL,
         )
 
+    def commit(self, repository: Path, message: str) -> None:
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=Private Path Guard Test",
+                "-c",
+                "user.email=private-path-guard@example.invalid",
+                "commit",
+                "-q",
+                "-m",
+                message,
+            ],
+            cwd=repository,
+            check=True,
+        )
+
     def test_detects_private_home_paths(self) -> None:
         macos_path = "/" + "Users/" + "actual-person/Project/Set.als"
         case_variant_macos_path = "/" + "users/" + "actual-person/Project/Set.als"
@@ -181,6 +198,45 @@ class PrivatePathGuardTest(unittest.TestCase):
 
         self.assertTrue(
             any(violation.category == "macos_home" for violation in violations)
+        )
+
+    def test_publication_scan_checks_private_data_in_other_ref(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_repository:
+            repository = Path(raw_repository)
+            self.initialize_repository(repository)
+            tracked = repository / "notes.txt"
+            tracked.write_text("sanitized", encoding="utf-8")
+            subprocess.run(
+                ["git", "add", "--", tracked.name], cwd=repository, check=True
+            )
+            self.commit(repository, "sanitized root")
+            subprocess.run(
+                ["git", "switch", "-q", "-c", "private-history"],
+                cwd=repository,
+                check=True,
+            )
+            tracked.write_text(
+                "/" + "Users/" + "actual-person/private.txt",
+                encoding="utf-8",
+            )
+            subprocess.run(
+                ["git", "add", "--", tracked.name], cwd=repository, check=True
+            )
+            self.commit(repository, "private history")
+            subprocess.run(
+                ["git", "switch", "-q", "--detach", "HEAD^"],
+                cwd=repository,
+                check=True,
+            )
+
+            self.assertEqual(private_path_guard.scan_repository(repository), [])
+            violations = private_path_guard.scan_publication(repository)
+
+        self.assertTrue(
+            any(
+                violation.category == "reachable_macos_home"
+                for violation in violations
+            )
         )
 
     def test_scans_tracked_utf16_path_dumps(self) -> None:

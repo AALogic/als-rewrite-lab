@@ -64,16 +64,19 @@ private ledgers. `.gitignore` blocks common Ableton and audio extensions, but th
 primary controls are keeping all real test material outside this repository and
 running `python3 tools/private_path_guard.py` before every publication.
 
-The guard reads tracked paths, modes, blobs, and symlink targets from Git's
-staged index while reading untracked entries from the worktree. It checks private
-home paths, private-corpus identifiers, UTF-8 and UTF-16 path dumps, and rejects
-unscannable tracked binary content. It also rejects tracked Ableton and common
-audio extensions case-insensitively before decoding payloads, including OGG,
-AAC, and SD2. Eligible staged blobs are size-checked before their contents are
-streamed, and oversized blobs fail closed without loading their payloads. No
-tracked synthetic media or binary fixture is allowlisted; tests create synthetic
-media only in temporary directories. The guard does not sanitize existing Git
-objects. Before this repository is handed to another laptop, the canonical
-repository maintainer must scrub sensitive paths and real data from all reachable
-history, verify the result from a fresh clone, and retire any pre-scrub clone or
-reference that can still reach the old objects.
+The guard checks the staged index and untracked worktree, then scans paths and
+object contents reachable from every local Git ref. It checks private home paths,
+private-corpus identifiers, UTF-8 and UTF-16 path dumps, and rejects unscannable
+tracked binary content. It also rejects tracked Ableton and common audio
+extensions case-insensitively before decoding payloads, including OGG, AAC, and
+SD2. Eligible objects are size-checked before their contents are streamed, and
+oversized objects fail closed without loading their payloads. Shallow clones
+fail because they cannot prove complete history. No tracked synthetic media or
+binary fixture is allowlisted; tests create synthetic media only in temporary
+directories.
+
+The guard detects unsafe history; it does not rewrite it. Publication and
+Windows handoff remain blocked while it reports any `reachable_*` violation.
+The canonical maintainer must scrub every affected ref between gate runs,
+retire pre-scrub refs and clones, and record a passing result from a fresh full
+clone as described in [the blocked-history recovery procedure](docs/setup/WINDOWS_TEST_LAB.md#blocked-history-recovery).

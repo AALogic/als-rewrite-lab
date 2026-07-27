@@ -80,6 +80,67 @@ This review worktree does not rewrite canonical history. Windows handoff remains
 blocked until the maintainer records that the history scrub and fresh-clone
 verification passed.
 
+### Blocked History Recovery
+
+If `python3 tools/private_path_guard.py` reports a `reachable_*` violation,
+stop the active gate without pushing, tagging, or cloning onto the Windows
+laptop. The `<reachable-object-...>` marker contains the full Git object ID but
+does not print the private value.
+
+History rewriting is a separate, coordinated maintenance operation between
+gate runs. In a dedicated maintenance clone, fetch every advertised namespace
+and preserve a private ref inventory before changing anything:
+
+```powershell
+$Maintenance = "C:\RescueLab\working\als-rewrite-lab-history-scrub"
+git clone --mirror https://github.com/AALogic/als-rewrite-lab.git $Maintenance
+cd $Maintenance
+git fetch --force --prune origin "+refs/*:refs/*"
+git for-each-ref --format="%(objectname) %(refname)" |
+  Set-Content C:\RescueLab\evidence\pre-scrub-refs.txt
+```
+
+Use each reported object ID to locate every commit that introduced or removed
+it:
+
+```powershell
+git log --all --find-object=<full-object-id> --oneline
+```
+
+Rewrite every affected canonical branch and tag with a reviewed history-rewrite
+procedure that removes prohibited ALS/audio blobs and replaces private text.
+Then delete obsolete remote refs, force-update only the reviewed sanitized
+refs, and quarantine every pre-scrub clone. If the host still advertises a PR,
+tag, or other ref that reaches an old object, publication remains blocked until
+that ref is removed or the host confirms that the sensitive-data purge is
+complete. Do not improvise the rewrite inside a no-mistakes worktree.
+
+After the rewrite, verify from a new non-shallow clone. The explicit fetch maps
+every advertised remote ref into a local verification namespace so the guard's
+all-ref traversal includes it:
+
+```powershell
+$Verification = "C:\RescueLab\working\als-rewrite-lab-fresh-verification"
+git clone https://github.com/AALogic/als-rewrite-lab.git $Verification
+cd $Verification
+git fetch --force --prune origin "+refs/*:refs/privacy-verification/*"
+if ((git rev-parse --is-shallow-repository) -ne "false") {
+  throw "Fresh-clone verification is shallow"
+}
+git switch --detach refs/privacy-verification/heads/codex/overnight-safe-vertical-slice
+python tools/private_path_guard.py |
+  Tee-Object C:\RescueLab\evidence\fresh-clone-private-path-guard.txt
+if ($LASTEXITCODE -ne 0) { throw "Canonical history remains unsafe" }
+git rev-parse HEAD |
+  Tee-Object C:\RescueLab\evidence\fresh-clone-verified-commit.txt
+git for-each-ref --format="%(objectname) %(refname)" refs/privacy-verification |
+  Set-Content C:\RescueLab\evidence\fresh-clone-advertised-refs.txt
+```
+
+The three evidence files, for the same reviewed commit, are the release-gate
+record. Only a full `PASS` may unblock the Windows clone and later publication
+steps.
+
 ## Clone The Canonical Repository
 
 ```powershell

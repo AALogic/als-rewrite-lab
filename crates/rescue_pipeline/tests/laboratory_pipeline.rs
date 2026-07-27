@@ -360,27 +360,41 @@ fn unbounded_filesystem_root_is_rejected() {
 
 #[test]
 fn unsupported_live_version_blocks_before_staging() {
-    let fixture = fixture();
-    fs::write(
-        &fixture.source_als,
-        gzip(&xml_for(
-            &fixture.source_audio,
-            "12.0_12000",
-            "Ableton Live 12.0.1",
-        )),
-    )
-    .expect("ALS");
-    let result = run_laboratory_package(&request(&fixture));
+    for (minor, creator) in [
+        ("9.0_9330", "Ableton Live 9.7.7"),
+        ("10.0_10000", "Ableton Live 10.1.43"),
+        ("12.0_12000", "Ableton Live 12.0.1"),
+    ] {
+        let fixture = fixture();
+        fs::write(
+            &fixture.source_als,
+            gzip(&xml_for(&fixture.source_audio, minor, creator)),
+        )
+        .expect("ALS");
+        let source_als_before = fs::read(&fixture.source_als).expect("ALS before");
+        let source_audio_before = fs::read(&fixture.source_audio).expect("audio before");
+        let result = run_laboratory_package(&request(&fixture));
 
-    assert_eq!(result.run_status, "resolution_or_plan_blocked");
-    assert!(result
-        .package_plan
-        .as_ref()
-        .expect("plan")
-        .errors
-        .iter()
-        .any(|error| error.error_code == "PACKAGE_REWRITE_DOCUMENT_UNSUPPORTED"));
-    assert!(!fixture.staging_root.exists());
+        assert_eq!(result.run_status, "resolution_or_plan_blocked");
+        assert!(result
+            .package_plan
+            .as_ref()
+            .expect("plan")
+            .errors
+            .iter()
+            .any(|error| error.error_code == "PACKAGE_REWRITE_DOCUMENT_UNSUPPORTED"));
+        assert!(!fixture.staging_root.exists());
+        assert!(!fixture.target_root.exists());
+        assert!(!fixture.ledger_path.exists());
+        assert_eq!(
+            fs::read(&fixture.source_als).expect("ALS after"),
+            source_als_before
+        );
+        assert_eq!(
+            fs::read(&fixture.source_audio).expect("audio after"),
+            source_audio_before
+        );
+    }
 }
 
 #[test]
