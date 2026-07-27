@@ -117,6 +117,9 @@ confirmed_project_root: optional native path
 project_root_basis: optional, required when confirmed_project_root exists
 ```
 
+`host_platform` is `macos` or `windows` in the product. `posix` is accepted
+only so the same core safety contract can run in non-product Unix CI.
+
 Allowed `project_root_basis` values for the first implementation:
 
 ```text
