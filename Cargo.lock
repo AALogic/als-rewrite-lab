@@ -246,6 +246,7 @@ name = "rescue-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "rescue_analyzer",
  "rescue_core",
  "serde",
  "serde_json",

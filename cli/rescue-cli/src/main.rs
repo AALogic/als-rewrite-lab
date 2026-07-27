@@ -1,5 +1,10 @@
 use clap::{Parser, Subcommand};
-use rescue_core::{analyze_als, extract_dependencies, ALSError};
+use rescue_analyzer::{
+    assess_dependencies, build_preflight_report, discover_project, ProjectDiscoveryRequest,
+};
+use rescue_core::{
+    analyze_als, extract_dependencies, observe_dependency_paths, ALSError, PathObservationContext,
+};
 use serde::Serialize;
 use serde_json::json;
 use std::path::PathBuf;
@@ -17,6 +22,7 @@ struct Cli {
 enum Command {
     Analyze { path: PathBuf },
     Extract { path: PathBuf },
+    Preflight { path: PathBuf },
 }
 
 fn main() -> ExitCode {
@@ -42,6 +48,54 @@ fn main() -> ExitCode {
             }
             Err(error) => print_als_error(error),
         },
+        Command::Preflight { path } => run_preflight(path),
+    }
+}
+
+fn run_preflight(path: PathBuf) -> ExitCode {
+    let discovery = discover_project(&ProjectDiscoveryRequest {
+        source_als_path: path.clone(),
+    });
+    if !discovery.errors.is_empty() {
+        return print_json_with_domain_status(&discovery, false);
+    }
+    let analysis = match analyze_als(path) {
+        Ok(analysis) => analysis,
+        Err(error) => return print_als_error(error),
+    };
+    let extraction = extract_dependencies(&analysis);
+    let observations = observe_dependency_paths(
+        &extraction,
+        &PathObservationContext {
+            host_platform: current_host_platform().to_string(),
+            confirmed_project_root: discovery.confirmed_project_root.clone(),
+            project_root_basis: discovery
+                .confirmed_project_root
+                .as_ref()
+                .map(|_| "confirmed_ableton_project_structure".to_string()),
+        },
+    );
+    let assessment = assess_dependencies(&extraction, &observations);
+    let report = build_preflight_report(&discovery, &assessment);
+    let success = report.errors.is_empty();
+    print_json_with_domain_status(&report, success)
+}
+
+fn current_host_platform() -> &'static str {
+    if cfg!(target_os = "windows") {
+        "windows"
+    } else if cfg!(target_os = "macos") {
+        "macos"
+    } else {
+        "posix"
+    }
+}
+
+fn print_json_with_domain_status(value: &impl Serialize, success: bool) -> ExitCode {
+    match print_stdout_json(value) {
+        ExitCode::SUCCESS if success => ExitCode::SUCCESS,
+        ExitCode::SUCCESS => ExitCode::FAILURE,
+        failure => failure,
     }
 }
 
@@ -110,6 +164,15 @@ mod tests {
         assert!(Cli::try_parse_from(["rescue", "extract", "fixture.als"]).is_ok());
 
         let error = Cli::try_parse_from(["rescue", "extract", "fixture.als", "--json"])
+            .expect_err("--json should not pretend to select an output mode");
+        assert_eq!(error.kind(), ErrorKind::UnknownArgument);
+    }
+
+    #[test]
+    fn preflight_cli_command_is_available() {
+        assert!(Cli::try_parse_from(["rescue", "preflight", "fixture.als"]).is_ok());
+
+        let error = Cli::try_parse_from(["rescue", "preflight", "fixture.als", "--json"])
             .expect_err("--json should not pretend to select an output mode");
         assert_eq!(error.kind(), ErrorKind::UnknownArgument);
     }
