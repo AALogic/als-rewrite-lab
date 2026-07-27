@@ -5,6 +5,7 @@ members = [
   "crates/rescue_catalog",
   "crates/rescue_resolution",
   "crates/rescue_packaging",
+  "crates/rescue_execution",
   "cli/rescue-cli",
 ]
 resolver = "2"
