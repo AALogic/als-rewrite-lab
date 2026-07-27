@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject private paths and configured private identifiers in repository entries."""
+"""Reject private data and configured private identifiers in repository entries."""
 
 from __future__ import annotations
 
@@ -57,6 +57,23 @@ PRIVATE_IDENTIFIER_HASHES = frozenset(
     }
 )
 MAX_PRIVATE_IDENTIFIER_TOKENS = 12
+
+PROHIBITED_TRACKED_MEDIA_EXTENSIONS = frozenset(
+    {
+        ".aac",
+        ".aif",
+        ".aiff",
+        ".als",
+        ".asd",
+        ".flac",
+        ".m4a",
+        ".mp3",
+        ".ogg",
+        ".wav",
+        ".wave",
+    }
+)
+ALLOWED_TRACKED_MEDIA_FIXTURES: frozenset[str] = frozenset()
 
 HOME_PATTERNS = (
     (
@@ -123,16 +140,9 @@ def text_violations(
     return violations
 
 
-def repository_files(repository: Path) -> list[Path]:
+def git_files(repository: Path, *arguments: str) -> list[Path]:
     completed = subprocess.run(
-        [
-            "git",
-            "ls-files",
-            "--cached",
-            "--others",
-            "--exclude-standard",
-            "-z",
-        ],
+        ["git", "ls-files", *arguments, "-z"],
         cwd=repository,
         check=True,
         stdout=subprocess.PIPE,
@@ -144,11 +154,20 @@ def repository_files(repository: Path) -> list[Path]:
     ]
 
 
+def repository_files(repository: Path) -> list[Path]:
+    return git_files(repository, "--cached", "--others", "--exclude-standard")
+
+
+def tracked_repository_files(repository: Path) -> frozenset[Path]:
+    return frozenset(git_files(repository, "--cached"))
+
+
 def scan_repository(
     repository: Path,
     private_identifier_hashes: frozenset[str] = PRIVATE_IDENTIFIER_HASHES,
 ) -> list[PrivatePathViolation]:
     violations = []
+    tracked_files = tracked_repository_files(repository)
     for path in repository_files(repository):
         relative_path = path.relative_to(repository)
         violations.extend(
@@ -158,6 +177,16 @@ def scan_repository(
                 private_identifier_hashes,
             )
         )
+        if (
+            path in tracked_files
+            and relative_path.suffix.casefold()
+            in PROHIBITED_TRACKED_MEDIA_EXTENSIONS
+            and relative_path.as_posix() not in ALLOWED_TRACKED_MEDIA_FIXTURES
+        ):
+            violations.append(
+                PrivatePathViolation(relative_path, 1, "tracked_private_media")
+            )
+            continue
         if path.is_symlink():
             violations.extend(
                 text_violations(

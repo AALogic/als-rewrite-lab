@@ -73,6 +73,30 @@ class PrivatePathGuardTest(unittest.TestCase):
             any(violation.category == "private_identifier" for violation in violations)
         )
 
+    def test_rejects_tracked_binary_media_case_insensitively(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_repository:
+            repository = Path(raw_repository)
+            self.initialize_repository(repository)
+            tracked_names = ("fixture.ALS", "fixture.OgG", "fixture.AaC")
+            for tracked_name in tracked_names:
+                (repository / tracked_name).write_bytes(b"media\0payload")
+            subprocess.run(
+                ["git", "add", "--", *tracked_names],
+                cwd=repository,
+                check=True,
+            )
+
+            violations = private_path_guard.scan_repository(repository)
+
+        self.assertEqual(
+            {
+                violation.path.as_posix()
+                for violation in violations
+                if violation.category == "tracked_private_media"
+            },
+            set(tracked_names),
+        )
+
     @unittest.skipIf(sys.platform == "win32", "tracked symlink fixture requires Unix")
     def test_scans_tracked_symlink_target_payload(self) -> None:
         with tempfile.TemporaryDirectory() as raw_repository:
@@ -92,6 +116,7 @@ class PrivatePathGuardTest(unittest.TestCase):
     def test_repository_tree_passes_private_data_policy(self) -> None:
         repository = TOOLS_DIR.parent
 
+        self.assertEqual(private_path_guard.ALLOWED_TRACKED_MEDIA_FIXTURES, frozenset())
         self.assertEqual(private_path_guard.scan_repository(repository), [])
 
 
