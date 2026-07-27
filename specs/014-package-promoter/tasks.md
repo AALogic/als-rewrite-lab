@@ -1,0 +1,21 @@
+# Tasks: 014 PackagePromoter
+
+- [x] Define PackagePromotionResult v0.1.
+- [x] ENFORCED_BY_TEST: validated_staging_is_promoted_without_touching_sources
+- [x] ENFORCED_BY_TEST: existing_final_target_is_never_overwritten
+- [x] ENFORCED_BY_TEST: tampered_staged_file_blocks_promotion
+- [x] ENFORCED_BY_TEST: unexpected_file_blocks_promotion
+- [x] ENFORCED_BY_TEST: missing_private_ledger_blocks_promotion
+- [x] ENFORCED_BY_TEST: failed_validation_state_blocks_promotion
+- [x] ENFORCED_BY_TEST: repeated_promotion_verifies_existing_package
+- [x] ENFORCED_BY_TEST: symlink_inside_staging_blocks_promotion
+- [x] ENFORCED_BY_TEST: changed_original_source_blocks_promotion
+- [x] ENFORCED_BY_TYPE: PackagePromotionRequest
+- [x] ENFORCED_BY_TYPE: PackagePromotionResult
+- [x] ENFORCED_BY_TYPE: PackagePromotionMetadata
+- [x] ENFORCED_BY_TYPE: PromotedFileRecord
+- [x] ENFORCED_BY_TYPE: PackagePromotionError
+- [x] REVIEW_ONLY: existing final target is never intentionally overwritten
+- [x] REVIEW_ONLY: promoter makes no package content decisions
+- [x] DOCUMENTED_ONLY: hardened no-replace directory rename remains pre-release work
+

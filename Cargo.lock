@@ -368,6 +368,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "rescue_promotion"
+version = "0.1.0"
+dependencies = [
+ "rescue_execution",
+ "rescue_manifest",
+ "rescue_packaging",
+ "rescue_rewriter",
+ "rescue_validation",
+ "serde",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "rescue_resolution"
 version = "0.1.0"
 dependencies = [
