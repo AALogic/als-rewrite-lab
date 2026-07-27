@@ -87,23 +87,28 @@ def extract_balanced_block(text: str, opening_brace_index: int) -> str:
 
 def rust_test_cases() -> Dict[str, RustTestCase]:
     cases: Dict[str, RustTestCase] = {}
-    crates_root = ROOT / "crates"
-    if not crates_root.exists():
-        return cases
-    test_paths = sorted(crates_root.glob("*/tests/**/*.rs"))
-    for path in test_paths:
+    test_paths: Set[Path] = set()
+    for workspace_area in ("crates", "cli"):
+        area_root = ROOT / workspace_area
+        if area_root.exists():
+            test_paths.update(area_root.glob("*/tests/**/*.rs"))
+            test_paths.update(area_root.glob("*/src/**/*.rs"))
+    for path in sorted(test_paths):
         text = read_text(path)
         for match in re.finditer(
             r"(?P<attrs>(?:\s*#\[[^\]]+\]\s*)*)\s*fn\s+(?P<name>[a-zA-Z0-9_]+)\s*\([^)]*\)\s*\{",
             text,
         ):
+            attrs = match.group("attrs")
+            if not re.search(r"#\[(?:[A-Za-z0-9_]+::)?test(?:\s|\(|\])", attrs):
+                continue
             name = match.group("name")
             body = extract_balanced_block(text, match.end() - 1)
             cases[name] = RustTestCase(
                 name=name,
                 path=path,
                 body=body,
-                ignored="#[ignore" in match.group("attrs"),
+                ignored="#[ignore" in attrs,
             )
     return cases
 
@@ -215,7 +220,7 @@ def is_checked_task(tasks_text: str, literal: str) -> bool:
     return bool(re.search(rf"^\s*-\s*\[[xX]\]\s+{escaped}\s*$", tasks_text, re.M))
 
 
-def cargo_dependency_names() -> Set[str]:
+def cargo_dependency_names(cargo_paths: Iterable[Path]) -> Set[str]:
     names: Set[str] = set()
     dependency_sections = {
         "dependencies",
@@ -223,7 +228,7 @@ def cargo_dependency_names() -> Set[str]:
         "build-dependencies",
         "workspace.dependencies",
     }
-    for cargo_path in ROOT.rglob("Cargo.toml"):
+    for cargo_path in cargo_paths:
         current_section = ""
         for line in read_text(cargo_path).splitlines():
             stripped = line.strip()
@@ -241,6 +246,29 @@ def cargo_dependency_names() -> Set[str]:
             if name and all(ch not in name for ch in " {}[]"):
                 names.add(name)
     return names
+
+
+def module_cargo_manifest_paths(contract: Dict[str, Any]) -> Set[Path]:
+    manifests: Set[Path] = set()
+    for configured_path in contract.get("dependency_manifest_paths", []):
+        candidate = ROOT / str(configured_path)
+        if candidate.exists():
+            manifests.add(candidate)
+
+    source_paths: Set[Path] = set()
+    for key in ("expected_source_files", "quality_source_globs", "guarded_source_globs"):
+        source_paths.update(rust_source_paths(contract, key))
+    for source_path in source_paths:
+        current = source_path.parent
+        while True:
+            candidate = current / "Cargo.toml"
+            if candidate.exists():
+                manifests.add(candidate)
+                break
+            if current == ROOT or current.parent == current:
+                break
+            current = current.parent
+    return manifests
 
 
 def check_required_doc_literacy(
@@ -497,7 +525,8 @@ def check_verify_module(module_id: str) -> GuardResult:
     allowed_dependency_names = contract.get("allowed_dependency_names")
     if isinstance(allowed_dependency_names, list):
         allowed = {str(name) for name in allowed_dependency_names}
-        for dependency_name in sorted(cargo_dependency_names() - allowed):
+        manifests = module_cargo_manifest_paths(contract)
+        for dependency_name in sorted(cargo_dependency_names(manifests) - allowed):
             result.fail(f"dependency not allowed by module contract: {dependency_name}")
 
     public_contract = contract.get("public_contract", {})

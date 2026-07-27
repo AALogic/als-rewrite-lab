@@ -26,12 +26,56 @@ class WorkspaceTestDiscoveryTest(unittest.TestCase):
                         f"#[test]\nfn {test_name}() {{}}\n",
                         encoding="utf-8",
                     )
+                cli_source = root / "cli" / "rescue-cli" / "src"
+                cli_source.mkdir(parents=True)
+                (cli_source / "main.rs").write_text(
+                    "#[test]\nfn cli_contract_is_kept() {}\n"
+                    "fn helper_is_not_a_test() {}\n",
+                    encoding="utf-8",
+                )
 
                 guard.ROOT = root
 
                 self.assertEqual(
                     set(guard.rust_test_cases()),
-                    {"core_contract_is_kept", "analyzer_contract_is_kept"},
+                    {
+                        "core_contract_is_kept",
+                        "analyzer_contract_is_kept",
+                        "cli_contract_is_kept",
+                    },
+                )
+        finally:
+            guard.ROOT = original_root
+
+
+class ModuleDependencyScopeTest(unittest.TestCase):
+    def test_dependency_check_uses_only_module_owning_crates(self) -> None:
+        original_root = guard.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                for crate, dependency in (
+                    ("alpha", "alpha_dep"),
+                    ("beta", "beta_dep"),
+                ):
+                    source_dir = root / "crates" / crate / "src"
+                    source_dir.mkdir(parents=True)
+                    (source_dir / "lib.rs").write_text("pub fn api() {}\n", encoding="utf-8")
+                    (source_dir.parent / "Cargo.toml").write_text(
+                        f"[package]\nname = \"{crate}\"\nversion = \"0.1.0\"\n"
+                        f"[dependencies]\n{dependency} = \"1\"\n",
+                        encoding="utf-8",
+                    )
+
+                guard.ROOT = root
+                contract = {
+                    "expected_source_files": ["crates/alpha/src/lib.rs"],
+                }
+                manifests = guard.module_cargo_manifest_paths(contract)
+
+                self.assertEqual(
+                    guard.cargo_dependency_names(manifests),
+                    {"alpha_dep"},
                 )
         finally:
             guard.ROOT = original_root
