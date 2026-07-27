@@ -1,15 +1,12 @@
+mod support;
+
 use rescue_core::{
     analyze_als, extract_dependencies, ALSReadError, ALSReadModel, ALSReadWarning,
     ActiveAudioReference, DependencyExtractionResult, DependencyRef, HistoricalReference,
     NonAudioDependencySignal, SetMetadata,
 };
-use std::path::{Path, PathBuf};
 
-fn fixture_path(name: &str) -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tests/fixtures")
-        .join(name)
-}
+use support::synthetic_als;
 
 fn metadata(version: &str) -> SetMetadata {
     SetMetadata {
@@ -146,8 +143,8 @@ fn assert_no_forbidden_downstream_fields(result: &DependencyExtractionResult) {
 
 #[test]
 fn valid_model_extracts_audio_dependencies() {
-    let model =
-        analyze_als(fixture_path("als/kombinacja_piejo.als")).expect("fixture should parse");
+    let fixture = synthetic_als("dependency_extractor_eleven_refs", &["1"; 11], 0);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
     let result = extract_dependencies(&model);
 
     assert_eq!(result.errors, Vec::new());
@@ -164,8 +161,8 @@ fn valid_model_extracts_audio_dependencies() {
 
 #[test]
 fn zero_active_refs_is_valid() {
-    let model =
-        analyze_als(fixture_path("als/template_zero_active.als")).expect("fixture should parse");
+    let fixture = synthetic_als("dependency_extractor_zero_active", &[], 6);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
     let result = extract_dependencies(&model);
 
     assert!(result.dependencies.is_empty());

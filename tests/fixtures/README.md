@@ -1,26 +1,25 @@
-# Local Fixture Policy
+# Fixture Policy
 
-The current `.als` fixtures are available locally so the existing regression
-suite can run, but they contain private paths and project metadata. `.gitignore`
-therefore keeps Ableton and audio binaries untracked.
+The committed regression suite generates small synthetic gzip/XML `.als` files
+at runtime. Core parser and extractor tests therefore run in clean clones,
+worktrees and CI without private Ableton projects.
 
-Before a remote push, remote CI or delegated work in disposable worktrees:
+Real-world `.als` files may still be used as a private, optional evidence corpus.
+They contain private paths and project metadata, so `.gitignore` keeps Ableton
+and audio binaries untracked.
 
-1. replace core parser cases with synthetic gzip/XML `.als` fixtures;
-2. keep any approved real-world corpus outside the repository;
-3. store only hashes, expected counts and sanitized evidence for private files;
-4. review fixture licensing and privacy explicitly;
-5. make CI generate or receive an approved fixture pack without embedding user
-   projects in the source repository.
+Rules for private evidence:
+
+1. keep the corpus outside the repository or in ignored local paths;
+2. store only hashes, expected counts and sanitized evidence in Git;
+3. review fixture licensing and privacy before sharing it;
+4. never make core tests depend on the private corpus;
+5. use private files for additional regression and Ableton-behavior research.
 
 Evidence recorded on 2026-07-26:
 
 ```text
-A clean local clone compiled successfully but failed 8 ALSReader fixture tests
-because the ignored private `.als` files were absent. Passing tests in the
-primary checkout therefore do not yet prove that CI or agent worktrees are
-reproducible.
+A clean worktree previously failed 8 tests because ignored private `.als` files
+were absent. The tests now generate equivalent, minimal contract fixtures and
+must pass without any private files.
 ```
-
-Do not remove the local files until equivalent synthetic regression coverage
-exists.

@@ -20,7 +20,11 @@ DependencyExtractor does not deduplicate.
 
 ## 2. Fixture Sources
 
-Use existing ALS fixtures through ALSReader where practical:
+Core automated tests generate minimal gzip/XML ALS fixtures through ALSReader.
+They cover active refs, zero-active projects, historical refs, duplicate paths
+and raw RelativePathType preservation without requiring private projects.
+
+The following files remain an optional private evidence corpus:
 
 ```text
 tests/fixtures/als/cziki_before_cas.als

@@ -4,6 +4,15 @@ Status: draft; v0.1 fixture counts with v0.2 contract addendum
 Date: 2026-06-02  
 Scope: expected fixture behavior for ALSReader tests
 
+Update note 2026-07-27:
+
+```text
+Core automated tests use generated synthetic gzip/XML ALS fixtures.
+The named private projects below remain an optional evidence corpus and are not
+required in a clean clone, worktree or CI environment.
+Their large observed counts are evidence, not a requirement for every unit test.
+```
+
 Update note 2026-06-09:
 
 ```text
@@ -25,7 +34,7 @@ If we know the expected counts before implementation, the parser cannot silently
 define its own meaning of "works".
 ```
 
-## 2. Required Fixtures
+## 2. Private Evidence Fixtures
 
 ### cziki_after_cas
 
@@ -242,14 +251,24 @@ kombinacja_piejo:
   total_original_file_ref_count: 7
 ```
 
-Known missing v0.2 fixtures:
+Generated v0.2 contract fixtures cover:
 
 ```text
-RelativePathType 0 fixture
+active and historical reference separation
+RelativePathType 0, 1, 3 and 5 preservation
 non-audio dependency signal fixture
-plugin/preset evidence fixture
-Max for Live dependency signal fixture
-ambiguous or unknown ALS structure fixture
+invalid gzip and invalid XML
+Windows drive-letter and UNC path text on macOS
+read-only input behavior
+```
+
+Still requiring private-domain evidence or dedicated experiments:
+
+```text
+plugin/preset evidence
+Max for Live dependency signals
+ambiguous or unknown real ALS structures
+large-corpus regression counts
 ```
 
 Boundary rule:
