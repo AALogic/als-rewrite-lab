@@ -131,7 +131,7 @@ fn plan(fixture: &Fixture) -> PackagePlan {
             plan_id: "plan0".to_string(),
             planning_mode: "laboratory_rescue_rewrite".to_string(),
             source_als_hash: source_hash.clone(),
-            resolution_policy_version: "0.1.0".to_string(),
+            resolution_policy_version: "0.2.0".to_string(),
             rewrite_ruleset_version: "live11_3_external_to_imported_v0.1-experimental".to_string(),
             required_asset_count: 1,
             copy_operation_count: 2,
@@ -198,6 +198,7 @@ fn request(fixture: &Fixture) -> ALSRewriteRequest {
     }
 }
 
+#[cfg(unix)]
 #[test]
 fn approved_locator_changes_only_three_active_fields() {
     let fixture = fixture();
@@ -302,6 +303,7 @@ fn duplicate_reference_operations_are_rejected() {
     assert_eq!(result.errors[0].error_code, "REWRITE_DUPLICATE_REFERENCE");
 }
 
+#[cfg(unix)]
 #[test]
 fn repeated_rewrite_does_not_stack_changes() {
     let fixture = fixture();
@@ -317,6 +319,7 @@ fn repeated_rewrite_does_not_stack_changes() {
     assert_eq!(fs::read(&fixture.staged_als).expect("twice"), once);
 }
 
+#[cfg(unix)]
 #[test]
 fn xml_special_characters_are_escaped_and_round_trip() {
     let fixture = fixture();
@@ -333,4 +336,20 @@ fn xml_special_characters_are_escaped_and_round_trip() {
     assert_eq!(result.rewrite_status, "rewrite_complete");
     assert!(xml.contains("A&amp;B"));
     roxmltree::Document::parse(&xml).expect("valid rewritten XML");
+}
+
+#[cfg(not(unix))]
+#[test]
+fn unsupported_platform_atomic_replace_fails_closed() {
+    let fixture = fixture();
+    let plan = plan(&fixture);
+    let before = fs::read(&fixture.staged_als).expect("before");
+    let result = rewrite_staged_als(&request(&fixture), &plan, &staging(&fixture, &plan));
+
+    assert_eq!(result.rewrite_status, "rewrite_failed");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| error.error_code == "REWRITE_ATOMIC_REPLACE_FAILED"));
+    assert_eq!(fs::read(&fixture.staged_als).expect("after"), before);
 }

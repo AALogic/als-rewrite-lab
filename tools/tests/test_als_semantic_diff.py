@@ -11,7 +11,11 @@ sys.path.insert(0, str(TOOLS_DIR))
 import als_semantic_diff as semantic_diff  # noqa: E402
 
 
-def document(path_value: str, relative_value: str = "../old.wav") -> bytes:
+def document(
+    path_value: str,
+    relative_value: str = "../old.wav",
+    historical_path: str = "/historical/original.wav",
+) -> bytes:
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Ableton MajorVersion="5" MinorVersion="11.0_11300" Creator="Ableton Live 11.3.43">
   <LiveSet>
@@ -25,6 +29,11 @@ def document(path_value: str, relative_value: str = "../old.wav") -> bytes:
         <OriginalCrc Value="42" />
       </FileRef>
     </SampleRef>
+    <OriginalFileRef>
+      <FileRef>
+        <Path Value="{historical_path}" />
+      </FileRef>
+    </OriginalFileRef>
   </LiveSet>
 </Ableton>
 """
@@ -60,6 +69,25 @@ class SemanticDiffTest(unittest.TestCase):
                 report["active_changed_fields"],
                 {"Path": 1, "RelativePath": 1},
             )
+            self.assertFalse(report["equal_after_allowed_active_redaction"])
+
+    def test_historical_path_change_is_never_redacted(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            before = root / "before.als"
+            after = root / "after.als"
+            before.write_bytes(document("/old/sample.wav"))
+            after.write_bytes(
+                document(
+                    "/new/sample.wav",
+                    historical_path="/historical/changed.wav",
+                )
+            )
+
+            report = semantic_diff.compare_documents(before, after, ["Path"])
+
+            self.assertEqual(report["active_changed_fields"], {"Path": 1})
+            self.assertEqual(report["historical_changed_fields"], {"Path": 1})
             self.assertFalse(report["equal_after_allowed_active_redaction"])
 
 

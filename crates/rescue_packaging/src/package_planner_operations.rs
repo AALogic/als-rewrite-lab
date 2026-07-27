@@ -191,10 +191,25 @@ fn add_rewrite_operations(
 }
 
 fn supported_external_reference(reference: &ActiveAudioReference) -> bool {
-    reference.relative_path_type.as_deref() == Some("1")
+    reference.is_rewrite_candidate
+        && reference.rewrite_support_status == "supported"
+        && supported_usage_context(&reference.usage_context)
+        && reference.relative_path_type.as_deref() == Some("1")
         && reference.xml_locator == format!("SampleRef[{}]/FileRef", reference.ref_id)
         && reference.xml_locator.starts_with("SampleRef[")
         && reference.xml_locator.ends_with("]/FileRef")
+}
+
+fn supported_usage_context(context: &str) -> bool {
+    matches!(
+        context,
+        "audio_clip"
+            | "take_lane"
+            | "session_clip"
+            | "arrangement_clip"
+            | "simpler_multisample"
+            | "impulse_sample"
+    )
 }
 
 fn rewrite_operation(

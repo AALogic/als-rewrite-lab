@@ -5,7 +5,7 @@ use rescue_execution::{execute_staging, StagingExecutionRequest, StagingExecutio
 use rescue_packaging::{
     CopyOperation, PackagePlan, PackagePlanMetadata, PlannedSourceAls, RewriteOperation,
 };
-use rescue_rewriter::{rewrite_staged_als, ALSRewriteRequest, ALSRewriteResult};
+use rescue_rewriter::ALSRewriteResult;
 use rescue_validation::{validate_staged_package, PackageValidationRequest};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -76,6 +76,81 @@ fn copy_operation(id: &str, kind: &str, source: &Path, target: &str) -> CopyOper
     }
 }
 
+#[cfg(unix)]
+fn prepare_rewrite(
+    staging_root: &Path,
+    plan: &PackagePlan,
+    staging: &StagingExecutionResult,
+) -> ALSRewriteResult {
+    let rewrite = rescue_rewriter::rewrite_staged_als(
+        &rescue_rewriter::ALSRewriteRequest {
+            rewrite_id: "rewrite0".to_string(),
+            staging_root: staging_root.to_path_buf(),
+        },
+        plan,
+        staging,
+    );
+    assert_eq!(rewrite.rewrite_status, "rewrite_complete");
+    rewrite
+}
+
+#[cfg(not(unix))]
+fn prepare_rewrite(
+    staging_root: &Path,
+    plan: &PackagePlan,
+    staging: &StagingExecutionResult,
+) -> ALSRewriteResult {
+    let operation = &plan.rewrite_operations[0];
+    let staged_als = staging_root.join(&staging.staged_als_relative_path);
+    let original_hash = digest_file(&staged_als);
+    let rewritten_xml = gunzip(&staged_als)
+        .replacen(
+            &format!(r#"<Path Value="{OLD_PATH}"/>"#),
+            &format!(r#"<Path Value="{}"/>"#, operation.new_path),
+            1,
+        )
+        .replacen(
+            &format!(r#"<RelativePath Value="{OLD_RELATIVE}"/>"#),
+            &format!(r#"<RelativePath Value="{}"/>"#, operation.new_relative_path),
+            1,
+        )
+        .replacen(
+            r#"<RelativePathType Value="1"/>"#,
+            r#"<RelativePathType Value="3"/>"#,
+            1,
+        );
+    let rewritten_bytes = gzip(&rewritten_xml);
+    fs::write(&staged_als, &rewritten_bytes).expect("synthetic rewritten ALS");
+    ALSRewriteResult {
+        metadata: rescue_rewriter::ALSRewriteMetadata {
+            rewriter_version: rescue_rewriter::ALS_REWRITER_VERSION.to_string(),
+            rewrite_schema_version: rescue_rewriter::ALS_REWRITE_SCHEMA_VERSION.to_string(),
+            rewrite_id: "rewrite0".to_string(),
+            execution_id: staging.metadata.execution_id.clone(),
+            plan_id: plan.metadata.plan_id.clone(),
+            source_als_hash: plan.metadata.source_als_hash.clone(),
+            rewrite_ruleset_version: plan.metadata.rewrite_ruleset_version.clone(),
+            planned_operation_count: 1,
+            completed_operation_count: 1,
+            warning_count: 0,
+            error_count: 0,
+        },
+        staged_als_relative_path: staging.staged_als_relative_path.clone(),
+        original_staged_als_hash: Some(original_hash),
+        rewritten_staged_als_hash: Some(digest_bytes(&rewritten_bytes)),
+        operation_records: vec![rescue_rewriter::RewriteExecutionRecord {
+            operation_id: operation.operation_id.clone(),
+            als_ref_id: operation.als_ref_id,
+            xml_locator: operation.xml_locator.clone(),
+            changed_fields: operation.fields_to_change.clone(),
+            operation_status: "rewritten_and_verified".to_string(),
+        }],
+        rewrite_status: "rewrite_complete".to_string(),
+        warnings: Vec::new(),
+        errors: Vec::new(),
+    }
+}
+
 fn prepare_run() -> Run {
     let temp = tempfile::tempdir().expect("tempdir");
     let source_root = temp.path().join("source");
@@ -128,7 +203,7 @@ fn prepare_run() -> Run {
             plan_id: "plan0".to_string(),
             planning_mode: "laboratory_rescue_rewrite".to_string(),
             source_als_hash: als_hash.clone(),
-            resolution_policy_version: "0.1.0".to_string(),
+            resolution_policy_version: "0.2.0".to_string(),
             rewrite_ruleset_version: "live11_3_external_to_imported_v0.1-experimental".to_string(),
             required_asset_count: 1,
             copy_operation_count: copies.len(),
@@ -162,15 +237,7 @@ fn prepare_run() -> Run {
         &plan,
     );
     assert_eq!(staging.execution_status, "staging_complete");
-    let rewrite = rewrite_staged_als(
-        &ALSRewriteRequest {
-            rewrite_id: "rewrite0".to_string(),
-            staging_root: staging_root.clone(),
-        },
-        &plan,
-        &staging,
-    );
-    assert_eq!(rewrite.rewrite_status, "rewrite_complete");
+    let rewrite = prepare_rewrite(&staging_root, &plan, &staging);
     Run {
         _temp: temp,
         source_als,

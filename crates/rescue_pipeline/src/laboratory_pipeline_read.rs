@@ -30,6 +30,11 @@ pub(crate) fn read_and_assess(
             "Project discovery returned errors",
         ));
     }
+    if let Some(error) =
+        crate::laboratory_pipeline_inputs::validate_discovered_project(request, &discovery)
+    {
+        return Err(error);
+    }
     let als_read_model = analyze_als(&request.source_als_path).map_err(|read_error| {
         let info = read_error.to_info();
         error(&info.error_code, "als_reader", &info.message)

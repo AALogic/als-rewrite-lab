@@ -15,7 +15,7 @@ PackagePlanningRequest
 + ALSReadModel v0.2
 + DependencyAssessmentResult v0.1
 + AssetInventoryResult v0.1
-+ AssetResolutionResult v0.1
++ AssetResolutionResult v0.1 using policy v0.2
 -> PackagePlan v0.1
 ```
 
@@ -52,8 +52,9 @@ open promote the E-03 rule.
 
 All producer results must be trusted and mutually consistent. The ALS source
 hash must equal the assessment snapshot hash. Resolution and inventory scan IDs
-must agree. The target Project root must be absolute, and the target ALS path
-must not equal the original ALS path.
+must agree, and every resolution decision must use the current safety policy.
+The target Project root must be absolute, and the target ALS path must not equal
+the original ALS path.
 
 Only `auto_accepted` decisions can become executable copy/rewrite operations.
 Every selected occurrence and active reference must exist exactly once.
@@ -78,6 +79,11 @@ values, changed-field allowlist and ruleset.
 
 Locator and reference values come from the explicit ADR-005 ALSReader rewrite
 handoff, not DependencyRef.
+
+The handoff must explicitly mark the reference as a rewrite candidate with
+`rewrite_support_status = supported` and a known usage context. `unknown`,
+`requires_test`, or a false candidate flag blocks rewrite planning even when the
+locator and RelativePathType match the laboratory profile.
 
 ## Status
 
@@ -111,6 +117,8 @@ one selected content produces one copy operation
 repeated occurrences produce separate rewrite operations
 same-name different-content collision blocks
 unsupported Live/version/type/locator blocks rewrite
+unknown or unapproved rewrite support evidence blocks rewrite
+outdated resolution policy blocks planning
 copy-only mode contains no rewrite operations
 same input produces the same plan
 tests, clippy and module guard pass

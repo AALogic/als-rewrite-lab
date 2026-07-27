@@ -10,6 +10,7 @@
 - [x] ENFORCED_BY_TEST: duplicate_reference_operations_are_rejected
 - [x] ENFORCED_BY_TEST: repeated_rewrite_does_not_stack_changes
 - [x] ENFORCED_BY_TEST: xml_special_characters_are_escaped_and_round_trip
+- [x] ENFORCED_BY_TEST: unsupported_platform_atomic_replace_fails_closed
 - [x] ENFORCED_BY_TYPE: ALSRewriteRequest
 - [x] ENFORCED_BY_TYPE: ALSRewriteResult
 - [x] ENFORCED_BY_TYPE: ALSRewriteMetadata
@@ -19,4 +20,3 @@
 - [x] REVIEW_ONLY: no global XML search and replace
 - [x] REVIEW_ONLY: original ALS is never writable
 - [x] DOCUMENTED_ONLY: non-Unix atomic replacement remains unsupported
-

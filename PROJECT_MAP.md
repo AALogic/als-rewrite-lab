@@ -93,7 +93,8 @@ project requirement.
 
 Owns candidate evidence, scoring, ambiguity policy, and resolution decisions.
 It is pure and does not touch files. A partial inventory cannot produce an
-automatic match.
+automatic match. Scores rank candidates; without expected content identity or
+an explicit user decision, a candidate remains unselected.
 
 ### `rescue_packaging`
 
@@ -134,7 +135,8 @@ It re-verifies all inputs and files. It does not merge, overwrite, or clean.
 ### `rescue_pipeline`
 
 Owns ordering and fail-closed handoff of the modules above for one laboratory
-run. It contains no duplicate ALS parsing, matching, planning, or rewrite
+run. It requires a confirmed source Project root and keeps every output outside
+that root. It contains no duplicate ALS parsing, matching, planning, or rewrite
 policy.
 
 ### CLI

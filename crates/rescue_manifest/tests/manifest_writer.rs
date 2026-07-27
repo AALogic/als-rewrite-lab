@@ -103,7 +103,7 @@ fn fixture() -> Fixture {
             plan_id: "plan0".to_string(),
             planning_mode: "laboratory_rescue_rewrite".to_string(),
             source_als_hash: source_hash.clone(),
-            resolution_policy_version: "0.1.0".to_string(),
+            resolution_policy_version: "0.2.0".to_string(),
             rewrite_ruleset_version: "live11_3_external_to_imported_v0.1-experimental".to_string(),
             required_asset_count: 1,
             copy_operation_count: 2,

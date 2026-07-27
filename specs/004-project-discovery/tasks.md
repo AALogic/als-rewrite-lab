@@ -16,6 +16,7 @@ Date: 2026-07-27
 - [x] ENFORCED_BY_TEST: nested_set_uses_marker_bearing_ancestor
 - [x] ENFORCED_BY_TEST: backup_set_is_labeled_without_main_set_claim
 - [x] ENFORCED_BY_TEST: absent_marker_keeps_project_root_unknown
+- [x] ENFORCED_BY_TEST: case_variant_marker_is_not_confirmed
 - [x] ENFORCED_BY_TEST: nested_markers_are_ambiguous
 - [x] ENFORCED_BY_TEST: marker_symlink_is_not_confirmed
 - [x] ENFORCED_BY_TEST: source_symlink_is_rejected

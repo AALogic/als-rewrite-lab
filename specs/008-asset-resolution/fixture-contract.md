@@ -8,7 +8,7 @@ All tests use synthetic immutable assessment and inventory contracts.
 Required cases:
 
 ```text
-one exact path + filename + size candidate
+one exact path + filename + size candidate without an expected hash
 filename + size without exact path
 same filename with different content IDs
 two exact high-score paths

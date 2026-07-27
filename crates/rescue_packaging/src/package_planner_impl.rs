@@ -7,7 +7,7 @@ use crate::{
 use rescue_analyzer::DependencyAssessmentResult;
 use rescue_catalog::{AssetInventoryResult, FileOccurrence};
 use rescue_core::ALSReadModel;
-use rescue_resolution::{AssetResolutionResult, ResolutionDecision};
+use rescue_resolution::{AssetResolutionResult, ResolutionDecision, RESOLUTION_POLICY_VERSION};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 
@@ -90,6 +90,18 @@ fn validate_inputs(
         errors.push(error(
             "PACKAGE_INVENTORY_RESOLUTION_MISMATCH",
             "Resolution does not belong to the supplied inventory",
+            None,
+        ));
+    }
+    if resolution.metadata.policy_version != RESOLUTION_POLICY_VERSION
+        || resolution
+            .decisions
+            .iter()
+            .any(|decision| decision.policy_version != RESOLUTION_POLICY_VERSION)
+    {
+        errors.push(error(
+            "PACKAGE_RESOLUTION_POLICY_UNSUPPORTED",
+            "Resolution decisions do not use the required safety policy",
             None,
         ));
     }

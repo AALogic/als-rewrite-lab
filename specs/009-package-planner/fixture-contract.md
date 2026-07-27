@@ -15,6 +15,8 @@ source equals target
 same target filename with different content
 unsupported Live version
 unsupported RelativePathType
+unknown or requires-test rewrite support evidence
+outdated resolution policy
 missing or mismatched locator/ref
 copy-only mode
 unchanged input/output determinism

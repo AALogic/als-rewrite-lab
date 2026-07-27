@@ -47,7 +47,7 @@ tests/fixtures/als/cziki_after_cas.als
 Source provenance:
 
 ```text
-/Users/tru.siak/Documents/TRWAJA GRUBE TESTY/cziki Project/cziki.als
+<private-fixture-source>/cziki.als
 ```
 
 Expected:
@@ -113,7 +113,7 @@ tests/fixtures/als/template_zero_active.als
 Source provenance:
 
 ```text
-/Users/tru.siak/REMIX/TEMPLATE 1.0_TRUSIAK Project/TEMPLATE 1.0_TRUSIAK.als
+<private-fixture-source>/template-zero-active.als
 ```
 
 Expected:
@@ -148,7 +148,7 @@ tests/fixtures/als/kombinacja_piejo.als
 Source provenance:
 
 ```text
-/Users/tru.siak/first new Project/kombinacja piejo.als
+<private-fixture-source>/kombinacja-piejo.als
 ```
 
 Expected:

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 pub const ASSET_RESOLUTION_VERSION: &str = "0.1.0";
-pub const RESOLUTION_POLICY_VERSION: &str = "0.1.0";
+pub const RESOLUTION_POLICY_VERSION: &str = "0.2.0";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AssetResolutionResult {

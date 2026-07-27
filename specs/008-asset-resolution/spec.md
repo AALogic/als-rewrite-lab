@@ -1,6 +1,6 @@
 # Module Spec 008: AssetResolution
 
-Status: ready for implementation, v0.1
+Status: ready for implementation, model v0.1, policy v0.2
 Date: 2026-07-27
 Implementation target: new `rescue_resolution` crate
 
@@ -52,9 +52,14 @@ score >= 95
 exactly one qualifying candidate
 no candidate conflicts
 complete inventory snapshot
+full SHA-256 match against expected content identity supplied upstream
 ```
 
-Otherwise the decision is `needs_user_confirmation` or `unresolved`.
+The current `RequiredAsset v0.1` input contains no expected content hash and no
+explicit user-selection decision. Therefore path, filename, extension, size,
+and a newly observed candidate hash can rank candidates but cannot auto-accept
+one under policy v0.2. Such candidates remain `needs_user_confirmation` until a
+separate supported identity or user-decision contract exists.
 
 ## Output
 
@@ -90,14 +95,14 @@ no filesystem access
 no hidden candidate selection
 no user decision fabrication
 no copy/rewrite/delete
-same name, size or CRC alone never proves identity
+path, name, size, newly observed hash or CRC alone never proves expected identity
 ambiguous high-scoring candidates block automation
 ```
 
 ## Acceptance
 
 ```text
-one exact path/name/size candidate may auto-accept at >=95
+one exact path/name/size candidate requires confirmation without an expected hash
 name/size-only candidates require confirmation
 same-name different-content candidates remain distinct
 high-score ties remain ambiguous

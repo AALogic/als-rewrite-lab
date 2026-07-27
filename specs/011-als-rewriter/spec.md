@@ -71,7 +71,8 @@ Structured errors include `REWRITE_PLAN_NOT_READY`,
 Tests prove targeted three-field change, historical/unrelated preservation,
 snapshot mismatch rejection, old-value mismatch rejection, locator rejection,
 ruleset rejection, duplicate-reference rejection, repeat safety, and XML
-escaping.
+escaping on Unix. Non-Unix tests prove that the unsupported atomic replacement
+adapter fails closed and preserves the staged ALS.
 
 ## Known Limits
 
@@ -80,4 +81,3 @@ platforms fail closed at the isolated I/O adapter until an equivalent
 replace-existing primitive is implemented and tested. Live 9/10/12, type 5,
 same-name collisions, Windows path semantics, and unknown XML contexts remain
 unsupported.
-

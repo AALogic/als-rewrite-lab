@@ -1,9 +1,8 @@
-use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use rescue_pipeline::{run_laboratory_package, LaboratoryPackageRequest};
 use std::fs;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
@@ -21,14 +20,6 @@ fn gzip(xml: &str) -> Vec<u8> {
     let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
     encoder.write_all(xml.as_bytes()).expect("gzip write");
     encoder.finish().expect("gzip finish")
-}
-
-fn gunzip(path: &Path) -> String {
-    let bytes = fs::read(path).expect("ALS bytes");
-    let mut decoder = GzDecoder::new(bytes.as_slice());
-    let mut xml = String::new();
-    decoder.read_to_string(&mut xml).expect("gunzip");
-    xml
 }
 
 fn xml_for(path: &Path, minor: &str, creator: &str) -> String {
@@ -60,6 +51,7 @@ fn fixture() -> Fixture {
     let output_root = temp.path().join("output");
     let evidence_root = temp.path().join("evidence");
     fs::create_dir(&source_root).expect("source");
+    fs::create_dir(source_root.join("Ableton Project Info")).expect("project marker");
     fs::create_dir(&output_root).expect("output");
     fs::create_dir(&evidence_root).expect("evidence");
     let source_als = source_root.join("Set.als");
@@ -98,31 +90,20 @@ fn request(fixture: &Fixture) -> LaboratoryPackageRequest {
 }
 
 #[test]
-fn complete_pipeline_creates_promoted_project_for_manual_check() {
+fn complete_pipeline_blocks_unconfirmed_candidate_before_staging() {
     let fixture = fixture();
     let source_als_before = fs::read(&fixture.source_als).expect("ALS before");
     let source_audio_before = fs::read(&fixture.source_audio).expect("audio before");
     let result = run_laboratory_package(&request(&fixture));
-    assert_eq!(result.run_status, "ready_for_manual_ableton_check");
+    assert_eq!(result.run_status, "resolution_or_plan_blocked");
+    assert_eq!(result.errors[0].error_code, "PIPELINE_PACKAGE_PLAN_BLOCKED");
     assert_eq!(
-        result
-            .promotion
-            .as_ref()
-            .expect("promotion")
-            .promotion_status,
-        "promoted_ready_for_manual_check"
+        result.resolution.as_ref().expect("resolution").decisions[0].decision_status,
+        "needs_user_confirmation"
     );
     assert!(!fixture.staging_root.exists());
-    assert!(fixture.target_root.join("Set.als").exists());
-    assert!(fixture
-        .target_root
-        .join("Samples/Imported/shared.wav")
-        .exists());
-    assert!(fixture
-        .target_root
-        .join("Rescue Manifest/package-manifest.json")
-        .exists());
-    assert!(fixture.ledger_path.exists());
+    assert!(!fixture.target_root.exists());
+    assert!(!fixture.ledger_path.exists());
     assert_eq!(
         fs::read(&fixture.source_als).expect("ALS after"),
         source_als_before
@@ -134,39 +115,21 @@ fn complete_pipeline_creates_promoted_project_for_manual_check() {
 }
 
 #[test]
-fn promoted_als_contains_final_and_relative_paths() {
+fn confirmed_project_root_is_preserved_in_blocked_result() {
     let fixture = fixture();
     let result = run_laboratory_package(&request(&fixture));
-    assert_eq!(result.run_status, "ready_for_manual_ableton_check");
-    let xml = gunzip(&fixture.target_root.join("Set.als"));
-    let document = roxmltree::Document::parse(&xml).expect("rewritten XML");
-    let file_ref = document
-        .descendants()
-        .find(|node| node.has_tag_name("FileRef"))
-        .expect("FileRef");
-    let value = |tag: &str| {
-        file_ref
-            .children()
-            .find(|node| node.has_tag_name(tag))
-            .and_then(|node| node.attribute("Value"))
-            .map(ToString::to_string)
-    };
 
+    assert_eq!(result.run_status, "resolution_or_plan_blocked");
     assert_eq!(
-        value("Path"),
-        Some(
-            fixture
-                .target_root
-                .join("Samples/Imported/shared.wav")
-                .to_string_lossy()
-                .to_string()
-        )
+        result
+            .discovery
+            .as_ref()
+            .expect("discovery")
+            .confirmed_project_root
+            .as_deref(),
+        Some(fixture.source_root.as_path())
     );
-    assert_eq!(
-        value("RelativePath"),
-        Some("Samples/Imported/shared.wav".to_string())
-    );
-    assert_eq!(value("RelativePathType"), Some("3".to_string()));
+    assert_eq!(result.completed_stage, "package_planning");
 }
 
 #[test]
@@ -238,6 +201,53 @@ fn existing_target_is_rejected_before_any_write() {
     assert!(!fixture.staging_root.exists());
 }
 
+#[cfg(unix)]
+#[test]
+fn dangling_output_symlink_is_rejected_before_any_write() {
+    use std::os::unix::fs::symlink;
+
+    let fixture = fixture();
+    symlink(
+        fixture._temp.path().join("missing-target"),
+        &fixture.target_root,
+    )
+    .expect("dangling target symlink");
+    let result = run_laboratory_package(&request(&fixture));
+
+    assert_eq!(result.run_status, "rejected_before_read");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| error.error_code == "PIPELINE_OUTPUT_ALREADY_EXISTS"));
+    assert!(fs::symlink_metadata(&fixture.target_root).is_ok());
+    assert!(!fixture.staging_root.exists());
+    assert!(!fixture.ledger_path.exists());
+}
+
+#[test]
+fn outputs_inside_confirmed_project_root_are_rejected() {
+    for output in ["staging", "target", "ledger"] {
+        let fixture = fixture();
+        let mut request = request(&fixture);
+        match output {
+            "staging" => request.staging_root = fixture.source_root.join("unsafe.staging"),
+            "target" => request.target_project_root = fixture.source_root.join("unsafe-target"),
+            "ledger" => {
+                request.private_ledger_path = fixture.source_root.join("unsafe-ledger.json")
+            }
+            _ => unreachable!(),
+        }
+        let result = run_laboratory_package(&request);
+
+        assert_eq!(result.run_status, "read_stage_failed");
+        assert!(result
+            .errors
+            .iter()
+            .any(|error| error.error_code == "PIPELINE_OUTPUT_INSIDE_SOURCE_PROJECT"));
+        assert!(result.inventory.is_none());
+    }
+}
+
 #[test]
 fn unbounded_filesystem_root_is_rejected() {
     let fixture = fixture();
@@ -278,19 +288,19 @@ fn unsupported_live_version_blocks_before_staging() {
 }
 
 #[test]
-fn portable_manifest_redacts_every_laboratory_absolute_path() {
+fn unknown_project_root_blocks_before_inventory_and_writes() {
     let fixture = fixture();
+    fs::remove_dir(fixture.source_root.join("Ableton Project Info"))
+        .expect("remove synthetic project marker");
     let result = run_laboratory_package(&request(&fixture));
-    assert_eq!(result.run_status, "ready_for_manual_ableton_check");
-    let manifest = fs::read_to_string(
-        fixture
-            .target_root
-            .join("Rescue Manifest/package-manifest.json"),
-    )
-    .expect("manifest");
 
-    assert!(!manifest.contains(fixture._temp.path().to_string_lossy().as_ref()));
-    assert!(!manifest.contains(fixture.source_als.to_string_lossy().as_ref()));
-    assert!(!manifest.contains(fixture.source_audio.to_string_lossy().as_ref()));
-    assert!(manifest.contains("Samples/Imported/shared.wav"));
+    assert_eq!(result.run_status, "read_stage_failed");
+    assert_eq!(
+        result.errors[0].error_code,
+        "PIPELINE_PROJECT_ROOT_UNCONFIRMED"
+    );
+    assert!(result.inventory.is_none());
+    assert!(!fixture.staging_root.exists());
+    assert!(!fixture.target_root.exists());
+    assert!(!fixture.ledger_path.exists());
 }

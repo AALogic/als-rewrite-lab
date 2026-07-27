@@ -475,7 +475,7 @@ Najprostszy setup:
 
 ```text
 Open Folder:
-/Users/tru.siak/Documents/New project
+$WORKSPACE
 ```
 
 W VS Code korzystasz glownie z:

@@ -102,7 +102,7 @@ marker. A symlink, file, inaccessible entry, or case variant is not accepted.
 
 ```text
 read metadata only
-check one explicit marker path per ancestor
+inspect only direct entry names and marker metadata per ancestor
 never recursively walk directories
 never canonicalize or follow symlinks
 never create, rename, delete, copy, or write

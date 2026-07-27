@@ -107,6 +107,20 @@ fn absent_marker_keeps_project_root_unknown() {
 }
 
 #[test]
+fn case_variant_marker_is_not_confirmed() {
+    let tree = TempTree::new("case_variant");
+    let project = tree.root.join("Project");
+    fs::create_dir_all(project.join("ableton project info"))
+        .expect("case-variant marker should exist");
+    let als = tree.als("Project/Set.als");
+    let result = discover(&als);
+
+    assert_eq!(result.discovery_status, "unknown");
+    assert_eq!(result.confirmed_project_root, None);
+    assert!(result.candidates.is_empty());
+}
+
+#[test]
 fn nested_markers_are_ambiguous() {
     let tree = TempTree::new("ambiguous");
     tree.marker("Outer");

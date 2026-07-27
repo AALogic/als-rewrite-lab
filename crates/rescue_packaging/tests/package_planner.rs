@@ -5,11 +5,39 @@ use rescue_packaging::{plan_package, PackagePlanningRequest};
 use rescue_resolution::{AssetResolutionMetadata, AssetResolutionResult, ResolutionDecision};
 use std::path::PathBuf;
 
+#[cfg(windows)]
+fn native_absolute(parts: &[&str]) -> PathBuf {
+    let mut path = PathBuf::from(r"C:\");
+    path.extend(parts);
+    path
+}
+
+#[cfg(not(windows))]
+fn native_absolute(parts: &[&str]) -> PathBuf {
+    let mut path = PathBuf::from("/");
+    path.extend(parts);
+    path
+}
+
+fn native_fixture_path(path: &str) -> PathBuf {
+    native_absolute(
+        &path
+            .split('/')
+            .filter(|component| !component.is_empty())
+            .collect::<Vec<_>>(),
+    )
+}
+
 fn active_ref(index: usize) -> ActiveAudioReference {
+    let filename = format!("sample{index}.wav");
     ActiveAudioReference {
         ref_id: index,
         source_kind: "sample_ref".to_string(),
-        raw_path: Some(format!("/source/sample{index}.wav")),
+        raw_path: Some(
+            native_absolute(&["source", &filename])
+                .to_string_lossy()
+                .to_string(),
+        ),
         raw_relative_path: Some(format!("../sample{index}.wav")),
         relative_path_type: Some("1".to_string()),
         file_type: Some("1".to_string()),
@@ -19,11 +47,11 @@ fn active_ref(index: usize) -> ActiveAudioReference {
         original_crc: Some("42".to_string()),
         default_duration: None,
         default_sample_rate: None,
-        usage_context: "unknown".to_string(),
+        usage_context: "audio_clip".to_string(),
         xml_context: "Ableton/LiveSet/SampleRef/FileRef".to_string(),
         xml_locator: format!("SampleRef[{index}]/FileRef"),
-        is_rewrite_candidate: false,
-        rewrite_support_status: "requires_test".to_string(),
+        is_rewrite_candidate: true,
+        rewrite_support_status: "supported".to_string(),
         warnings: Vec::new(),
     }
 }
@@ -31,7 +59,9 @@ fn active_ref(index: usize) -> ActiveAudioReference {
 fn als_model(reference_count: usize) -> ALSReadModel {
     ALSReadModel {
         set_metadata: SetMetadata {
-            source_als_path: "/source/Set.als".to_string(),
+            source_als_path: native_absolute(&["source", "Set.als"])
+                .to_string_lossy()
+                .to_string(),
             source_als_filename: Some("Set.als".to_string()),
             source_project_root: None,
             source_file_size: 500,
@@ -89,7 +119,9 @@ fn assessment(assets: Vec<RequiredAsset>) -> DependencyAssessmentResult {
             assessment_version: "0.1.0".to_string(),
             input_dependency_ref_version: "0.1".to_string(),
             input_path_observation_model_version: "0.2".to_string(),
-            source_als_path: "/source/Set.als".to_string(),
+            source_als_path: native_absolute(&["source", "Set.als"])
+                .to_string_lossy()
+                .to_string(),
             source_file_hash: "als-hash".to_string(),
             occurrence_count,
             required_asset_count: assets.len(),
@@ -112,8 +144,8 @@ fn inventory(files: &[(&str, &str, &str)]) -> AssetInventoryResult {
         .map(|(index, (path, filename, digest))| FileOccurrence {
             file_occurrence_id: format!("occ{index}"),
             content_id: format!("sha256:{digest}"),
-            source_root: PathBuf::from("/source"),
-            native_path: PathBuf::from(path),
+            source_root: native_absolute(&["source"]),
+            native_path: native_fixture_path(path),
             relative_path: PathBuf::from(filename),
             filename: (*filename).to_string(),
             extension: "wav".to_string(),
@@ -178,8 +210,8 @@ fn resolution(
                     .then(|| occurrence.map(|item| item.content_id.clone()))
                     .flatten(),
                 score: accepted.then_some(100),
-                policy_version: "0.1.0".to_string(),
-                decision_basis: "fixture".to_string(),
+                policy_version: "0.2.0".to_string(),
+                decision_basis: "strong_expected_content_identity_match".to_string(),
                 requires_user_confirmation: !accepted && statuses[index] != "unresolved",
             }
         })
@@ -187,7 +219,7 @@ fn resolution(
     AssetResolutionResult {
         metadata: AssetResolutionMetadata {
             resolution_version: "0.1.0".to_string(),
-            policy_version: "0.1.0".to_string(),
+            policy_version: "0.2.0".to_string(),
             input_assessment_version: "0.1.0".to_string(),
             input_inventory_version: "0.1.0".to_string(),
             scan_run_id: "scan0".to_string(),
@@ -218,7 +250,7 @@ fn resolution(
 fn request(mode: &str) -> PackagePlanningRequest {
     PackagePlanningRequest {
         plan_id: "plan0".to_string(),
-        target_project_root: PathBuf::from("/target/Project"),
+        target_project_root: native_absolute(&["target", "Project"]),
         planning_mode: mode.to_string(),
     }
 }
@@ -297,7 +329,7 @@ fn unresolved_decision_blocks_plan() {
 fn target_equal_to_source_is_rejected() {
     let (model, assessment, inventory, resolution) = valid_inputs(1);
     let mut request = request("copy_only");
-    request.target_project_root = PathBuf::from("/source");
+    request.target_project_root = native_absolute(&["source"]);
     let plan = plan_package(&request, &model, &assessment, &inventory, &resolution);
 
     assert_eq!(plan.plan_status, "blocked");
@@ -369,6 +401,48 @@ fn unsupported_relative_path_type_blocks_rewrite() {
         plan.unresolved_requirements[0].reason,
         "rewrite_reference_not_supported"
     );
+}
+
+#[test]
+fn unknown_rewrite_support_blocks_rewrite() {
+    let (mut model, assessment, inventory, resolution) = valid_inputs(1);
+    model.active_audio_references[0].usage_context = "unknown".to_string();
+    model.active_audio_references[0].is_rewrite_candidate = false;
+    model.active_audio_references[0].rewrite_support_status = "requires_test".to_string();
+    let plan = plan_package(
+        &request("laboratory_rescue_rewrite"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "blocked");
+    assert_eq!(
+        plan.unresolved_requirements[0].reason,
+        "rewrite_reference_not_supported"
+    );
+    assert!(plan.rewrite_operations.is_empty());
+}
+
+#[test]
+fn outdated_resolution_policy_blocks_plan() {
+    let (model, assessment, inventory, mut resolution) = valid_inputs(1);
+    resolution.metadata.policy_version = "0.1.0".to_string();
+    resolution.decisions[0].policy_version = "0.1.0".to_string();
+    let plan = plan_package(
+        &request("copy_only"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "blocked");
+    assert!(plan
+        .errors
+        .iter()
+        .any(|error| error.error_code == "PACKAGE_RESOLUTION_POLICY_UNSUPPORTED"));
 }
 
 #[test]

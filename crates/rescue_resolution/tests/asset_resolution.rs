@@ -134,7 +134,7 @@ fn inventory(status: &str, files: &[(&str, &str, u64, &str)]) -> AssetInventoryR
 }
 
 #[test]
-fn exact_path_name_and_size_auto_accepts() {
+fn exact_path_name_and_size_requires_confirmation_without_expected_hash() {
     let assessment = assessment(required_asset(
         Some("kick.wav"),
         Some("100"),
@@ -145,8 +145,17 @@ fn exact_path_name_and_size_auto_accepts() {
     let result = resolve_assets(&assessment, &inventory);
 
     assert_eq!(result.proposals[0].candidates[0].score, 100);
-    assert_eq!(result.decisions[0].decision_status, "auto_accepted");
-    assert!(!result.decisions[0].requires_user_confirmation);
+    assert_eq!(
+        result.decisions[0].decision_status,
+        "needs_user_confirmation"
+    );
+    assert_eq!(result.decisions[0].selected_candidate_id, None);
+    assert!(result.decisions[0].requires_user_confirmation);
+    assert_eq!(result.decisions[0].policy_version, "0.2.0");
+    assert!(result
+        .warnings
+        .iter()
+        .any(|warning| warning.warning_code == "RESOLUTION_STRONG_IDENTITY_REQUIRED"));
 }
 
 #[test]
@@ -164,7 +173,10 @@ fn path_observer_status_v0_2_is_consumed_without_translation() {
         .evidence
         .iter()
         .any(|evidence| evidence.evidence_code == "exact_observed_native_path"));
-    assert_eq!(result.decisions[0].decision_status, "auto_accepted");
+    assert_eq!(
+        result.decisions[0].decision_status,
+        "needs_user_confirmation"
+    );
 }
 
 #[test]
@@ -306,7 +318,7 @@ fn resolution_output_is_deterministic() {
 }
 
 #[test]
-fn fake_package_planner_consumes_resolution_decisions() {
+fn fake_package_planner_receives_no_unconfirmed_selection() {
     fn accepted_sources(result: &AssetResolutionResult) -> Vec<(&str, &str)> {
         result
             .decisions
@@ -333,5 +345,7 @@ fn fake_package_planner_consumes_resolution_decisions() {
     let inventory = inventory("complete", &[("/audio/kick.wav", "kick.wav", 100, "aaa")]);
     let result = resolve_assets(&assessment, &inventory);
 
-    assert_eq!(accepted_sources(&result), vec![("asset0", "occ0")]);
+    assert!(accepted_sources(&result).is_empty());
+    assert_eq!(result.metadata.auto_accepted_count, 0);
+    assert_eq!(result.metadata.manual_review_count, 1);
 }

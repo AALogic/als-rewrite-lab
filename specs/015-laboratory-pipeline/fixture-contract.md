@@ -1,8 +1,12 @@
 # Fixture Contract: 015 LaboratoryPipeline
 
 Automated tests create a complete synthetic ALS, audio source, scan scope,
-staging root, target root, and private-ledger parent under a temporary directory.
+exact Ableton Project marker, staging root, target root, and private-ledger
+parent under a temporary directory.
 All destructive setup operations affect only that temporary fixture.
+
+Safety variants cover an absent marker, outputs inside the confirmed Project,
+and a dangling output symlink where the platform supports symlink fixtures.
 
 The real-data laboratory run uses only ALS and audio copies under the dedicated
 overnight laboratory directory. Original user projects and samples remain

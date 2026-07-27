@@ -2,14 +2,16 @@
 
 - [x] Define LaboratoryPackageRequest v0.1.
 - [x] Define LaboratoryPackageResult v0.1.
-- [x] ENFORCED_BY_TEST: complete_pipeline_creates_promoted_project_for_manual_check
-- [x] ENFORCED_BY_TEST: promoted_als_contains_final_and_relative_paths
+- [x] ENFORCED_BY_TEST: complete_pipeline_blocks_unconfirmed_candidate_before_staging
+- [x] ENFORCED_BY_TEST: confirmed_project_root_is_preserved_in_blocked_result
 - [x] ENFORCED_BY_TEST: missing_sample_blocks_before_staging
 - [x] ENFORCED_BY_TEST: ambiguous_same_name_candidates_block_before_staging
 - [x] ENFORCED_BY_TEST: existing_target_is_rejected_before_any_write
+- [x] ENFORCED_BY_TEST: dangling_output_symlink_is_rejected_before_any_write
+- [x] ENFORCED_BY_TEST: outputs_inside_confirmed_project_root_are_rejected
+- [x] ENFORCED_BY_TEST: unknown_project_root_blocks_before_inventory_and_writes
 - [x] ENFORCED_BY_TEST: unbounded_filesystem_root_is_rejected
 - [x] ENFORCED_BY_TEST: unsupported_live_version_blocks_before_staging
-- [x] ENFORCED_BY_TEST: portable_manifest_redacts_every_laboratory_absolute_path
 - [x] ENFORCED_BY_TYPE: LaboratoryPackageRequest
 - [x] ENFORCED_BY_TYPE: LaboratoryPackageResult
 - [x] ENFORCED_BY_TYPE: LaboratoryPackageError

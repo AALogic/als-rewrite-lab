@@ -21,6 +21,7 @@
     "ENFORCED_BY_TEST: duplicate_reference_operations_are_rejected",
     "ENFORCED_BY_TEST: repeated_rewrite_does_not_stack_changes",
     "ENFORCED_BY_TEST: xml_special_characters_are_escaped_and_round_trip",
+    "ENFORCED_BY_TEST: unsupported_platform_atomic_replace_fails_closed",
     "ENFORCED_BY_TYPE: ALSRewriteRequest",
     "ENFORCED_BY_TYPE: ALSRewriteResult",
     "ENFORCED_BY_TYPE: ALSRewriteMetadata",
@@ -40,7 +41,8 @@
     "incomplete_staging_is_rejected",
     "duplicate_reference_operations_are_rejected",
     "repeated_rewrite_does_not_stack_changes",
-    "xml_special_characters_are_escaped_and_round_trip"
+    "xml_special_characters_are_escaped_and_round_trip",
+    "unsupported_platform_atomic_replace_fails_closed"
   ],
   "required_tests_must_not_be_ignored": true,
   "required_tests_must_have_substance": true,

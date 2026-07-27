@@ -207,7 +207,7 @@ fn xml_context_does_not_duplicate_the_observed_element() {
 fn filename_from_handles_windows_backslashes_on_macos() {
     let fixture = gzip_als(
         "windows_backslash_path",
-        &minimal_ableton_with_file_ref(r"C:\Users\Bartosz\Samples\kick.wav", ""),
+        &minimal_ableton_with_file_ref(r"C:\Users\fixture\Samples\kick.wav", ""),
     );
     let model = analyze_als(fixture.path()).unwrap();
 
@@ -216,7 +216,7 @@ fn filename_from_handles_windows_backslashes_on_macos() {
     assert_eq!(first.extension.as_deref(), Some("wav"));
     assert_eq!(
         first.raw_path.as_deref(),
-        Some(r"C:\Users\Bartosz\Samples\kick.wav")
+        Some(r"C:\Users\fixture\Samples\kick.wav")
     );
 }
 

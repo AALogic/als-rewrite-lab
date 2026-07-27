@@ -34,7 +34,8 @@ It contains orchestration only; each domain rule remains owned by its module.
 Original Ableton projects and media are read-only.
 Raw ALS facts, filesystem observations, identity evidence, and decisions remain separate.
 Path availability is not asset identity.
-Partial inventory cannot authorize automatic matching.
+Partial inventory cannot authorize automatic matching, and scores alone do not
+replace expected content identity or an explicit user decision.
 Wrong sample match is worse than an unresolved sample.
 No ready plan means no write-capable stage.
 Rewrite applies only to a copied ALS and a snapshot-bound allowlist.

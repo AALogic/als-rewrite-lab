@@ -1,6 +1,6 @@
 # Current State
 
-Status: laboratory vertical slice implemented and verified on an isolated branch
+Status: laboratory vertical slice under fail-closed safety review on an isolated branch
 
 Date: 2026-07-27
 
@@ -69,8 +69,8 @@ For one selected Live 11.3 ALS with supported external audio references, it can:
 4. group references into required assets;
 5. produce a read-only preflight report;
 6. scan explicitly selected local folders and hash audio files;
-7. rank candidates and auto-accept only a unique high-confidence result from a
-   complete inventory;
+7. rank candidates while requiring expected content identity or an explicit
+   user decision before selection;
 8. build an immutable copy/rewrite plan;
 9. copy source ALS and selected audio into fresh staging with hash checks;
 10. rewrite only approved `Path`, `RelativePath`, and
@@ -79,12 +79,23 @@ For one selected Live 11.3 ALS with supported external audio references, it can:
 12. write a full private ledger outside the package and a redacted portable
     manifest inside it;
 13. rename validated staging to an absent final target;
-14. leave the result marked `ready_for_manual_ableton_check`.
+14. leave the result marked `ready_for_manual_ableton_check` only when every
+    upstream safety contract is explicit.
 
-## 4. Real Laboratory Evidence
+The current composed request contract has no expected content hash or explicit
+user-selection input, and ALSReader still reports active references as
+`usage_context = unknown`, `is_rewrite_candidate = false`, and
+`rewrite_support_status = requires_test`. AssetResolution policy v0.2 and
+PackagePlanner therefore block the laboratory pipeline before staging. The
+write modules remain implemented and isolated, but the composed pipeline no
+longer turns path/name/size evidence or unknown rewrite context into writes.
 
-A copied one-reference ALS was run through the complete pipeline while its real
-audio source remained read-only.
+## 4. Historical Real Laboratory Evidence
+
+Before the fail-closed policy correction above, a copied one-reference ALS was
+run through the complete pipeline while its real audio source remained
+read-only. This proves the isolated mechanics, not that the former automatic
+selection and rewrite authorization policy remains accepted.
 
 ```text
 filesystem entries visited: 68,568
@@ -118,7 +129,7 @@ dedicated laboratory directory.
 
 ## 5. Quality State
 
-Current branch verification:
+Pre-review branch verification baseline:
 
 ```text
 cargo fmt --check: PASS
@@ -134,9 +145,10 @@ emitted `safe_for_metadata_read`, while AssetResolution expected an invented
 `accepted` value. A cross-module regression test now enforces the actual v0.2
 handoff.
 
-A real scan also exposed very slow portable SHA-256 hashing. The workspace now
-uses one shared `sha2` configuration with the supported assembly backend.
-Digest behavior stayed unchanged. Windows builds still require CI validation.
+A real scan exposed slow portable SHA-256 hashing. The global assembly feature
+was removed because its locked backend does not compile on Windows; digest
+behavior remains portable, and acceleration may return only behind a supported
+target-specific configuration. Windows builds still require CI validation.
 
 ## 6. Hard Boundaries
 
@@ -148,7 +160,10 @@ no recursive deletion or cleanup
 no overwrite or merge into an existing target
 no write before a ready immutable plan
 no automatic choice from partial inventory
+no automatic choice without expected content identity or explicit user selection
 no automatic choice for tied or low-confidence candidates
+no write when Project root discovery is unknown or outputs are inside that root
+no rewrite unless the ALS handoff explicitly marks the reference supported
 no rewrite outside the supported ruleset and exact source snapshot
 no promotion before independent validation and manifests
 ```

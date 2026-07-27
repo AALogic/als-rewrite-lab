@@ -274,7 +274,8 @@ recovery:
 ```text
 read and report dependencies
 scan explicitly selected local scopes
-resolve only unique high-confidence candidates from a complete inventory
+rank candidates from a complete inventory and select only with expected content
+identity or an explicit user decision
 build and inspect an immutable plan
 create a fresh staged package
 rewrite only a confirmed laboratory ALS profile

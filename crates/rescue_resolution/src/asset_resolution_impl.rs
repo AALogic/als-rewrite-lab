@@ -8,6 +8,7 @@ use rescue_analyzer::{DependencyAssessmentResult, RequiredAsset};
 use rescue_catalog::AssetInventoryResult;
 
 const AUTO_ACCEPT_THRESHOLD: u8 = 95;
+const STRONG_IDENTITY_EVIDENCE: &str = "expected_content_sha256_match";
 
 pub(crate) fn resolve_assets_impl(
     assessment: &DependencyAssessmentResult,
@@ -116,8 +117,13 @@ fn decide(
             candidate.score >= AUTO_ACCEPT_THRESHOLD && candidate.conflicts.is_empty()
         })
         .collect();
-    if scan_status == "complete" && qualified.len() == 1 {
-        return accepted_decision(asset, qualified[0]);
+    let strongly_identified: Vec<_> = qualified
+        .iter()
+        .copied()
+        .filter(|candidate| has_strong_expected_identity(candidate))
+        .collect();
+    if scan_status == "complete" && strongly_identified.len() == 1 {
+        return accepted_decision(asset, strongly_identified[0]);
     }
     if qualified.len() > 1 {
         push_warning(
@@ -127,11 +133,31 @@ fn decide(
             Some(&asset.required_asset_id),
         );
     }
+    if qualified.len() == 1 && strongly_identified.is_empty() {
+        push_warning(
+            warnings,
+            "RESOLUTION_STRONG_IDENTITY_REQUIRED",
+            "Candidate lacks a full-hash match against expected content identity",
+            Some(&asset.required_asset_id),
+        );
+    }
     if candidates.is_empty() {
         unresolved_decision(asset)
     } else {
-        manual_decision(asset, scan_status, qualified.len())
+        manual_decision(
+            asset,
+            scan_status,
+            qualified.len(),
+            strongly_identified.len(),
+        )
     }
+}
+
+fn has_strong_expected_identity(candidate: &ResolutionCandidate) -> bool {
+    candidate
+        .evidence
+        .iter()
+        .any(|evidence| evidence.evidence_code == STRONG_IDENTITY_EVIDENCE)
 }
 
 fn accepted_decision(asset: &RequiredAsset, candidate: &ResolutionCandidate) -> ResolutionDecision {
@@ -143,7 +169,7 @@ fn accepted_decision(asset: &RequiredAsset, candidate: &ResolutionCandidate) -> 
         selected_content_id: Some(candidate.content_id.clone()),
         score: Some(candidate.score),
         policy_version: RESOLUTION_POLICY_VERSION.to_string(),
-        decision_basis: "single_candidate_at_or_above_threshold".to_string(),
+        decision_basis: "strong_expected_content_identity_match".to_string(),
         requires_user_confirmation: false,
     }
 }
@@ -152,11 +178,16 @@ fn manual_decision(
     asset: &RequiredAsset,
     scan_status: &str,
     qualified_count: usize,
+    strongly_identified_count: usize,
 ) -> ResolutionDecision {
     let basis = if scan_status != "complete" {
         "inventory_incomplete"
+    } else if strongly_identified_count > 1 {
+        "ambiguous_strong_identity_candidates"
     } else if qualified_count > 1 {
         "ambiguous_high_confidence_candidates"
+    } else if qualified_count == 1 {
+        "strong_expected_content_identity_missing"
     } else {
         "candidate_below_automatic_threshold"
     };

@@ -1,5 +1,7 @@
 use crate::{LaboratoryPackageError, LaboratoryPackageRequest};
+use rescue_analyzer::ProjectDiscoveryResult;
 use std::fs;
+use std::io;
 use std::path::{Component, Path};
 
 pub(crate) fn validate_request(request: &LaboratoryPackageRequest) -> Vec<LaboratoryPackageError> {
@@ -94,13 +96,13 @@ fn validate_output_paths(
             "Source, staging, target, and private ledger scopes must be isolated",
         ));
     }
-    if request.staging_root.exists() || request.target_project_root.exists() {
+    if path_is_occupied(&request.staging_root) || path_is_occupied(&request.target_project_root) {
         errors.push(error(
             "PIPELINE_OUTPUT_ALREADY_EXISTS",
             "Fresh laboratory staging and target paths must not exist",
         ));
     }
-    if request.private_ledger_path.exists() {
+    if path_is_occupied(&request.private_ledger_path) {
         errors.push(error(
             "PIPELINE_PRIVATE_LEDGER_EXISTS",
             "Fresh laboratory private ledger path must not exist",
@@ -121,6 +123,45 @@ fn validate_output_paths(
     }
 }
 
+pub(crate) fn validate_discovered_project(
+    request: &LaboratoryPackageRequest,
+    discovery: &ProjectDiscoveryResult,
+) -> Option<LaboratoryPackageError> {
+    let Some(project_root) = discovery.confirmed_project_root.as_deref() else {
+        return Some(project_error(
+            "PIPELINE_PROJECT_ROOT_UNCONFIRMED",
+            "A confirmed Ableton Project root is required before any write-capable flow",
+        ));
+    };
+    if discovery.discovery_status != "confirmed" {
+        return Some(project_error(
+            "PIPELINE_PROJECT_ROOT_UNCONFIRMED",
+            "Project discovery did not produce one confirmed Ableton Project root",
+        ));
+    }
+    if [
+        &request.staging_root,
+        &request.target_project_root,
+        &request.private_ledger_path,
+    ]
+    .iter()
+    .any(|path| path.starts_with(project_root))
+    {
+        return Some(project_error(
+            "PIPELINE_OUTPUT_INSIDE_SOURCE_PROJECT",
+            "Staging, target, and private ledger paths must remain outside the source Project root",
+        ));
+    }
+    None
+}
+
+fn path_is_occupied(path: &Path) -> bool {
+    match fs::symlink_metadata(path) {
+        Ok(_) => true,
+        Err(error) => error.kind() != io::ErrorKind::NotFound,
+    }
+}
+
 fn valid_directory(path: &Path) -> Option<()> {
     let metadata = fs::symlink_metadata(path).ok()?;
     (metadata.file_type().is_dir() && !metadata.file_type().is_symlink()).then_some(())
@@ -137,6 +178,14 @@ fn error(code: &str, message: &str) -> LaboratoryPackageError {
     LaboratoryPackageError {
         error_code: code.to_string(),
         stage: "request_validation".to_string(),
+        message: message.to_string(),
+    }
+}
+
+fn project_error(code: &str, message: &str) -> LaboratoryPackageError {
+    LaboratoryPackageError {
+        error_code: code.to_string(),
+        stage: "project_discovery".to_string(),
         message: message.to_string(),
     }
 }

@@ -25,7 +25,7 @@ Spec first. Core first. UI later.
 Rootem projektu jest:
 
 ```text
-/Users/tru.siak/Documents/New project/als-rewrite-lab
+$WORKSPACE/als-rewrite-lab
 ```
 
 Ten folder mozna pozniej otworzyc w VS Code jako:

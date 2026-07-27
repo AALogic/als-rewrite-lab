@@ -80,10 +80,10 @@ Eksperyment:
 
 ```text
 source:
-/Users/tru.siak/Documents/TRWAJA GRUBE TESTY/cziki Project
+<private-lab-root>/source-project
 
 target:
-/Users/tru.siak/Documents/TRWAJA GRUBE TESTY/COXED twoja kolej
+<private-lab-root>/relocated-project
 ```
 
 Operacja:

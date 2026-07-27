@@ -24,15 +24,6 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_ROOTS = [
-    Path("/Users/tru.siak/cover"),
-    Path("/Users/tru.siak/POLISHBOYS LIVE "),
-    Path("/Users/tru.siak/REMIX"),
-    Path("/Users/tru.siak/TRU.SIAK LIVE"),
-    Path("/Users/tru.siak/ZGRANIA"),
-    Path("/Users/tru.siak/Downloads"),
-]
-
 EXCLUDE_PARTS = {
     ".Trash",
     ".git",
@@ -675,7 +666,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment-dir", required=True, type=Path)
     parser.add_argument("--limit", default=20, type=int)
-    parser.add_argument("--roots", nargs="*", type=Path, default=DEFAULT_ROOTS)
+    parser.add_argument("--roots", nargs="+", required=True, type=Path)
     args = parser.parse_args()
 
     experiment_dir = args.experiment_dir

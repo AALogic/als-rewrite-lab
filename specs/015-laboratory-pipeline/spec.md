@@ -9,8 +9,10 @@ modifying source files.
 
 ## Gate Status
 
-CONFIRMED for explicit laboratory paths, one selected ALS, bounded audio scan
-roots, and the currently supported Live 11 rewrite profile.
+PARTIAL for read-only composition and fail-closed planning. Execution remains
+blocked until the request flow has an explicit user-selection or expected
+content-identity contract and ALSReader supplies explicit supported rewrite
+evidence for every planned reference.
 
 ## Inputs
 
@@ -54,7 +56,10 @@ No write-capable module is called before the package plan is ready.
 - `/` and equivalent unbounded scan roots are rejected.
 - Staging, final target, or private ledger paths that already exist are
   rejected before ALS reading.
+- A dangling symlink or inaccessible output entry is treated as occupied.
 - Output scopes must be isolated from the source and from one another.
+- Project discovery must confirm exactly one structural Ableton Project root,
+  and every output must remain outside it.
 - The pipeline never removes, merges, cleans, or overwrites user data.
 - Ambiguous or unresolved dependencies block before staging.
 - Unsupported rewrite evidence blocks before staging.
@@ -78,11 +83,12 @@ ledger paths.
 
 ## Acceptance Criteria
 
-Tests prove a complete promotion while sources remain byte-identical, correct
-final ALS paths, blocking before staging for missing or ambiguous samples,
-existing-target protection, bounded scan enforcement, unsupported Live-version
-blocking, and redaction of laboratory absolute paths from the portable
-manifest.
+Tests prove that unconfirmed candidate identity, unknown Project roots, outputs
+inside a confirmed source Project, missing or ambiguous samples, existing or
+symlink outputs, unbounded scans, and unsupported Live versions all block
+before staging. Write modules retain their isolated tests, but the composed
+pipeline does not claim a successful package until the missing decision and
+rewrite-support contracts exist.
 
 ## Does Not Do
 

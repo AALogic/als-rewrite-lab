@@ -71,24 +71,27 @@ def historical_refs(root: ET.Element) -> list[dict[str, str | None]]:
 def canonical_node(
     node: ET.Element,
     parent_tag: str | None,
+    parent_is_direct_active_file_ref: bool,
     allowed_active_fields: set[str],
 ) -> Any:
     attributes = dict(sorted(node.attrib.items()))
     if (
-        parent_tag == "FileRef"
+        parent_is_direct_active_file_ref
         and node.tag in allowed_active_fields
         and node.attrib.get("Value") is not None
     ):
         attributes["Value"] = "<allowed-active-value>"
     children = []
+    is_direct_active_file_ref = node.tag == "FileRef" and parent_tag == "SampleRef"
     for child in node:
-        child_parent = (
-            "FileRef"
-            if node.tag == "FileRef"
-            and parent_tag == "SampleRef"
-            else node.tag
+        children.append(
+            canonical_node(
+                child,
+                node.tag,
+                is_direct_active_file_ref,
+                allowed_active_fields,
+            )
         )
-        children.append(canonical_node(child, child_parent, allowed_active_fields))
     return [
         node.tag,
         attributes,
@@ -98,7 +101,7 @@ def canonical_node(
 
 
 def semantic_hash(root: ET.Element, allowed_active_fields: Iterable[str]) -> str:
-    canonical = canonical_node(root, None, set(allowed_active_fields))
+    canonical = canonical_node(root, None, False, set(allowed_active_fields))
     encoded = json.dumps(
         canonical,
         ensure_ascii=False,

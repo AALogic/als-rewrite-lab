@@ -3,6 +3,7 @@ use crate::{
     ProjectDiscoveryResult, ProjectDiscoveryWarning, ProjectRootCandidate,
     PROJECT_DISCOVERY_VERSION,
 };
+use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::path::{Component, Path, PathBuf};
@@ -57,7 +58,19 @@ fn inspect_marker(
     candidates: &mut Vec<ProjectRootCandidate>,
     warnings: &mut Vec<ProjectDiscoveryWarning>,
 ) {
-    let marker = ancestor.join(PROJECT_MARKER);
+    let marker = match exact_marker_path(ancestor) {
+        Ok(Some(marker)) => marker,
+        Ok(None) => return,
+        Err(_) => {
+            warnings.push(warning(
+                warnings.len(),
+                "PROJECT_MARKER_INACCESSIBLE",
+                "Ableton Project Info marker entry could not be inspected",
+                ancestor.join(PROJECT_MARKER),
+            ));
+            return;
+        }
+    };
     match fs::symlink_metadata(&marker) {
         Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {
             candidates.push(ProjectRootCandidate {
@@ -87,6 +100,16 @@ fn inspect_marker(
             marker,
         )),
     }
+}
+
+fn exact_marker_path(ancestor: &Path) -> io::Result<Option<PathBuf>> {
+    for entry in fs::read_dir(ancestor)? {
+        let entry = entry?;
+        if entry.file_name() == OsStr::new(PROJECT_MARKER) {
+            return Ok(Some(entry.path()));
+        }
+    }
+    Ok(None)
 }
 
 fn completed_result(
