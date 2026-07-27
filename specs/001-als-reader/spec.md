@@ -259,6 +259,28 @@ historical_refs
 non_audio_dependency_signals
 ```
 
+Rewrite evidence handoff, promoted for an explicit writer consumer:
+
+```text
+SetMetadata.source_als_path
+SetMetadata.source_file_hash
+SetMetadata.ableton_document_version
+SetMetadata.ableton_creator_version
+SetMetadata.ableton_minor_version
+ActiveAudioReference.ref_id
+ActiveAudioReference.raw_path
+ActiveAudioReference.raw_relative_path
+ActiveAudioReference.relative_path_type
+ActiveAudioReference.xml_locator
+ActiveAudioReference.is_rewrite_candidate
+ActiveAudioReference.rewrite_support_status
+```
+
+This is not part of the DependencyExtractor core handoff. PackagePlanner and
+ALSRewriter may consume it only under ADR-005, tied to the exact source hash and
+a versioned E-03 support rule. A locator is not stable identity across an
+arbitrary Ableton save.
+
 Diagnostic-only or preserve-for-future examples:
 
 ```text
