@@ -1,7 +1,7 @@
 # Module Spec 003: PathObservation
 
-Status: blocked pending evidence, draft v0.2  
-Date: 2026-07-26  
+Status: ready for implementation, v0.2
+Date: 2026-07-27
 Implementation target: Rust core  
 Product source: `PRODUCT_SPINE.md`  
 Upstream contract: `DependencyExtractionResult v0.1`
@@ -233,6 +233,7 @@ warnings
 Candidate basis:
 
 ```text
+confirmed_project_root_plus_raw_path
 confirmed_project_root_plus_raw_relative_path
 recorded_raw_absolute_path
 ```
@@ -293,24 +294,37 @@ Size agreement remains supporting evidence and never changes
 The module may produce at most:
 
 ```text
-one project-relative candidate from confirmed_project_root + raw_relative_path
+one project-relative candidate according to the admitted RelativePathType rule
 one direct candidate from raw_path when it is an absolute path checkable on the host
 ```
 
 Rules:
 
 1. No project-relative candidate exists without `confirmed_project_root`.
-2. `raw_relative_path` is preserved and parsed before joining.
-3. Absolute, prefixed or parent-escaping relative values are rejected from the
-   project-relative candidate.
-4. A direct candidate is not created from a bare filename.
-5. A macOS path is not checked using Windows semantics and vice versa.
-6. Both candidates are retained if both can be checked.
-7. Candidate order is deterministic but has no preference or selection meaning.
-8. Missing, inaccessible and unsupported are distinct outcomes.
-9. `symlink_metadata` is used for the first version; a symlink target is not
-   followed.
-10. Raw ALS values are never rewritten or normalized.
+2. Type `0` may use a safe relative `raw_path` as
+   `confirmed_project_root_plus_raw_path`.
+3. Type `3` may use a safe `raw_relative_path` as
+   `confirmed_project_root_plus_raw_relative_path`.
+4. Types `1` and `5` do not produce a project-relative candidate in v0.2.
+5. Unknown or missing types do not produce a project-relative candidate.
+6. An absolute native `raw_path` may produce `recorded_raw_absolute_path` for
+   any type.
+7. Absolute, prefixed or parent-escaping relative values are rejected before a
+   project-relative join.
+8. A direct candidate is not created from a bare filename.
+9. A macOS path is not checked using Windows semantics and vice versa.
+10. Both admitted candidates are retained if both can be checked.
+11. Candidate order is deterministic but has no preference or selection meaning.
+12. Missing, inaccessible and unsupported are distinct outcomes.
+13. `symlink_metadata` is used for the first version; a symlink target is not
+    followed.
+14. Raw ALS values are never rewritten or normalized.
+
+Evidence:
+
+```text
+docs/experiments/E-01-E-02-path-and-coverage-2026-07-27.md
+```
 
 ## 7. Explicit Non-Responsibilities
 
@@ -389,14 +403,13 @@ raw path preservation
 size and existence are not identity
 ```
 
-Blocking:
+Resolved for v0.2:
 
 ```text
-BLOCKING_UNKNOWN: E-01 must confirm the project-relative candidate semantics
-for the RelativePathType values admitted to the first implementation.
-
-BLOCKING_UNKNOWN: synthetic cross-platform fixtures must define native path,
-Unicode and parent-escape behavior before code starts.
+E-01 confirms type 0 raw Path and type 3 raw RelativePath as the only admitted
+Project-relative joins.
+Synthetic fixtures preserve Unicode and case exactly, reject parent escape,
+and treat foreign-platform path text as not checkable on the current host.
 ```
 
 Non-blocking future work:
@@ -410,9 +423,6 @@ project-root discovery automation
 
 ## 12. Acceptance Criteria
 
-The specification may move to ready only after E-01 resolves both blocking
-items and the contract/fixture documents are updated.
-
 The implementation is accepted when:
 
 ```text
@@ -421,6 +431,9 @@ one DependencyRef produces one DependencyPathObservation
 all safe candidates remain visible
 no selected or verified identity field exists
 parent escape is rejected
+type 0 uses relative raw Path under the confirmed Project root
+type 3 uses raw RelativePath under the confirmed Project root
+type 1 and type 5 relative fields are not joined to the Project root
 symlinks are reported and not followed
 foreign-platform paths are preserved but not checked
 raw ALS paths are preserved

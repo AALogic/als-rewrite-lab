@@ -1,12 +1,12 @@
 # Tasks 003: PathObservation
 
-Status: blocked before build  
-Date: 2026-07-26
+Status: ready for build
+Date: 2026-07-27
 
 ## 1. Evidence And Readiness
 
-- [ ] DOCUMENTED_ONLY: E-01 confirms admitted RelativePathType candidate rules
-- [ ] DOCUMENTED_ONLY: synthetic cross-platform fixture matrix is accepted
+- [x] DOCUMENTED_ONLY: E-01 confirms admitted RelativePathType candidate rules
+- [x] DOCUMENTED_ONLY: synthetic cross-platform fixture matrix is accepted
 - [ ] ENFORCED_BY_GUARD: blocking markers removed only after evidence review
 - [ ] ENFORCED_BY_GUARD: ENGINEERING_RULES.md version 0.1 referenced
 - [ ] ENFORCED_BY_GUARD: required obligations checked before acceptance
@@ -23,6 +23,8 @@ Date: 2026-07-26
 ## 2. Required Behavior Obligations
 
 - [ ] ENFORCED_BY_TEST: confirmed_project_root_produces_relative_candidate
+- [ ] ENFORCED_BY_TEST: relative_path_type_zero_uses_raw_path
+- [ ] ENFORCED_BY_TEST: type_one_and_five_relative_paths_are_not_project_joined
 - [ ] ENFORCED_BY_TEST: absent_project_root_produces_no_relative_candidate
 - [ ] ENFORCED_BY_TEST: both_safe_candidates_are_preserved_without_selection
 - [ ] ENFORCED_BY_TEST: existing_regular_file_is_observed_without_identity_claim

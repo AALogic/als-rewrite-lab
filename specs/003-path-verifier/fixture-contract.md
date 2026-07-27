@@ -1,7 +1,7 @@
 # Fixture Contract 003: PathObservation
 
-Status: blocked pending E-01  
-Date: 2026-07-26  
+Status: ready; E-01 accepted
+Date: 2026-07-27
 Scope: synthetic evidence for read-only candidate path observations
 
 ## 1. Purpose
@@ -62,6 +62,50 @@ Expected:
 raw_relative_path is preserved
 no project-relative candidate is created
 warning explains missing confirmed context
+```
+
+### 3.2A RelativePathType 0
+
+Input:
+
+```text
+relative_path_type: 0
+raw_path: Samples/Processed/Consolidate/Kick.aif
+raw_relative_path: empty
+```
+
+Expected:
+
+```text
+candidate_basis: confirmed_project_root_plus_raw_path
+candidate is contained lexically under confirmed_project_root
+```
+
+### 3.2B RelativePathType 3
+
+Input:
+
+```text
+relative_path_type: 3
+raw_path: native absolute path
+raw_relative_path: Samples/Imported/Kick.wav
+```
+
+Expected:
+
+```text
+one confirmed_project_root_plus_raw_relative_path candidate
+one recorded_raw_absolute_path candidate when native
+neither candidate is selected
+```
+
+### 3.2C RelativePathType 1 And 5
+
+Expected:
+
+```text
+relative fields are preserved but are not joined to confirmed_project_root
+a native absolute raw_path may still produce recorded_raw_absolute_path
 ```
 
 ### 3.3 Two Existing Candidates
@@ -168,8 +212,14 @@ case variants
 the longest path practical for unit tests
 ```
 
-Expected behavior is platform-specific and must be recorded by E-01 before this
-case becomes a required implementation test.
+Expected:
+
+```text
+raw values are preserved exactly
+no Unicode normalization is used as an identity rule
+case variants remain distinct path observations
+native filesystem metadata determines only observed availability
+```
 
 ### 3.12 Metadata-Only Safety
 
@@ -185,10 +235,17 @@ no opened audio content
 
 ## 4. Experiment Gate
 
-```text
-BLOCKING_UNKNOWN: admitted RelativePathType values and cross-platform native
-path expectations require E-01 evidence before implementation.
-```
+Accepted evidence:
 
-The fixture contract must be updated with the experiment id, input hashes and
-accepted rules before the blocker is removed.
+```text
+E-01/E-02 report:
+  docs/experiments/E-01-E-02-path-and-coverage-2026-07-27.md
+
+private evidence:
+  read-only corpus
+  SHA-256 manifest retained outside Git
+
+accepted project-relative types:
+  0 -> raw_path
+  3 -> raw_relative_path
+```

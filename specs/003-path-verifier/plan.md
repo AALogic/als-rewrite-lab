@@ -1,7 +1,7 @@
 # Plan 003: PathObservation
 
-Status: blocked before build  
-Date: 2026-07-26
+Status: ready for build
+Date: 2026-07-27
 
 ## 1. Goal
 
@@ -11,12 +11,11 @@ confirming asset identity.
 
 ## 2. Evidence Before Code
 
-1. Run E-01 project-root and path-semantics experiment.
+1. Review the accepted E-01 project-root and path-semantics report.
 2. Add synthetic fixtures for macOS, Windows, Unicode, parent escape, directory,
    symlink, inaccessible and missing paths.
-3. Record which `RelativePathType` values may create a project-relative
-   candidate in v0.2.
-4. Remove `BLOCKING_UNKNOWN` markers only when fixture evidence resolves them.
+3. Enforce the accepted RelativePathType 0 and 3 candidate rules.
+4. Keep RelativePathType 1, 5 and unknown relative semantics out of v0.2.
 5. Run workflow_guard module-ready 003-path-verifier.
 
 Do not write product code while the module-ready guard is blocked.
