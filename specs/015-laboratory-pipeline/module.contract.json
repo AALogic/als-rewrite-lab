@@ -25,7 +25,9 @@
     "ENFORCED_BY_TYPE: LaboratoryPackageError",
     "REVIEW_ONLY: orchestration contains no duplicated ALS or matching policy",
     "REVIEW_ONLY: no write-capable stage runs before a ready package plan",
-    "DOCUMENTED_ONLY: successful static validation still requires manual Ableton verification"
+    "DOCUMENTED_ONLY: successful static validation still requires manual Ableton verification",
+    "ENFORCED_BY_TEST: laboratory_command_requires_explicit_write_flag",
+    "ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs"
   ],
   "required_tests": [
     "complete_pipeline_creates_promoted_project_for_manual_check",
@@ -35,7 +37,9 @@
     "existing_target_is_rejected_before_any_write",
     "unbounded_filesystem_root_is_rejected",
     "unsupported_live_version_blocks_before_staging",
-    "portable_manifest_redacts_every_laboratory_absolute_path"
+    "portable_manifest_redacts_every_laboratory_absolute_path",
+    "laboratory_command_requires_explicit_write_flag",
+    "laboratory_command_accepts_bounded_inputs"
   ],
   "required_tests_must_not_be_ignored": true,
   "required_tests_must_have_substance": true,
@@ -51,16 +55,17 @@
     "crates/rescue_pipeline/src/laboratory_pipeline_inputs.rs",
     "crates/rescue_pipeline/src/laboratory_pipeline_read.rs",
     "crates/rescue_pipeline/src/laboratory_pipeline_resolve.rs",
-    "crates/rescue_pipeline/src/laboratory_pipeline_write.rs"
+    "crates/rescue_pipeline/src/laboratory_pipeline_write.rs",
+    "cli/rescue-cli/src/laboratory_command.rs"
   ],
-  "quality_source_globs": ["crates/rescue_pipeline/src/*.rs"],
-  "guarded_source_globs": ["crates/rescue_pipeline/src/*.rs"],
+  "quality_source_globs": ["crates/rescue_pipeline/src/*.rs", "cli/rescue-cli/src/*.rs"],
+  "guarded_source_globs": ["crates/rescue_pipeline/src/*.rs", "cli/rescue-cli/src/*.rs"],
   "forbidden_guarded_source_patterns": [
     {"literal": "remove_dir_all", "label": "recursive deletion"},
     {"literal": "remove_file", "label": "file deletion"},
     {"literal": "unwrap(", "label": "unwrap"},
     {"literal": "expect(", "label": "expect"}
   ],
-  "allowed_dependency_names": ["rescue_analyzer", "rescue_catalog", "rescue_core", "rescue_execution", "rescue_manifest", "rescue_packaging", "rescue_promotion", "rescue_resolution", "rescue_rewriter", "rescue_validation", "serde", "flate2", "roxmltree", "tempfile"],
+  "allowed_dependency_names": ["clap", "rescue_analyzer", "rescue_catalog", "rescue_core", "rescue_execution", "rescue_manifest", "rescue_packaging", "rescue_pipeline", "rescue_promotion", "rescue_resolution", "rescue_rewriter", "rescue_validation", "serde", "serde_json", "flate2", "roxmltree", "tempfile"],
   "quality_limits": {"max_source_file_lines": 360, "max_function_lines": 105}
 }

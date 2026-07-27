@@ -16,6 +16,8 @@
 - [x] REVIEW_ONLY: orchestration contains no duplicated ALS or matching policy
 - [x] REVIEW_ONLY: no write-capable stage runs before a ready package plan
 - [x] DOCUMENTED_ONLY: successful static validation still requires manual Ableton verification
-- [ ] Add an explicit laboratory CLI command and parser tests.
+- [x] ENFORCED_BY_TEST: laboratory_command_requires_explicit_write_flag
+- [x] ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs
+- [x] Add an explicit laboratory CLI command and parser tests.
 - [ ] Run the pipeline on a copied real ALS and preserve private evidence.
 - [ ] Perform and record manual Ableton verification when UI control is available.

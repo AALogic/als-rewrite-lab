@@ -10,6 +10,8 @@ use serde_json::json;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+mod laboratory_command;
+
 #[derive(Debug, Parser)]
 #[command(name = "rescue")]
 #[command(about = "Ableton dependency safety CLI")]
@@ -20,9 +22,33 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    Analyze { path: PathBuf },
-    Extract { path: PathBuf },
-    Preflight { path: PathBuf },
+    Analyze {
+        path: PathBuf,
+    },
+    Extract {
+        path: PathBuf,
+    },
+    Preflight {
+        path: PathBuf,
+    },
+    #[command(name = "lab-package")]
+    LabPackage {
+        path: PathBuf,
+        #[arg(long)]
+        run_id: String,
+        #[arg(long = "scan-root", required = true)]
+        scan_roots: Vec<PathBuf>,
+        #[arg(long, default_value_t = 100_000)]
+        max_entries: usize,
+        #[arg(long)]
+        staging_root: PathBuf,
+        #[arg(long)]
+        target_root: PathBuf,
+        #[arg(long)]
+        private_ledger: PathBuf,
+        #[arg(long, required = true)]
+        laboratory_write: bool,
+    },
 }
 
 fn main() -> ExitCode {
@@ -49,6 +75,24 @@ fn main() -> ExitCode {
             Err(error) => print_als_error(error),
         },
         Command::Preflight { path } => run_preflight(path),
+        Command::LabPackage {
+            path,
+            run_id,
+            scan_roots,
+            max_entries,
+            staging_root,
+            target_root,
+            private_ledger,
+            laboratory_write: _,
+        } => laboratory_command::run(laboratory_command::Arguments {
+            path,
+            run_id,
+            scan_roots,
+            max_entries,
+            staging_root,
+            target_root,
+            private_ledger,
+        }),
     }
 }
 
@@ -175,5 +219,39 @@ mod tests {
         let error = Cli::try_parse_from(["rescue", "preflight", "fixture.als", "--json"])
             .expect_err("--json should not pretend to select an output mode");
         assert_eq!(error.kind(), ErrorKind::UnknownArgument);
+    }
+
+    fn laboratory_args() -> [&'static str; 16] {
+        [
+            "rescue",
+            "lab-package",
+            "/lab/source.als",
+            "--run-id",
+            "run-001",
+            "--scan-root",
+            "/lab/audio",
+            "--max-entries",
+            "1000",
+            "--staging-root",
+            "/lab/out.staging",
+            "--target-root",
+            "/lab/out",
+            "--private-ledger",
+            "/lab/evidence/run.json",
+            "--laboratory-write",
+        ]
+    }
+
+    #[test]
+    fn laboratory_command_requires_explicit_write_flag() {
+        let mut args = laboratory_args().to_vec();
+        args.pop();
+        let error = Cli::try_parse_from(args).expect_err("write flag must be explicit");
+        assert_eq!(error.kind(), ErrorKind::MissingRequiredArgument);
+    }
+
+    #[test]
+    fn laboratory_command_accepts_bounded_inputs() {
+        assert!(Cli::try_parse_from(laboratory_args()).is_ok());
     }
 }

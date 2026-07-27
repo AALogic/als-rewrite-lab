@@ -299,6 +299,7 @@ dependencies = [
  "clap",
  "rescue_analyzer",
  "rescue_core",
+ "rescue_pipeline",
  "serde",
  "serde_json",
 ]
