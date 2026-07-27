@@ -1,3 +1,4 @@
+#[cfg(unix)]
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -8,8 +9,12 @@ use rescue_packaging::{
 use rescue_rewriter::{rewrite_staged_als, ALSRewriteRequest};
 use sha2::{Digest, Sha256};
 use std::fs;
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+#[cfg(unix)]
+use std::io::Read;
+use std::io::Write;
+#[cfg(unix)]
+use std::path::Path;
+use std::path::PathBuf;
 use tempfile::TempDir;
 
 const OLD_PATH: &str = "/external/shared.wav";
@@ -42,6 +47,7 @@ fn gzip(xml: &str) -> Vec<u8> {
     encoder.finish().expect("gzip finish")
 }
 
+#[cfg(unix)]
 fn gunzip(path: &Path) -> String {
     let bytes = fs::read(path).expect("read ALS");
     let mut decoder = GzDecoder::new(bytes.as_slice());

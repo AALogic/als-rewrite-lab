@@ -1,5 +1,5 @@
 use rescue_execution::{CopyExecutionRecord, StagingExecutionMetadata, StagingExecutionResult};
-use rescue_manifest::{write_package_evidence, ManifestWriteRequest};
+use rescue_manifest::{write_package_evidence, ManifestWriteRequest, PrivateLedger};
 use rescue_packaging::{
     CopyOperation, PackagePlan, PackagePlanMetadata, PlannedSourceAls, RewriteOperation,
 };
@@ -316,10 +316,14 @@ fn private_ledger_retains_full_audit_paths() {
     let result = write(&fixture);
     assert_eq!(result.write_status, "manifests_written");
     let text = fs::read_to_string(&fixture.private_ledger).expect("private ledger");
+    let ledger: PrivateLedger = serde_json::from_str(&text).expect("private ledger JSON");
 
-    assert!(text.contains(fixture.source_als.to_string_lossy().as_ref()));
-    assert!(text.contains(fixture.staging_root.to_string_lossy().as_ref()));
-    assert!(text.contains("/private/source/shared.wav"));
+    assert_eq!(ledger.plan.source_als.source_als_path, fixture.source_als);
+    assert_eq!(ledger.staging.staging_root, fixture.staging_root);
+    assert_eq!(
+        ledger.plan.rewrite_operations[0].old_path.as_deref(),
+        Some("/private/source/shared.wav")
+    );
 }
 
 #[test]
