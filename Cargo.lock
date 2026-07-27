@@ -262,6 +262,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rescue_catalog"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "sha2",
+]
+
+[[package]]
 name = "rescue_core"
 version = "0.1.0"
 dependencies = [

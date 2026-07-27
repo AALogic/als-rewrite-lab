@@ -2,6 +2,7 @@
 members = [
   "crates/rescue_core",
   "crates/rescue_analyzer",
+  "crates/rescue_catalog",
   "cli/rescue-cli",
 ]
 resolver = "2"
