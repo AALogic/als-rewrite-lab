@@ -282,6 +282,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rescue_packaging"
+version = "0.1.0"
+dependencies = [
+ "rescue_analyzer",
+ "rescue_catalog",
+ "rescue_core",
+ "rescue_resolution",
+ "serde",
+]
+
+[[package]]
 name = "rescue_resolution"
 version = "0.1.0"
 dependencies = [

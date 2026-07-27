@@ -1,0 +1,11 @@
+[package]
+name = "rescue_packaging"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rescue_analyzer = { path = "../rescue_analyzer" }
+rescue_catalog = { path = "../rescue_catalog" }
+rescue_core = { path = "../rescue_core" }
+rescue_resolution = { path = "../rescue_resolution" }
+serde = { version = "1", features = ["derive"] }
