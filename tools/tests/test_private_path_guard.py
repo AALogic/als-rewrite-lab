@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 TOOLS_DIR = Path(__file__).resolve().parents[1]
@@ -24,16 +25,19 @@ class PrivatePathGuardTest(unittest.TestCase):
 
     def test_detects_private_home_paths(self) -> None:
         macos_path = "/" + "Users/" + "actual-person/Project/Set.als"
+        case_variant_macos_path = "/" + "users/" + "actual-person/Project/Set.als"
         linux_path = "/" + "home/" + "actual-person/audio.wav"
         windows_path = "C:" + "\\Users\\" + "actual-person\\Set.als"
 
         violations = private_path_guard.text_violations(
-            "\n".join((macos_path, linux_path, windows_path))
+            "\n".join(
+                (macos_path, case_variant_macos_path, linux_path, windows_path)
+            )
         )
 
         self.assertEqual(
             [violation.category for violation in violations],
-            ["macos_home", "linux_home", "windows_home"],
+            ["macos_home", "macos_home", "linux_home", "windows_home"],
         )
 
     def test_allows_documented_placeholders(self) -> None:
@@ -48,12 +52,24 @@ class PrivatePathGuardTest(unittest.TestCase):
         self.assertEqual(private_path_guard.text_violations(text), [])
 
     def test_detects_private_experiment_provenance(self) -> None:
-        text = "experiments/" + "2026-01-01_private/copies/" + "sensitive-set.als"
+        unix_path = (
+            "experiments/" + "run/nested/project_copy/" + "sensitive-set.als"
+        )
+        windows_path = (
+            "Experiments\\" + "run\\nested\\Copies\\" + "sensitive-set.als"
+        )
 
-        violations = private_path_guard.text_violations(text)
+        violations = private_path_guard.text_violations(
+            "\n".join((unix_path, windows_path))
+        )
 
-        self.assertTrue(
-            any(violation.category == "private_provenance" for violation in violations)
+        self.assertEqual(
+            [
+                violation.category
+                for violation in violations
+                if violation.category == "private_provenance"
+            ],
+            ["private_provenance", "private_provenance"],
         )
 
     def test_requires_placeholder_for_private_corpus_roots(self) -> None:
@@ -132,7 +148,15 @@ class PrivatePathGuardTest(unittest.TestCase):
                 check=True,
             )
 
-            violations = private_path_guard.scan_repository(repository)
+            with mock.patch.object(
+                private_path_guard, "git_index_blob_sizes"
+            ) as read_blob_sizes, mock.patch.object(
+                private_path_guard, "git_index_blob_contents"
+            ) as read_blob_contents:
+                violations = private_path_guard.scan_repository(repository)
+
+            read_blob_sizes.assert_not_called()
+            read_blob_contents.assert_not_called()
 
         self.assertEqual(
             {
@@ -188,19 +212,52 @@ class PrivatePathGuardTest(unittest.TestCase):
             set(payloads),
         )
 
-    def test_rejects_unscannable_tracked_binary_content(self) -> None:
+    def test_rejects_ambiguous_tracked_binary_content(self) -> None:
         with tempfile.TemporaryDirectory() as raw_repository:
             repository = Path(raw_repository)
             self.initialize_repository(repository)
-            tracked = repository / "opaque.bin"
-            tracked.write_bytes(b"\0\xff\0\xff\0")
-            subprocess.run(["git", "add", "--", tracked.name], cwd=repository, check=True)
+            payloads = {
+                "opaque-odd.bin": b"\0\xff\0\xff\0",
+                "opaque-even.bin": b"\x01\0\x02\0",
+            }
+            for name, payload in payloads.items():
+                (repository / name).write_bytes(payload)
+            subprocess.run(
+                ["git", "add", "--", *payloads], cwd=repository, check=True
+            )
 
             violations = private_path_guard.scan_repository(repository)
 
+        self.assertEqual(
+            {
+                violation.path.as_posix()
+                for violation in violations
+                if violation.category == "unscannable_tracked_binary"
+            },
+            set(payloads),
+        )
+
+    def test_rejects_oversized_staged_blob_without_reading_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_repository:
+            repository = Path(raw_repository)
+            self.initialize_repository(repository)
+            tracked = repository / "oversized.txt"
+            tracked.write_bytes(b"bounded payload")
+            subprocess.run(["git", "add", "--", tracked.name], cwd=repository, check=True)
+
+            with mock.patch.object(
+                private_path_guard, "MAX_TRACKED_BLOB_BYTES", 4
+            ), mock.patch.object(
+                private_path_guard, "git_index_blob_contents"
+            ) as read_blob_contents:
+                violations = private_path_guard.scan_repository(repository)
+
+            read_blob_contents.assert_not_called()
+
         self.assertTrue(
             any(
-                violation.category == "unscannable_tracked_binary"
+                violation.path == Path("oversized.txt")
+                and violation.category == "oversized_tracked_blob"
                 for violation in violations
             )
         )

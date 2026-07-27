@@ -69,9 +69,11 @@ staged index while reading untracked entries from the worktree. It checks privat
 home paths, private-corpus identifiers, UTF-8 and UTF-16 path dumps, and rejects
 unscannable tracked binary content. It also rejects tracked Ableton and common
 audio extensions case-insensitively before decoding payloads, including OGG,
-AAC, and SD2. No tracked synthetic media or binary fixture is allowlisted;
-tests create synthetic media only in temporary directories. The guard does not
-sanitize existing Git objects. Before this repository is handed to another
-laptop, the canonical repository maintainer must scrub sensitive paths and real
-data from all reachable history, verify the result from a fresh clone, and
-retire any pre-scrub clone or reference that can still reach the old objects.
+AAC, and SD2. Eligible staged blobs are size-checked before their contents are
+streamed, and oversized blobs fail closed without loading their payloads. No
+tracked synthetic media or binary fixture is allowlisted; tests create synthetic
+media only in temporary directories. The guard does not sanitize existing Git
+objects. Before this repository is handed to another laptop, the canonical
+repository maintainer must scrub sensitive paths and real data from all reachable
+history, verify the result from a fresh clone, and retire any pre-scrub clone or
+reference that can still reach the old objects.

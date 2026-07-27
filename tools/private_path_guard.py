@@ -7,6 +7,7 @@ import hashlib
 import os
 import re
 import subprocess
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote
@@ -79,11 +80,16 @@ ALLOWED_TRACKED_MEDIA_FIXTURES: frozenset[str] = frozenset()
 ALLOWED_TRACKED_BINARY_FILES: frozenset[str] = frozenset()
 GIT_BLOB_MODES = frozenset({"100644", "100755", "120000"})
 GITLINK_MODE = "160000"
+MAX_TRACKED_BLOB_BYTES = 8 * 1024 * 1024
+ALLOWED_TEXT_CONTROL_CHARACTERS = frozenset({"\t", "\n", "\r", "\f"})
 
 HOME_PATTERNS = (
     (
         "macos_home",
-        re.compile(r"/" + r"Users/" + r"(?P<user>[^/\\\s\"'`<>]+)"),
+        re.compile(
+            r"/" + r"Users/" + r"(?P<user>[^/\\\s\"'`<>]+)",
+            re.IGNORECASE,
+        ),
     ),
     (
         "linux_home",
@@ -119,8 +125,9 @@ PRIVATE_CORPUS_ROOT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 PRIVATE_PROVENANCE_PATTERN = re.compile(
-    r"experiments[\\/][^/\\\s\"'<>]+[\\/]"
-    r"(?:copies|project_copy)[\\/][^\s\"'<>]+"
+    r"experiments[\\/](?:[^/\\\r\n\"'<>]+[\\/])*"
+    r"(?:copies|project_copy)[\\/][^\r\n\"'<>]+",
+    re.IGNORECASE,
 )
 
 
@@ -205,41 +212,87 @@ def git_index_entries(repository: Path) -> list[GitIndexEntry]:
     return entries
 
 
-def git_index_blobs(
-    repository: Path, entries: list[GitIndexEntry]
-) -> dict[str, bytes]:
-    object_ids = list(
-        dict.fromkeys(
-            entry.object_id for entry in entries if entry.mode in GIT_BLOB_MODES
-        )
-    )
+def git_index_blob_sizes(repository: Path, object_ids: list[str]) -> dict[str, int]:
+    object_ids = list(dict.fromkeys(object_ids))
     if not object_ids:
         return {}
     completed = subprocess.run(
-        ["git", "cat-file", "--batch"],
+        ["git", "cat-file", "--batch-check"],
         cwd=repository,
         check=True,
         input="".join(f"{object_id}\n" for object_id in object_ids).encode("ascii"),
         stdout=subprocess.PIPE,
     )
-    output = completed.stdout
-    cursor = 0
-    blobs = {}
-    for object_id in object_ids:
-        header_end = output.find(b"\n", cursor)
-        if header_end < 0:
-            raise RuntimeError("git cat-file returned an incomplete header")
-        header = output[cursor:header_end].split(b" ")
-        if len(header) != 3 or header[1] != b"blob":
+    output_lines = completed.stdout.splitlines()
+    if len(output_lines) != len(object_ids):
+        raise RuntimeError("git cat-file returned incomplete blob metadata")
+    sizes = {}
+    for object_id, output_line in zip(object_ids, output_lines):
+        header = output_line.split(b" ")
+        if (
+            len(header) != 3
+            or header[0].decode("ascii") != object_id
+            or header[1] != b"blob"
+        ):
             raise RuntimeError("git index entry does not reference a blob")
-        size = int(header[2])
-        content_start = header_end + 1
-        content_end = content_start + size
-        if output[content_end : content_end + 1] != b"\n":
-            raise RuntimeError("git cat-file returned an incomplete blob")
-        blobs[object_id] = output[content_start:content_end]
-        cursor = content_end + 1
-    return blobs
+        sizes[object_id] = int(header[2])
+    return sizes
+
+
+def git_index_blob_contents(
+    repository: Path, object_ids: list[str]
+) -> Iterator[tuple[str, bytes]]:
+    object_ids = list(dict.fromkeys(object_ids))
+    if not object_ids:
+        return
+    process = subprocess.Popen(
+        ["git", "cat-file", "--batch"],
+        cwd=repository,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if process.stdin is None or process.stdout is None or process.stderr is None:
+        process.kill()
+        process.wait()
+        raise RuntimeError("git cat-file streams are unavailable")
+    try:
+        for object_id in object_ids:
+            process.stdin.write(f"{object_id}\n".encode("ascii"))
+            process.stdin.flush()
+            header = process.stdout.readline().rstrip(b"\n").split(b" ")
+            if (
+                len(header) != 3
+                or header[0].decode("ascii") != object_id
+                or header[1] != b"blob"
+            ):
+                raise RuntimeError("git index entry does not reference a blob")
+            size = int(header[2])
+            if size > MAX_TRACKED_BLOB_BYTES:
+                raise RuntimeError("git cat-file returned an oversized blob")
+            content = process.stdout.read(size)
+            if len(content) != size or process.stdout.read(1) != b"\n":
+                raise RuntimeError("git cat-file returned an incomplete blob")
+            yield object_id, content
+        process.stdin.close()
+        stderr = process.stderr.read()
+        return_code = process.wait()
+        if return_code:
+            raise RuntimeError(
+                f"git cat-file failed with exit code {return_code}: "
+                f"{stderr.decode('utf-8', errors='replace').strip()}"
+            )
+    finally:
+        if not process.stdin.closed:
+            try:
+                process.stdin.close()
+            except BrokenPipeError:
+                pass
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        process.stdout.close()
+        process.stderr.close()
 
 
 def untracked_repository_files(repository: Path) -> list[Path]:
@@ -272,9 +325,23 @@ def utf16_encoding(content: bytes) -> str | None:
     return None
 
 
+def is_plausible_text(text: str) -> bool:
+    for character in text:
+        codepoint = ord(character)
+        if character in ALLOWED_TEXT_CONTROL_CHARACTERS:
+            continue
+        if codepoint < 0x20 or 0x7F <= codepoint <= 0x9F:
+            return False
+    return True
+
+
 def decode_text_content(content: bytes) -> str | None:
     if b"\0" not in content:
-        return content.decode("utf-8", errors="ignore")
+        try:
+            text = content.decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        return text if is_plausible_text(text) else None
     encoding = utf16_encoding(content)
     if encoding is None:
         return None
@@ -282,7 +349,7 @@ def decode_text_content(content: bytes) -> str | None:
         text = content.decode(encoding)
     except UnicodeDecodeError:
         return None
-    return None if "\0" in text else text
+    return text if "\0" not in text and is_plausible_text(text) else None
 
 
 def content_violations(
@@ -323,7 +390,7 @@ def scan_repository(
 ) -> list[PrivatePathViolation]:
     violations = []
     index_entries = git_index_entries(repository)
-    index_blobs = git_index_blobs(repository, index_entries)
+    entries_by_object_id: dict[str, list[GitIndexEntry]] = {}
     for entry in index_entries:
         relative_path = entry.path
         violations.extend(path_violations(relative_path, private_identifier_hashes))
@@ -339,14 +406,33 @@ def scan_repository(
                 PrivatePathViolation(relative_path, 1, "unsupported_tracked_mode")
             )
             continue
-        violations.extend(
-            content_violations(
-                index_blobs[entry.object_id],
-                relative_path,
-                private_identifier_hashes,
-                fail_closed=True,
+        entries_by_object_id.setdefault(entry.object_id, []).append(entry)
+
+    object_ids = list(entries_by_object_id)
+    blob_sizes = git_index_blob_sizes(repository, object_ids) if object_ids else {}
+    bounded_object_ids = []
+    for object_id in object_ids:
+        if blob_sizes[object_id] <= MAX_TRACKED_BLOB_BYTES:
+            bounded_object_ids.append(object_id)
+            continue
+        for entry in entries_by_object_id[object_id]:
+            violations.append(
+                PrivatePathViolation(entry.path, 1, "oversized_tracked_blob")
             )
-        )
+
+    if bounded_object_ids:
+        for object_id, content in git_index_blob_contents(
+            repository, bounded_object_ids
+        ):
+            for entry in entries_by_object_id[object_id]:
+                violations.extend(
+                    content_violations(
+                        content,
+                        entry.path,
+                        private_identifier_hashes,
+                        fail_closed=True,
+                    )
+                )
 
     for relative_path in untracked_repository_files(repository):
         violations.extend(path_violations(relative_path, private_identifier_hashes))
