@@ -1,0 +1,17 @@
+[package]
+name = "rescue_rewriter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+flate2 = "1"
+rescue_core = { path = "../rescue_core" }
+rescue_execution = { path = "../rescue_execution" }
+rescue_packaging = { path = "../rescue_packaging" }
+roxmltree = "0.20"
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+
+[dev-dependencies]
+tempfile = "3"
+

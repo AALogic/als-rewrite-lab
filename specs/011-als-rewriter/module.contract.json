@@ -1,0 +1,74 @@
+{
+  "id": "011-als-rewriter",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
+  },
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["PackagePlan v0.1", "StagingExecutionResult v0.1", "ALSRewriteResult v0.1", "live11_3_external_to_imported_v0.1-experimental"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "ENFORCED_BY_TEST: approved_locator_changes_only_three_active_fields",
+    "ENFORCED_BY_TEST: source_snapshot_mismatch_leaves_staged_als_unchanged",
+    "ENFORCED_BY_TEST: old_value_mismatch_fails_closed",
+    "ENFORCED_BY_TEST: locator_mismatch_fails_closed",
+    "ENFORCED_BY_TEST: unsupported_ruleset_is_rejected_before_reading_xml",
+    "ENFORCED_BY_TEST: incomplete_staging_is_rejected",
+    "ENFORCED_BY_TEST: duplicate_reference_operations_are_rejected",
+    "ENFORCED_BY_TEST: repeated_rewrite_does_not_stack_changes",
+    "ENFORCED_BY_TEST: xml_special_characters_are_escaped_and_round_trip",
+    "ENFORCED_BY_TYPE: ALSRewriteRequest",
+    "ENFORCED_BY_TYPE: ALSRewriteResult",
+    "ENFORCED_BY_TYPE: ALSRewriteMetadata",
+    "ENFORCED_BY_TYPE: RewriteExecutionRecord",
+    "ENFORCED_BY_TYPE: ALSRewriteWarning",
+    "ENFORCED_BY_TYPE: ALSRewriteError",
+    "REVIEW_ONLY: no global XML search and replace",
+    "REVIEW_ONLY: original ALS is never writable",
+    "DOCUMENTED_ONLY: non-Unix atomic replacement remains unsupported"
+  ],
+  "required_tests": [
+    "approved_locator_changes_only_three_active_fields",
+    "source_snapshot_mismatch_leaves_staged_als_unchanged",
+    "old_value_mismatch_fails_closed",
+    "locator_mismatch_fails_closed",
+    "unsupported_ruleset_is_rejected_before_reading_xml",
+    "incomplete_staging_is_rejected",
+    "duplicate_reference_operations_are_rejected",
+    "repeated_rewrite_does_not_stack_changes",
+    "xml_special_characters_are_escaped_and_round_trip"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "ALSRewriteRequest": ["rewrite_id", "staging_root"],
+    "ALSRewriteResult": ["metadata", "staged_als_relative_path", "original_staged_als_hash", "rewritten_staged_als_hash", "operation_records", "rewrite_status", "warnings", "errors"],
+    "ALSRewriteMetadata": ["rewriter_version", "rewrite_schema_version", "rewrite_id", "execution_id", "plan_id", "source_als_hash", "rewrite_ruleset_version", "planned_operation_count", "completed_operation_count", "warning_count", "error_count"],
+    "RewriteExecutionRecord": ["operation_id", "als_ref_id", "xml_locator", "changed_fields", "operation_status"],
+    "ALSRewriteWarning": ["warning_code", "message", "operation_id"],
+    "ALSRewriteError": ["error_code", "message", "operation_id", "path"]
+  },
+  "expected_source_files": [
+    "crates/rescue_rewriter/src/als_rewriter.rs",
+    "crates/rescue_rewriter/src/als_rewriter_impl.rs",
+    "crates/rescue_rewriter/src/als_rewriter_io.rs",
+    "crates/rescue_rewriter/src/als_rewriter_result.rs",
+    "crates/rescue_rewriter/src/als_rewriter_validation.rs",
+    "crates/rescue_rewriter/src/als_rewriter_xml.rs"
+  ],
+  "quality_source_globs": ["crates/rescue_rewriter/src/als_rewriter*.rs"],
+  "guarded_source_globs": ["crates/rescue_rewriter/src/als_rewriter*.rs"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"},
+    {"literal": "remove_dir_all", "label": "recursive deletion"},
+    {"literal": ".replace(OLD", "label": "global XML replacement"}
+  ],
+  "allowed_dependency_names": ["flate2", "rescue_core", "rescue_execution", "rescue_packaging", "roxmltree", "serde", "sha2", "tempfile"],
+  "quality_limits": {"max_source_file_lines": 360, "max_function_lines": 105}
+}

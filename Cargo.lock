@@ -363,6 +363,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "rescue_rewriter"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "rescue_core",
+ "rescue_execution",
+ "rescue_packaging",
+ "roxmltree",
+ "serde",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "roxmltree"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
