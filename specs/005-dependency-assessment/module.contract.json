@@ -1,0 +1,70 @@
+{
+  "id": "005-dependency-assessment",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
+  },
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["DependencyAssessmentResult v0.1", "OriginalCrc", "pure transformation only"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: grouping represents equal recorded claims, not content identity",
+    "DOCUMENTED_ONLY: OriginalCrc is weak evidence only",
+    "REVIEW_ONLY: module remains a pure transformation",
+    "REVIEW_ONLY: no candidate path is selected",
+    "ENFORCED_BY_TEST: identical_complete_claims_group",
+    "ENFORCED_BY_TEST: same_filename_different_path_does_not_group",
+    "ENFORCED_BY_TEST: same_crc_different_path_does_not_group",
+    "ENFORCED_BY_TEST: incomplete_occurrences_remain_separate",
+    "ENFORCED_BY_TEST: observed_file_candidate_does_not_resolve_asset",
+    "ENFORCED_BY_TEST: missing_candidates_are_assessed_conservatively",
+    "ENFORCED_BY_TEST: snapshot_mismatch_fails_closed",
+    "ENFORCED_BY_TEST: occurrence_handoff_mismatch_fails_closed",
+    "ENFORCED_BY_TEST: assessment_output_is_deterministic",
+    "ENFORCED_BY_TEST: fake_preflight_consumer_uses_assessment_contract",
+    "ENFORCED_BY_TYPE: DependencyAssessmentResult",
+    "ENFORCED_BY_TYPE: DependencyAssessmentMetadata",
+    "ENFORCED_BY_TYPE: RequiredAsset",
+    "ENFORCED_BY_TYPE: RequiredAssetCandidateObservation",
+    "ENFORCED_BY_TYPE: DependencyAssessmentWarning",
+    "ENFORCED_BY_TYPE: DependencyAssessmentError"
+  ],
+  "required_tests": [
+    "identical_complete_claims_group",
+    "same_filename_different_path_does_not_group",
+    "same_crc_different_path_does_not_group",
+    "incomplete_occurrences_remain_separate",
+    "observed_file_candidate_does_not_resolve_asset",
+    "missing_candidates_are_assessed_conservatively",
+    "snapshot_mismatch_fails_closed",
+    "occurrence_handoff_mismatch_fails_closed",
+    "assessment_output_is_deterministic",
+    "fake_preflight_consumer_uses_assessment_contract"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "DependencyAssessmentResult": ["assessment_metadata", "required_assets", "warnings", "errors"],
+    "DependencyAssessmentMetadata": ["assessment_version", "input_dependency_ref_version", "input_path_observation_model_version", "source_als_path", "source_file_hash", "occurrence_count", "required_asset_count", "regular_file_candidate_asset_count", "missing_candidate_asset_count", "unknown_asset_count", "warning_count", "error_count"],
+    "RequiredAsset": ["required_asset_id", "grouping_basis", "dependency_ids", "als_ref_ids", "occurrence_count", "filename", "extension", "original_file_size", "original_crc", "candidate_observations", "availability_status", "resolution_status", "risk_flags", "evidence_status"],
+    "RequiredAssetCandidateObservation": ["dependency_id", "als_ref_id", "candidate_id", "candidate_basis", "candidate_path", "platform_status", "safety_status", "availability_status", "entry_kind", "size_evidence_status", "observed_file_size", "expected_file_size"],
+    "DependencyAssessmentWarning": ["warning_id", "warning_code", "message", "required_asset_id", "dependency_id", "evidence_status"],
+    "DependencyAssessmentError": ["error_code", "message", "source_file_hash"]
+  },
+  "expected_source_files": ["crates/rescue_analyzer/src/dependency_assessment.rs", "crates/rescue_analyzer/src/dependency_assessment_impl.rs", "crates/rescue_analyzer/src/dependency_assessment_grouping.rs", "crates/rescue_analyzer/src/dependency_assessment_status.rs", "crates/rescue_analyzer/src/dependency_assessment_result.rs"],
+  "quality_source_globs": ["crates/rescue_analyzer/src/dependency_assessment*.rs"],
+  "guarded_source_globs": ["crates/rescue_analyzer/src/dependency_assessment*.rs"],
+  "forbidden_output_fields": ["selected_path", "resolved_path", "match_score", "copy_operation", "rewrite_operation", "content_hash"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "std::fs", "label": "filesystem access"},
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"}
+  ],
+  "allowed_dependency_names": ["clap", "flate2", "rescue_core", "roxmltree", "serde", "serde_json", "sha2", "thiserror"],
+  "quality_limits": {"max_source_file_lines": 260, "max_function_lines": 70}
+}
