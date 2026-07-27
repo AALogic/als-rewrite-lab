@@ -18,4 +18,3 @@
 - [x] REVIEW_ONLY: executor does not choose assets or rewrite ALS
 - [x] REVIEW_ONLY: only an absent staging root may be created
 - [x] DOCUMENTED_ONLY: malicious local path-swap hardening remains pre-release work
-

@@ -150,7 +150,13 @@ handoff.
 A real scan exposed slow portable SHA-256 hashing. The global assembly feature
 was removed because its locked backend does not compile on Windows; digest
 behavior remains portable, and acceleration may return only behind a supported
-target-specific configuration. Windows builds still require CI validation.
+target-specific configuration.
+
+The repository now has a GitHub Actions quality workflow that runs the locked
+Rust workspace on macOS and Windows and verifies the private-data policy and all
+module contracts on Ubuntu. Configuration is not a passing result: native
+Windows compatibility and filesystem behavior still require successful CI and
+Windows laboratory evidence.
 
 ## 6. Hard Boundaries
 
@@ -208,7 +214,7 @@ Before merging this branch or widening rewrite support:
 2. review the overnight report and code commits;
 3. decide whether the next product slice is explicit user confirmation,
    persistent incremental indexing, or the first desktop workflow;
-4. add macOS and Windows CI before claiming cross-platform support.
+4. obtain passing macOS and Windows CI before claiming cross-platform support.
 
 Read next:
 

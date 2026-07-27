@@ -37,6 +37,11 @@ The CLI can then be built with:
 cargo build --release --locked -p rescue-cli
 ```
 
+The [quality workflow](.github/workflows/quality.yml) runs the locked Rust
+workspace on macOS and Windows, then checks the private-data policy and all
+module workflow contracts on Ubuntu. A configured workflow is not evidence of
+native Windows support until its run passes.
+
 ## Repository Map
 
 ```text

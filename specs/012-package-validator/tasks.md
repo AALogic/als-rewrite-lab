@@ -20,4 +20,3 @@
 - [x] ENFORCED_BY_TYPE: PackageValidationError
 - [x] REVIEW_ONLY: validator has no filesystem writes
 - [x] REVIEW_ONLY: success requires exact planned tree and semantic diff
-

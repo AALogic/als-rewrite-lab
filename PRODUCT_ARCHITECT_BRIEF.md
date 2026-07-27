@@ -1,9 +1,18 @@
 # Product Architect Brief: Ableton Project Rescue
 
-Status: draft for architecture review  
-Date: 2026-06-28  
-Audience: software architect / technical lead  
+Status: historical architecture-review brief; not an active implementation source
+Date: 2026-07-27
+Audience: software architect / technical lead
 Scope: product-level understanding, architecture input, MVP direction
+
+Active routing:
+
+```text
+CURRENT_STATE.md owns current implementation status and blockers.
+PRODUCT_SPINE.md owns active product direction and the MVP boundary.
+PROJECT_MAP.md owns current module responsibilities.
+The active module specifications own exact behavior.
+```
 
 ## 1. Executive Summary
 
@@ -688,62 +697,11 @@ If a relational schema is introduced, storage IDs and foreign keys should be
 treated as persistence concerns, not core domain identifiers.
 ```
 
-## 13. Current Implementation Status
+## 13. Implementation Status Ownership
 
-Technology:
-
-```text
-Rust core
-CLI first
-future desktop UI likely Tauri/TypeScript
-local-only data policy
-```
-
-Implemented:
-
-```text
-Rust workspace
-rescue_core crate
-rescue-cli CLI
-001 ALSReader
-002 DependencyExtractor
-module contracts and workflow guard
-fixtures and tests
-```
-
-Current code location:
-
-```text
-crates/rescue_core/src/
-cli/rescue-cli/src/main.rs
-```
-
-Current completed pipeline:
-
-```text
-ALS file
--> ALSReader
--> ALSReadModel v0.2
--> DependencyExtractor
--> DependencyExtractionResult v0.1
-```
-
-Not yet implemented:
-
-```text
-ProjectScanner
-PathVerifier
-PreflightReport
-AssetIndexer
-SampleMatcher
-PackagePlanner
-CopyStager
-ALSRewriter
-Validator
-ManifestWriter
-UI
-database/index
-```
+This dated brief no longer owns implementation inventory. Read
+`CURRENT_STATE.md` for what exists, `PROJECT_MAP.md` for current responsibility
+boundaries, and the active module specifications for exact contracts.
 
 ## 14. MVP Direction
 
@@ -826,4 +784,3 @@ No write operation should happen without a prior plan.
 No rewrite should happen on an original ALS.
 No success state should exist without validation and manifest.
 ```
-

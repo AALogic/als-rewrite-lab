@@ -22,6 +22,8 @@ pub(crate) struct ReadFailure {
     pub error: LaboratoryPackageError,
 }
 
+// A blocked run retains the complete discovery evidence for its public result.
+#[allow(clippy::result_large_err)]
 pub(crate) fn read_and_assess(
     request: &LaboratoryPackageRequest,
 ) -> Result<ReadStage, ReadFailure> {

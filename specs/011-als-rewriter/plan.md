@@ -5,4 +5,3 @@
 3. Change only three approved values and verify the in-memory result.
 4. Encode and validate a temporary ALS before replacing the staged copy.
 5. Cover fail-closed behavior and semantic preservation with fixtures.
-

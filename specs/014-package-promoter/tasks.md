@@ -18,4 +18,3 @@
 - [x] REVIEW_ONLY: existing final target is never intentionally overwritten
 - [x] REVIEW_ONLY: promoter makes no package content decisions
 - [x] DOCUMENTED_ONLY: hardened no-replace directory rename remains pre-release work
-

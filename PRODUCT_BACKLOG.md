@@ -1,7 +1,7 @@
 # Product Backlog
 
-Status: working backlog  
-Date: 2026-06-08
+Status: working backlog
+Date: 2026-07-27
 
 ## 1. Cel
 
@@ -18,28 +18,16 @@ tematy researchowe
 rzeczy odlozone poza MVP
 ```
 
-## 2. Teraz
+## 2. Aktualna Kolejnosc
 
-Rzeczy najblizsze pracy:
+`CURRENT_STATE.md` jest jedynym wlascicielem aktualnego stanu, blockerow i
+nastepnego kroku. Ten backlog ich nie kopiuje.
 
-```text
-ALSReader Contract Review through PRODUCT_SPINE.md
-Use ALS Structure Corpus 20 as review evidence
-Decision: diagnostic JSON vs downstream contract
-Update Spec 001 / fixture-contract if output is too narrow
-Then choose: automated CLI smoke test or specs/002-project-analyzer
-```
+## 3. Kandydaci Na Pozniej
 
-## 3. Nastepne
-
-Rzeczy po pierwszym readerze:
-
-```text
-ProjectAnalyzer
-source_category / storage_state
-preflight report
-basic package planner
-```
+Pozycje w tym pliku sa kandydatami, a nie aktywna kolejnoscia implementacji.
+Promocja do biezacej pracy wymaga aktualizacji `CURRENT_STATE.md` i aktywnej
+specyfikacji modulu.
 
 ## 4. Pozniej
 
@@ -114,34 +102,30 @@ Deferred until the right module boundary:
 Enum migration:
   Replace decision/status strings with Rust enums gradually.
   First candidates: PathBasis, ExtractionStatus, EvidenceStatus, Severity.
-  Suggested timing: start in 003 PathVerifier and migrate 001/002 only when
-  it does not disrupt the active module.
+  Reassess only inside an active module; do not retrofit 001/002 merely to
+  satisfy this backlog note.
 
 Activity status:
   active_audio_references currently means SampleRef/FileRef extracted from
   reader scope with usage_context unknown.
-  Before ALS rewrite, add activity_status or rename semantics if tests show
-  SampleRef can represent unsupported/non-active contexts.
+  Before widening ALS rewrite readiness, add activity_status or rename
+  semantics if tests show SampleRef can represent unsupported/non-active
+  contexts.
 
 Stable dependency identity:
   dep_audio_000000 is valid for the current 002 contract.
-  Before ManifestWriter or cross-run comparison, add a stable_dependency_key
-  derived from ALS hash, xml locator, raw path and supporting evidence.
+  Before promising cross-run identity, add a stable_dependency_key derived from
+  ALS hash, xml locator, raw path and supporting evidence.
 
 Parsed numeric evidence:
   Keep ALSReader raw fields as strings.
-  PathVerifier/SampleMatcher should add parsed_original_file_size and parse
-  status fields instead of repeatedly parsing raw strings independently.
+  Reassess parsed_original_file_size ownership in the active observation or
+  resolution contract instead of repeatedly parsing raw strings independently.
 
 Storage model:
   Current Rust structs are in-memory/domain/JSON models.
   A future SQLite schema must not treat storage IDs as domain IDs.
 
-PathVerifier implementation:
-  specs/003-path-verifier is prepared, but core verification code is not yet
-  implemented.
-  Next coding step should run workflow_guard module-ready 003-path-verifier,
-  then implement only read-only path existence and size evidence checks.
 ```
 
 ## 6B. Deferred Workflow Recommendations From Architecture Review
@@ -149,35 +133,15 @@ PathVerifier implementation:
 Status:
 
 ```text
-accepted as direction, not implemented now
+remaining deferred recommendations
 ```
 
 Deferred until the matching module boundary:
 
 ```text
-PreflightReport:
-  Add after PathVerifier and before first package/rewrite UX.
-  Purpose: user-facing ready/missing/blocked summary.
-
-Trusted write types:
-  Add before CopyStager / ALSRewriter.
-  Purpose: make it hard in code to write without PackagePlan.
-
-Manifest schema:
-  Add before first generated portable project is accepted as successful.
-  Purpose: record old path, new path, evidence, rule versions and decisions.
-
-Atomic write policy:
-  Add before ALSRewriter.
-  Purpose: write temp ALS, validate gzip/XML/semantic diff, then promote.
-
 cargo-deny / dependency policy:
   Add after repository structure is tracked cleanly in Git.
   Purpose: license/advisory/supply-chain checks in CI.
-
-CI:
-  Add when the repo is ready to be pushed or shared.
-  Required checks: fmt, check, test, clippy, workflow_guard for active modules.
 
 SQLite index:
   Add only when AssetIndexer needs persistent reuse across runs.
@@ -188,32 +152,9 @@ Tauri desktop UI:
 
 ## 6C. Agent Workflow Readiness
 
-Status:
-
-```text
-tooling pilot passed on a separate private synthetic repository
-product repository is not yet connected to remote CI or Firstmate coding
-```
-
-Confirmed on 2026-07-26:
-
-```text
-No-Mistakes can detect and repair a contract violation missed by author tests.
-Firstmate can dispatch a read-only Codex scout through Treehouse and Herdr,
-preserve a durable report and clean up the isolated worktree.
-A clean clone of this product repository compiles but cargo test fails 8
-ALSReader fixture tests because private ignored ALS files are unavailable.
-```
-
-Required before delegated product coding or remote CI:
-
-```text
-Generate small synthetic gzip/XML ALS fixtures for core parser behavior.
-Keep real user projects and the 20-file corpus outside Git.
-Make cargo test --workspace --locked pass in a clean clone.
-Run workflow guards in that clean clone.
-Only then register the product with Firstmate or configure a GitHub remote.
-```
+Live repository, gate, and CI readiness belongs to `CURRENT_STATE.md`,
+`README.md`, and `.github/workflows/quality.yml`. This backlog does not mirror
+that state.
 
 Operating recommendation:
 

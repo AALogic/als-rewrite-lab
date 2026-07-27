@@ -1,7 +1,7 @@
 # Overnight Safe Vertical Slice Report
 
-Date: 2026-07-27  
-Branch: `codex/overnight-safe-vertical-slice`  
+Date: 2026-07-27
+Branch: `codex/overnight-safe-vertical-slice`
 State: implementation and static validation complete; manual Ableton UI gate pending
 
 ## Objective
@@ -171,10 +171,7 @@ cargo deny: not installed, not run
 - Plugins, presets, Packs, Core Library, Max for Live, batch operation, and UI
   are outside this slice.
 
-## Recommended Next Review
+## Current Review Routing
 
-1. Manually open and play the generated real package in Ableton Live 11.
-2. Review commits from `ProjectDiscovery` through `LaboratoryPipeline`.
-3. Merge only after deciding whether the next slice is user-confirmed
-   resolution, persistent indexing, or desktop workflow.
-4. Add macOS and Windows CI before widening the support statement.
+This report owns the dated experiment evidence only. `CURRENT_STATE.md` owns
+the remaining blockers, merge decision, CI status, and next step.

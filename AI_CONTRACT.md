@@ -1,7 +1,7 @@
 # AI Contract
 
-Status: active safety contract  
-Date: 2026-06-02  
+Status: active safety contract
+Date: 2026-07-27
 Scope: non-negotiable rules for AI-assisted work on this project
 
 ## 1. Purpose
@@ -106,11 +106,10 @@ manifest/report is written
 user can open result in Ableton for verification
 ```
 
-Until implemented and validated, rewrite behavior is:
-
-```text
-research only
-```
+Implemented rewrite code remains laboratory-only until its active module spec,
+evidence gates, and manual Ableton verification say otherwise. Exact supported
+profiles and current readiness live in `CURRENT_STATE.md` and the active
+rewriter/pipeline specifications; implementation alone is not a support claim.
 
 ## 7. Matching Rules
 
@@ -191,32 +190,12 @@ accepted into a spec
 
 ## 9. MVP Boundary
 
-Current MVP path:
+`PRODUCT_SPINE.md` is the sole owner of the active MVP boundary, and
+`CURRENT_STATE.md` owns implemented status and current blockers. This contract
+does not duplicate those changing lists.
 
-```text
-ALSReader
-Rust CLI analyze --json
-active SampleRef/FileRef extraction
-no copy
-no rewrite
-no delete
-no UI
-```
-
-Out of scope for now:
-
-```text
-desktop UI
-Windows migration
-batch rewrite
-safe cleanup
-quarantine
-SQLite index
-Ableton bridge
-plugin rewrite
-VST/JUCE
-Max for Live
-```
+Regardless of MVP position, no implemented module weakens the prohibitions,
+rewrite gates, matching rules, or evidence requirements in this file.
 
 ## 10. Stop Conditions
 

@@ -5,4 +5,3 @@
 3. Copy through create-new temporary files and verify full hashes.
 4. Preserve a structured operation record for later PrivateLedger.
 5. Prove fail-closed and non-destructive behavior with filesystem tests.
-

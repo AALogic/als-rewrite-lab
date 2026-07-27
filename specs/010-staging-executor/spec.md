@@ -71,4 +71,3 @@ This v0.1 executor narrows race risk with pre-open and opened-handle metadata
 checks, but it is not yet claimed as hardened against a malicious local process
 that swaps a path between checks. That security-hardening item remains explicit
 before a commercial release.
-

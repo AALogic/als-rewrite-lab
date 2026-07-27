@@ -78,4 +78,3 @@
   "allowed_dependency_names": ["flate2", "rescue_core", "rescue_execution", "rescue_packaging", "rescue_rewriter", "roxmltree", "serde", "sha2", "tempfile"],
   "quality_limits": {"max_source_file_lines": 340, "max_function_lines": 95}
 }
-

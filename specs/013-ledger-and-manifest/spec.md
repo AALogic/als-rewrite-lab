@@ -64,4 +64,3 @@ planned-file collision rejection, final-target gate, and no temporary residue.
 
 No scan, matching, copy, ALS rewrite, package validation, final promotion,
 cleanup, telemetry, upload, or Ableton runtime verification.
-

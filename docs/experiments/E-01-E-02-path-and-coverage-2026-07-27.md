@@ -1,7 +1,7 @@
 # E-01 / E-02: Path Semantics And Recognized Audio Coverage
 
-Status: accepted for a narrowed Live 11/macOS read-only implementation  
-Date: 2026-07-27  
+Status: accepted for a narrowed Live 11/macOS read-only implementation
+Date: 2026-07-27
 Scope: evidence required before ProjectDiscovery and PathObservation
 
 ## 1. Questions

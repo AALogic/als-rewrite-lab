@@ -1,9 +1,9 @@
 # Product Specification: Ableton Project Rescue
 
-Status: long-form product reference; not an active implementation source  
-Date: 2026-07-26  
-Scope: full product specification, not MVP-only  
-Primary platform: local desktop app, macOS first, platform-portable core  
+Status: long-form product reference; not an active implementation source
+Date: 2026-07-27
+Scope: full product specification, not MVP-only
+Primary platform: local desktop app, macOS first, platform-portable core
 Data policy: local-only, no cloud requirement
 
 Active routing:
@@ -1996,9 +1996,9 @@ safety rules
 downstream consumers
 ```
 
-This product specification is the product-level source of truth.
-
-Module specifications translate this product intent into buildable contracts.
+`PRODUCT_SPINE.md` is the active product-level source of truth. This long-form
+reference preserves broader context, while module specifications translate the
+active product intent into buildable contracts.
 
 ## 14. MVP Boundary
 

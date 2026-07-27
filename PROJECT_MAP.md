@@ -18,11 +18,12 @@ Product direction lives in `PRODUCT_SPINE.md`. Current progress lives in
 ## Platform Stance
 
 ```text
-macOS is the current test platform
+macOS is the current hands-on laboratory platform
 core contracts use native PathBuf values rather than string concatenation
 foreign Windows path text is preserved and classified without pretending it is native
 platform-specific filesystem behavior stays behind narrow modules
-Windows support is not claimed until native build and filesystem CI pass
+quality CI targets macOS and Windows
+Windows support is not claimed until native CI and laboratory evidence pass
 ```
 
 ## Current Flow
@@ -175,7 +176,7 @@ rewrite logic in UI, CLI, ALSReader, or matcher
 matching policy inside filesystem scanning
 filesystem access inside AssetResolution or PackagePlanner
 copy decisions inside StagingExecutor
-promotion before Validator and ManifestWriter
+promotion before PackageValidator and ManifestWriter
 delete or cleanup logic anywhere in the current MVP
 platform path guessing through manual string concatenation
 domain safety rules that exist only in chat or prose

@@ -1,7 +1,7 @@
 # AGENTS
 
-Status: active project instructions  
-Date: 2026-07-26  
+Status: active project instructions
+Date: 2026-07-27
 Scope: how Codex works inside this repository
 
 ## 1. Project Identity
@@ -63,37 +63,13 @@ silently selecting a historical instruction.
 
 ## 3. Current Implementation Boundary
 
-Implemented:
+`CURRENT_STATE.md` is the sole owner of implemented-module status, current
+blockers, and the allowed next step. The presence of laboratory write modules
+does not authorize production use or scope expansion.
 
-```text
-001 ALSReader
-002 DependencyExtractor
-PathParser
-```
-
-Current corrective work:
-
-```text
-model DependencyRef v0.1 explicitly as a reference occurrence
-remove inferred Project root semantics from ALSReader
-replace old 003 selection contract with read-only candidate observations
-```
-
-Do not implement the old `PathVerificationResult v0.1` contract.
-
-Do not start:
-
-```text
-AssetIndexer
-SampleMatcher
-PackagePlanner
-copying
-ALS rewrite
-SQLite
-desktop UI
-```
-
-until the blockers and experiments named in `CURRENT_STATE.md` are resolved.
+Before changing a module, confirm that the work is within the boundary in
+`CURRENT_STATE.md` and is covered by that module's active specification. Do not
+revive superseded contracts from historical documents.
 
 ## 4. Product Model Rules
 
@@ -181,7 +157,7 @@ Before acceptance:
 cargo fmt --check
 cargo check --workspace --locked
 cargo test --workspace --locked
-cargo clippy --workspace --all-targets -- -D warnings
+cargo clippy --workspace --all-targets --locked -- -D warnings
 python3 tools/workflow_guard.py verify-module <module-id>
 ```
 
@@ -246,14 +222,7 @@ Do not copy the same `next step` into multiple documents.
 Tiny housekeeping and documentation corrections do not need a new spec.
 Product behavior and public-contract changes do.
 
-## 10. Current Next Step
+## 10. Next-Step Ownership
 
-Use exactly the next step stated in `CURRENT_STATE.md`. At the time of this
-instruction update it is:
-
-```text
-manually open and play the generated real package in Ableton Live 11
-then review the isolated overnight branch before merge or scope expansion
-```
-
-Historical next-step instructions are not active.
+Use exactly the next step stated in `CURRENT_STATE.md`. Historical next-step
+instructions and snapshots copied into other documents are not active.
