@@ -62,6 +62,12 @@ Use [docs/setup/WINDOWS_TEST_LAB.md](docs/setup/WINDOWS_TEST_LAB.md) to prepare 
 Windows laptop with Ableton Live 9 or 10. Start with read-only analysis. The
 current rewrite ruleset must reject unsupported Live versions rather than guess.
 
+When handing the copied project folder or cloned repository to Codex on the
+Windows laptop, start with
+[docs/setup/WINDOWS_CODEX_HANDOFF.md](docs/setup/WINDOWS_CODEX_HANDOFF.md). It
+contains the exact repository fallback, test scope, safety boundary, and report
+expected from that Windows session.
+
 ## Private Data Rule
 
 Never commit real ALS files, audio, Ableton analysis files, local path dumps, or

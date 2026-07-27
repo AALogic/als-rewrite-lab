@@ -1,6 +1,6 @@
 # Current State
 
-Status: laboratory vertical slice under fail-closed safety review on an isolated branch
+Status: laboratory vertical slice on an isolated review branch; macOS and Windows CI passed
 
 Date: 2026-07-27
 
@@ -154,9 +154,12 @@ target-specific configuration.
 
 The repository now has a GitHub Actions quality workflow that runs the locked
 Rust workspace on macOS and Windows and verifies the private-data policy and all
-module contracts on Ubuntu. Configuration is not a passing result: native
-Windows compatibility and filesystem behavior still require successful CI and
-Windows laboratory evidence.
+module contracts on Ubuntu. PR #1 passed the macOS, Windows, and workflow-contract
+jobs at commit `c78102b71eebbfde3b2318284c23bd15c3b30834`. Windows CI exposed and
+fixed one test portability defect: the private-ledger assertion compared a
+native Windows path with JSON source text instead of parsing the JSON value.
+Native compilation is now proved in CI, but real NTFS/Ableton behavior still
+requires Windows laboratory evidence.
 
 ## 6. Hard Boundaries
 
@@ -212,9 +215,10 @@ Before merging this branch or widening rewrite support:
 
 1. manually inspect and play the generated real project in Ableton Live 11;
 2. review the overnight report and code commits;
-3. decide whether the next product slice is explicit user confirmation,
-   persistent incremental indexing, or the first desktop workflow;
-4. obtain passing macOS and Windows CI before claiming cross-platform support.
+3. execute the bounded Windows Live 9/10 read-only handoff described in
+   `docs/setup/WINDOWS_CODEX_HANDOFF.md`;
+4. decide whether the next product slice is explicit user confirmation,
+   persistent incremental indexing, or the first desktop workflow.
 
 Read next:
 
