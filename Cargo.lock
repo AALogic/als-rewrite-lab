@@ -282,6 +282,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rescue_resolution"
+version = "0.1.0"
+dependencies = [
+ "rescue_analyzer",
+ "rescue_catalog",
+ "serde",
+]
+
+[[package]]
 name = "roxmltree"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

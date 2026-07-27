@@ -1,0 +1,63 @@
+{
+  "id": "008-asset-resolution",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
+  },
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["AssetResolutionResult v0.1", "score >= 95", "OriginalCrc"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: policy threshold is 95 for v0.1",
+    "DOCUMENTED_ONLY: OriginalCrc is not scored",
+    "REVIEW_ONLY: resolution remains a pure function",
+    "REVIEW_ONLY: ambiguous candidates never auto-select",
+    "ENFORCED_BY_TEST: exact_path_name_and_size_auto_accepts",
+    "ENFORCED_BY_TEST: name_and_size_only_requires_confirmation",
+    "ENFORCED_BY_TEST: same_name_different_content_remains_distinct",
+    "ENFORCED_BY_TEST: high_score_tie_blocks_automatic_resolution",
+    "ENFORCED_BY_TEST: no_candidate_remains_unresolved",
+    "ENFORCED_BY_TEST: original_crc_alone_does_not_create_candidate",
+    "ENFORCED_BY_TEST: partial_inventory_blocks_auto_acceptance",
+    "ENFORCED_BY_TEST: untrusted_upstream_fails_closed",
+    "ENFORCED_BY_TEST: resolution_output_is_deterministic",
+    "ENFORCED_BY_TEST: fake_package_planner_consumes_resolution_decisions",
+    "ENFORCED_BY_TYPE: AssetResolutionResult",
+    "ENFORCED_BY_TYPE: AssetResolutionMetadata",
+    "ENFORCED_BY_TYPE: ResolutionProposal",
+    "ENFORCED_BY_TYPE: ResolutionCandidate",
+    "ENFORCED_BY_TYPE: ResolutionEvidence",
+    "ENFORCED_BY_TYPE: ResolutionDecision",
+    "ENFORCED_BY_TYPE: AssetResolutionWarning",
+    "ENFORCED_BY_TYPE: AssetResolutionError"
+  ],
+  "required_tests": ["exact_path_name_and_size_auto_accepts", "name_and_size_only_requires_confirmation", "same_name_different_content_remains_distinct", "high_score_tie_blocks_automatic_resolution", "no_candidate_remains_unresolved", "original_crc_alone_does_not_create_candidate", "partial_inventory_blocks_auto_acceptance", "untrusted_upstream_fails_closed", "resolution_output_is_deterministic", "fake_package_planner_consumes_resolution_decisions"],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "AssetResolutionResult": ["metadata", "proposals", "decisions", "warnings", "errors"],
+    "AssetResolutionMetadata": ["resolution_version", "policy_version", "input_assessment_version", "input_inventory_version", "scan_run_id", "required_asset_count", "proposal_count", "auto_accepted_count", "manual_review_count", "unresolved_count", "warning_count", "error_count"],
+    "ResolutionProposal": ["required_asset_id", "recorded_filename", "candidates"],
+    "ResolutionCandidate": ["candidate_id", "file_occurrence_id", "content_id", "native_path", "score", "evidence", "conflicts"],
+    "ResolutionEvidence": ["evidence_code", "weight", "explanation"],
+    "ResolutionDecision": ["required_asset_id", "decision_status", "selected_candidate_id", "selected_file_occurrence_id", "selected_content_id", "score", "policy_version", "decision_basis", "requires_user_confirmation"],
+    "AssetResolutionWarning": ["warning_id", "warning_code", "message", "required_asset_id"],
+    "AssetResolutionError": ["error_code", "message"]
+  },
+  "expected_source_files": ["crates/rescue_resolution/src/asset_resolution.rs", "crates/rescue_resolution/src/asset_resolution_impl.rs", "crates/rescue_resolution/src/asset_resolution_scoring.rs", "crates/rescue_resolution/src/asset_resolution_result.rs"],
+  "quality_source_globs": ["crates/rescue_resolution/src/asset_resolution*.rs"],
+  "guarded_source_globs": ["crates/rescue_resolution/src/asset_resolution*.rs"],
+  "forbidden_output_fields": ["copy_operation", "rewrite_operation", "target_path", "manifest"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "std::fs", "label": "filesystem access"},
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"}
+  ],
+  "allowed_dependency_names": ["rescue_analyzer", "rescue_catalog", "serde"],
+  "quality_limits": {"max_source_file_lines": 260, "max_function_lines": 70}
+}
