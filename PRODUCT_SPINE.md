@@ -235,60 +235,68 @@ Observe recorded path candidates
 Group occurrences into logical requirements
   -> DependencyAssessment
 
-Scan selected filesystem scopes later
+Scan selected filesystem scopes
   -> AssetInventory
 
-Resolve missing or moved assets later
+Resolve missing or moved assets
   -> AssetResolution
 
-Plan package/rewrite operation later
+Plan package/rewrite operation
   -> PackagePlanner
 
-Stage/copy files safely later
+Stage/copy files safely
   -> StagingExecutor
 
-Rewrite supported ALS copies later
+Rewrite supported ALS copies
   -> ALSRewriter
 
-Validate semantic changes later
+Validate semantic changes
   -> Validator
 
-Record private operation history later
+Record private operation history
   -> PrivateLedger
 
-Export portable evidence later
+Export portable evidence
   -> PackageManifest
+
+Promote a validated fresh package
+  -> PackagePromoter
+
+Compose the bounded laboratory flow
+  -> LaboratoryPipeline
 ```
 
 ### 5.1 Current MVP Boundary
 
-The first MVP is one selected project and read-only evidence:
+The current implementation target is one selected project and audio-only
+recovery:
 
 ```text
-ALSReader
--> DependencyExtractor
--> ReferenceOccurrence grouping
--> candidate path observations
--> DependencyAssessment
--> report: available / unavailable / unknown / unsupported
+read and report dependencies
+scan explicitly selected local scopes
+resolve only unique high-confidence candidates from a complete inventory
+build and inspect an immutable plan
+create a fresh staged package
+rewrite only a confirmed laboratory ALS profile
+validate files and semantic XML difference
+write private and portable manifests
+promote to an absent target
+require manual Ableton verification
 ```
 
-Not in the first MVP:
+Still outside the current MVP:
 
 ```text
-global disk scan
-persistent asset index
-automatic missing-sample matching
-copying
-package creation
-ALS rewrite
-batch
+automatic full-disk UX and persistent incremental index
+batch execution and resume
 desktop UI
-plugin installation or transfer
+plugin, preset, Pack and Max for Live portability
+cleanup or deletion
+Live 9/10/12 and Windows rewrite support claims
 ```
 
-The later features remain product directions, but they may not widen the first
-vertical slice.
+Implemented write modules remain laboratory-only until the real Ableton runtime
+gate and release hardening are complete.
 
 ## 6. Gate Statuses
 

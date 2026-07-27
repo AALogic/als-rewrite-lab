@@ -1,223 +1,201 @@
 # Current State
 
-Status: active  
-Date: 2026-07-26  
-Purpose: one short source of truth for the current project position
+Status: laboratory vertical slice implemented and verified on an isolated branch
 
-## 1. What We Are Building
+Date: 2026-07-27
 
-This is a local, read-only-first safety tool for Ableton Live projects.
+Branch: `codex/overnight-safe-vertical-slice`
 
-The product should help a user:
+Purpose: short source of truth for what exists, what was proved, and what remains
+
+## 1. Product In Plain Language
+
+The product is a local Ableton project safety tool. It should find the audio a
+Live Set depends on, explain whether those files still exist, locate reliable
+candidates, and create a self-contained project copy without modifying the
+original ALS or original media.
+
+The central safety rule is:
 
 ```text
-understand which audio assets a selected Live Set requires
-see what is available, unavailable, unknown or unsupported
-review evidence before accepting a replacement for a missing asset
-later create a staged and validated portable audio package
-never damage the original ALS or original media
+read facts -> observe files -> assess evidence -> plan -> stage a copy
+-> rewrite only approved references -> validate -> record -> promote
 ```
 
-The core product problem is evidence-based dependency resolution and safe
-project recovery. Parsing gzip/XML is an adapter capability, not the product's
-main domain.
+No uncertain match may silently become a file operation.
 
-## 2. What Exists In Code
+## 2. What Exists On The Isolated Branch
 
-Implemented and verified:
+The implemented one-project audio path is:
 
 ```text
 001 ALSReader
-  reads gzip/XML in read-only mode
-  extracts recognized active audio references
-  preserves historical and non-audio signals separately
-
 002 DependencyExtractor
-  converts active ALS references one-to-one into DependencyRef v0.1
-  preserves raw evidence and order
-  does not inspect the filesystem or resolve assets
-
-PathParser
-  classifies raw ALS path text without applying host-path semantics
+003 PathObservation
+004 ProjectDiscovery
+005 DependencyAssessment
+006 PreflightReport
+007 AssetInventory
+008 AssetResolution
+009 PackagePlanner
+010 StagingExecutor
+011 ALSRewriter
+012 PackageValidator / SemanticDiff
+013 PrivateLedger / PackageManifest
+014 PackagePromoter
+015 LaboratoryPipeline
 ```
 
-The current `DependencyRef v0.1` represents a reference occurrence, not a
-unique required asset and not a file found on disk.
+The CLI now supports:
 
-Current verified baseline after the corrective work:
+```text
+rescue analyze <set.als>
+rescue extract <set.als>
+rescue preflight <set.als>
+rescue lab-package <set.als> ... --laboratory-write
+```
+
+`lab-package` is intentionally explicit and experimental. It requires bounded
+scan roots, fresh staging/final/ledger locations, and a separate write-consent
+flag.
+
+## 3. What The Vertical Slice Can Do
+
+For one selected Live 11.3 ALS with supported external audio references, it can:
+
+1. read and snapshot the ALS;
+2. preserve one record per active audio reference;
+3. observe recorded paths without treating existence as identity;
+4. group references into required assets;
+5. produce a read-only preflight report;
+6. scan explicitly selected local folders and hash audio files;
+7. rank candidates and auto-accept only a unique high-confidence result from a
+   complete inventory;
+8. build an immutable copy/rewrite plan;
+9. copy source ALS and selected audio into fresh staging with hash checks;
+10. rewrite only approved `Path`, `RelativePath`, and
+    `RelativePathType` values in the staged ALS;
+11. prove all other XML bytes and historical references stayed unchanged;
+12. write a full private ledger outside the package and a redacted portable
+    manifest inside it;
+13. rename validated staging to an absent final target;
+14. leave the result marked `ready_for_manual_ableton_check`.
+
+## 4. Real Laboratory Evidence
+
+A copied one-reference ALS was run through the complete pipeline while its real
+audio source remained read-only.
+
+```text
+filesystem entries visited: 68,568
+audio occurrences indexed: 31,502
+unique content records: 8,108
+selected match score: 100/100
+copy operations: 2
+rewrite operations: 1
+pipeline errors: 0
+final status: ready_for_manual_ableton_check
+```
+
+Independent checks confirmed:
+
+```text
+source ALS SHA-256 unchanged
+source audio SHA-256 unchanged
+copied audio SHA-256 equals source
+result ALS passes gzip and XML parsing
+result has one active relative Samples/Imported reference of Type 3
+portable manifest contains no user-home absolute path
+```
+
+Ableton Live 11 accepted the generated ALS path through macOS `open`, and its
+own log recorded that document argument. Accessibility control was unavailable,
+so the UI, missing-media state, and audible project behavior remain manually
+unverified. This is not counted as a successful Ableton runtime check.
+
+Private ALS, media, paths, reports, and ledgers remain outside Git under the
+dedicated laboratory directory.
+
+## 5. Quality State
+
+Current branch verification:
 
 ```text
 cargo fmt --check: PASS
-cargo check --workspace --locked: PASS
-cargo test --workspace --locked: PASS, 43 tests
+cargo test --workspace: PASS, 178 tests
 cargo clippy --workspace --all-targets -- -D warnings: PASS
-workflow guard verify-module 001: PASS
-workflow guard verify-module 002: PASS
-workflow guard module-ready 003: EXPECTED BLOCK on BLOCKING_UNKNOWN
-workflow guard Python unit test: PASS
-guard hardening regression: PASS, 10/10 bad scenarios caught
+Python workflow-guard tests: PASS, 7 tests
+workflow_guard verify-module 001 through 015: PASS
+cargo audit: PASS, no known vulnerability reported
 ```
 
-## 3. Active Architecture Decisions
+The integrated test found and fixed one genuine contract drift: PathObservation
+emitted `safe_for_metadata_read`, while AssetResolution expected an invented
+`accepted` value. A cross-module regression test now enforces the actual v0.2
+handoff.
+
+A real scan also exposed very slow portable SHA-256 hashing. The workspace now
+uses one shared `sha2` configuration with the supported assembly backend.
+Digest behavior stayed unchanged. Windows builds still require CI validation.
+
+## 6. Hard Boundaries
+
+Still enforced:
 
 ```text
-ReferenceOccurrence != RequiredAsset
-RequiredAsset != FileOccurrence
-FileOccurrence != ContentIdentity
-
-path is location evidence, not identity
-the parent directory of an ALS is not automatically the Ableton Project root
-filesystem existence does not prove that a file is the expected sample
-OriginalCrc is weak evidence only
-matching scores may rank candidates but may not silently confirm identity
+original ALS and media are read-only
+no recursive deletion or cleanup
+no overwrite or merge into an existing target
+no write before a ready immutable plan
+no automatic choice from partial inventory
+no automatic choice for tied or low-confidence candidates
+no rewrite outside the supported ruleset and exact source snapshot
+no promotion before independent validation and manifests
 ```
 
-Original ALS and original media remain read-only.
+## 7. What Is Not Complete
 
-## 4. Completed Corrective Slice
-
-The independent audit found that the old 003 PathVerifier contract mixed:
+The branch is not a shippable desktop product. Missing or intentionally blocked:
 
 ```text
-candidate generation
-filesystem availability
-asset identity
-candidate selection
+manual confirmation that the generated real set opens cleanly in Ableton
+native Windows build and filesystem tests
+macOS/Windows desktop UI
+full-disk discovery UX, cancellation, progress and persistent incremental index
+explicit user-confirmed candidate selection
+batch processing and resume
+plugin, preset, Max for Live, Pack and Core Library portability
+Live 9/10/12 rewrite rules
+hardened platform-specific no-replace directory promotion primitive
+code signing, packaging, SBOM and release security review
 ```
 
-Completed:
-
-1. keep raw ALS facts separate from filesystem observations;
-2. remove inferred project root from ALSReader output semantics;
-3. make 003 return all candidate path observations without selecting a file;
-4. add explicit path-safety and platform states;
-5. fix duplicated XML context and the misleading CLI output flag;
-6. make workflow guard quality limits cover implementation files;
-7. preserve the old long state document in
-   `docs/archive/CURRENT_STATE.pre-audit-2026-07-26.md`.
-8. split ALS file decoding/I/O from reference extraction after the truthful
-   quality guard exposed an oversized function;
-9. initialize a local Git repository and ignore private/generated corpora;
-10. create the first local baseline commit (`6d4d093`) without configuring a
-    remote or publishing project data;
-11. validate `no-mistakes`, Firstmate, Treehouse, Herdr and Codex CLI on a
-    separate private synthetic pilot repository.
-
-## 5. The One Next Product Step
-
-After this corrective slice is green:
+The rewrite rule remains laboratory-only:
 
 ```text
-run E-01: project-root and path-semantics experiment
-run E-02: dependency-coverage comparison against Ableton File Manager / CAS
-then implement one-project read-only path observations and dependency assessment
+Live 11.3.x
+direct active SampleRef/FileRef
+old RelativePathType 1
+destination Samples/Imported
+new RelativePathType 3
+only Path / RelativePath / RelativePathType may change
 ```
 
-Do not implement the old 003 contract. Do not start AssetIndexer, SampleMatcher,
-PackagePlanner, copying or ALS rewrite before E-01 and E-02 have been reviewed.
+## 8. Next Decision
 
-## 6. Current Blockers And Unknowns
+Before merging this branch or widening rewrite support:
 
-Blocking 003 implementation:
+1. manually inspect and play the generated real project in Ableton Live 11;
+2. review the overnight report and code commits;
+3. decide whether the next product slice is explicit user confirmation,
+   persistent incremental indexing, or the first desktop workflow;
+4. add macOS and Windows CI before claiming cross-platform support.
 
-```text
-how Project root is supplied or discovered
-the exact safe candidate-generation rules
-the support boundary for recognized active audio references
-native path and symlink policy across macOS and Windows
-```
-
-Repository blocker:
+Read next:
 
 ```text
-the local Git repository has a clean first baseline commit
-no project remote is configured and no product files have been published
-private experiments and binary audio/ALS data remain ignored
-a clean clone fails 8 ALSReader fixture tests because ignored private ALS
-fixtures are not present
-replace those private dependencies with committed synthetic gzip/XML ALS
-fixtures before remote CI or delegated coding in disposable worktrees
-```
-
-Automation pilot evidence:
-
-```text
-No-Mistakes caught an empty-input contract violation that author tests missed,
-fixed the implementation and test, reran checks and opened a private pilot PR
-Firstmate dispatched one read-only Codex scout in a Treehouse worktree and
-Herdr pane, preserved its report and cleaned up the worktree successfully
-the pilot also showed high overhead, so multi-agent delegation is for bounded
-parallel/research/review work, not every small edit
-```
-
-Important later unknowns:
-
-```text
-safe rewrite support matrix for Live 9/10/11/12
-matching without a historical full-content hash
-plugin, preset and Pack portability
-cloud placeholder and disconnected-volume behavior
-```
-
-## 7. Active Sources And Routing
-
-Read in this order:
-
-```text
-1. CURRENT_STATE.md
-2. PRODUCT_SPINE.md
-3. the one active module spec
-4. AI_CONTRACT.md for safety-sensitive work
-5. ENGINEERING_RULES.md for code/refactor work
-```
-
-Supporting references are read only when the task needs them:
-
-```text
-PROJECT_MAP.md
-ALS_REWRITE_METHODOLOGY.md
-docs/architecture/
-docs/audits/ableton-domain-architecture-audit.md
-session-digests/
-```
-
-History is not an active instruction source.
-
-## 8. Scope Boundaries
-
-Now:
-
-```text
-one selected project
-recognized audio dependency facts
-read-only path observations
-honest available / unavailable / unknown / unsupported report
-```
-
-Next:
-
-```text
-selected-scope inventory
-candidate evidence
-user decisions
-```
-
-Later:
-
-```text
-staged package
-validated limited ALS rewrite
-batch processing
-desktop UI
-Windows adapter
-```
-
-Outside the current product:
-
-```text
-automatic deletion
-copying or installing plugins
-universal Finder/Explorer delete protection
-cloud collaboration
-guaranteed compatibility with every Live version
+PRODUCT_SPINE.md
+docs/experiments/overnight-safe-vertical-slice-2026-07-27.md
+docs/architecture/traceability.md
+the active module specification
 ```

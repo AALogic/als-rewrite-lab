@@ -1,6 +1,6 @@
 # E-03: Narrow ALS Rewrite Support Matrix
 
-Status: partial evidence; relocation confirmed, rescue-package rule experimental
+Status: relocation confirmed; rescue-package static gates passed, Ableton UI gate pending
 Date: 2026-07-27
 Scope: laboratory copies only, macOS, Ableton Live 11.3.x
 
@@ -110,10 +110,32 @@ becomes stale when the source ALS hash changes.
 | Live 9/10/12 or Windows rewrite | UNKNOWN | block |
 | Unknown SampleRef context or locator mismatch | UNSUPPORTED | block |
 
-## Next Controlled Experiment
+## Result C: Generated One-Reference Rescue Package
 
-Use the copied one-reference external fixture. Copy its selected audio source to
-`Samples/Imported`, change only active `Path`, `RelativePath` and
-`RelativePathType`, preserve all other fields, run structural and semantic
-validation, then manually open the result in Ableton Live 11.3. Promotion from
-`EXPERIMENTAL` requires all gates to pass.
+The copied one-reference external fixture completed the implemented pipeline:
+
+~~~text
+unique selected match: score 100
+source ALS and source audio hashes unchanged: yes
+copied audio hash equals source: yes
+Path / RelativePath / RelativePathType operations: 1
+new RelativePathType: 3
+staging validation: passed
+semantic allowlist validation: passed
+portable manifest privacy check: passed
+promotion to fresh target: passed
+pipeline errors: 0
+~~~
+
+Ableton Live 11 received the generated ALS document path through macOS and
+recorded it in its own log. Computer Accessibility access was unavailable, so
+the loaded UI state, missing-media status, playback, and user acceptance could
+not be inspected. This is evidence that launch dispatch occurred, not evidence
+that the set opened cleanly.
+
+## Next Evidence Gate
+
+Open the generated package manually in Ableton Live 11.3, confirm that no sample
+is missing, play the referenced audio, and close without saving. Record the
+result. The external Type 1 to Type 3 rule stays `EXPERIMENTAL` until that
+runtime gate passes. Windows and other Live versions require separate evidence.

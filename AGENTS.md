@@ -252,9 +252,8 @@ Use exactly the next step stated in `CURRENT_STATE.md`. At the time of this
 instruction update it is:
 
 ```text
-finish the corrective foundation slice
-then run E-01 project-root/path semantics
-then run E-02 dependency coverage against Ableton
+manually open and play the generated real package in Ableton Live 11
+then review the isolated overnight branch before merge or scope expansion
 ```
 
 Historical next-step instructions are not active.

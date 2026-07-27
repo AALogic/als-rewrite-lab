@@ -19,5 +19,5 @@
 - [x] ENFORCED_BY_TEST: laboratory_command_requires_explicit_write_flag
 - [x] ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs
 - [x] Add an explicit laboratory CLI command and parser tests.
-- [ ] Run the pipeline on a copied real ALS and preserve private evidence.
+- [x] Run the pipeline on a copied real ALS and preserve private evidence.
 - [ ] Perform and record manual Ableton verification when UI control is available.
