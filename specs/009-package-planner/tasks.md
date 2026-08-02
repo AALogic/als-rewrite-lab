@@ -24,17 +24,31 @@ Date: 2026-07-27
 - [x] ENFORCED_BY_TEST: zero_reference_laboratory_plan_is_blocked
 - [x] ENFORCED_BY_TEST: locator_mismatch_blocks_rewrite
 - [x] ENFORCED_BY_TEST: copy_only_mode_has_no_rewrite_operations
+- [x] ENFORCED_BY_TEST: missing_current_path_produces_non_blocking_incomplete_plan
+- [x] ENFORCED_BY_TEST: available_current_path_produces_copy_and_rewrite
+- [x] ENFORCED_BY_TEST: safety_failure_still_blocks_current_paths_copy
 - [x] ENFORCED_BY_TEST: package_plan_is_deterministic
 - [x] ENFORCED_BY_TEST: package_planner_is_pure
+- [x] ENFORCED_BY_TEST: project_local_type3_preserves_target_and_changes_path_only
+- [x] ENFORCED_BY_TEST: mixed_type1_and_type3_plan_has_no_orphan_audio_copy
+- [x] ENFORCED_BY_TEST: unsupported_existing_reference_blocks_without_audio_copy
+- [x] ENFORCED_BY_TEST: unsafe_type3_relative_path_blocks_without_audio_copy
+- [x] ENFORCED_BY_TEST: metadata_only_current_path_plan_has_no_audio_hash_or_content_id
 - [x] ENFORCED_BY_TYPE: PackagePlanningRequest
 - [x] ENFORCED_BY_TYPE: PackagePlan
 - [x] ENFORCED_BY_TYPE: PackagePlanMetadata
 - [x] ENFORCED_BY_TYPE: PlannedSourceAls
+- [x] ENFORCED_BY_TYPE: CreateDirectoryOperation
 - [x] ENFORCED_BY_TYPE: CopyOperation
 - [x] ENFORCED_BY_TYPE: RewriteOperation
 - [x] ENFORCED_BY_TYPE: UnresolvedPackageRequirement
+- [x] ENFORCED_BY_TYPE: SystemDependencyRequirement
+- [x] ENFORCED_BY_TEST: confirmed_core_library_dependency_is_left_system_managed_without_blocking
+- [x] ENFORCED_BY_TEST: plan_fingerprint_is_order_independent
+- [x] ENFORCED_BY_TEST: plan_fingerprint_changes_with_semantic_plan
 - [x] ENFORCED_BY_TYPE: PackagePlanWarning
 - [x] ENFORCED_BY_TYPE: PackagePlanError
+- [x] ENFORCED_BY_TYPE: PlanFingerprint
 
 ## Build
 

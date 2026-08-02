@@ -1348,6 +1348,18 @@ Use deterministic unique names or collision-safe subfolders.
 
 CopyStager performs the package copy.
 
+Current desktop MVP rule:
+
+```text
+audio still present at its recorded path is a current binding, not proven
+historical content identity
+do not compute SHA-256 for current-path audio
+copy it once through a create-new temporary file
+verify stable source metadata and counted byte size during that copy
+record hash as not_computed in the manifest
+introduce reusable audio hashes only with the persistent SQLite index
+```
+
 Rules:
 
 ```text

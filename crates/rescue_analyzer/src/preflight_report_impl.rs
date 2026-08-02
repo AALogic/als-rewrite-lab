@@ -20,6 +20,14 @@ pub(crate) fn build_preflight_report_impl(
             required_asset_id: asset.required_asset_id.clone(),
             filename: asset.filename.clone(),
             occurrence_count: asset.occurrence_count,
+            source_category: asset.source_category.clone(),
+            management_class: asset.management_class.clone(),
+            portability_status: if asset.is_confirmed_system_dependency() {
+                "portable_risk"
+            } else {
+                "not_evaluated"
+            }
+            .to_string(),
             availability_status: asset.availability_status.clone(),
             resolution_status: asset.resolution_status.clone(),
             candidate_paths: unique_candidate_paths(asset),
@@ -111,6 +119,11 @@ fn summary(assessment: &DependencyAssessmentResult) -> PreflightSummary {
         overall_status: overall_status.to_string(),
         reference_occurrence_count: metadata.occurrence_count,
         required_asset_count: metadata.required_asset_count,
+        system_dependency_count: assessment
+            .required_assets
+            .iter()
+            .filter(|asset| asset.is_confirmed_system_dependency())
+            .count(),
         candidate_observed_count: metadata.regular_file_candidate_asset_count,
         needs_search_count: metadata.missing_candidate_asset_count,
         unknown_count: metadata.unknown_asset_count,
@@ -160,6 +173,7 @@ fn blocked_report(
             overall_status: "blocked".to_string(),
             reference_occurrence_count: 0,
             required_asset_count: 0,
+            system_dependency_count: 0,
             candidate_observed_count: 0,
             needs_search_count: 0,
             unknown_count: 0,

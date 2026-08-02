@@ -119,7 +119,11 @@ fn build_required_asset(
     let first = dependencies[0];
     let candidates = candidate_observations(observations);
     let availability_status = availability_status(&candidates);
-    let risk_flags = risk_flags(basis, &candidates, &availability_status);
+    let classification = crate::dependency_source_classification::classify(first, &candidates);
+    let mut risk_flags = risk_flags(basis, &candidates, &availability_status);
+    if classification.management_class == "system_dependency" {
+        risk_flags.push("portable_risk".to_string());
+    }
     add_warnings(
         &required_asset_id,
         basis,
@@ -141,6 +145,10 @@ fn build_required_asset(
         extension: first.extension.clone(),
         original_file_size: first.original_file_size.clone(),
         original_crc: first.original_crc.clone(),
+        source_category: classification.source_category.to_string(),
+        management_class: classification.management_class.to_string(),
+        source_classification_status: classification.status.to_string(),
+        source_classification_basis: classification.basis.to_string(),
         candidate_observations: candidates,
         availability_status,
         resolution_status: "unresolved".to_string(),

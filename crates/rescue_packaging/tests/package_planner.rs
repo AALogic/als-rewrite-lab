@@ -1,9 +1,15 @@
 use rescue_analyzer::{DependencyAssessmentMetadata, DependencyAssessmentResult, RequiredAsset};
 use rescue_catalog::{AssetInventoryMetadata, AssetInventoryResult, ContentRecord, FileOccurrence};
 use rescue_core::{ALSReadModel, ActiveAudioReference, SetMetadata};
-use rescue_packaging::{plan_package, PackagePlanningRequest};
-use rescue_resolution::{AssetResolutionMetadata, AssetResolutionResult, ResolutionDecision};
-use std::path::PathBuf;
+use rescue_packaging::{
+    fingerprint_package_plan, plan_current_path_package, plan_package, PackagePlanningRequest,
+};
+use rescue_resolution::{
+    AssetResolutionMetadata, AssetResolutionResult, CurrentPathBinding, CurrentPathBindingMetadata,
+    CurrentPathBindingResult, ResolutionDecision, CURRENT_PATH_BINDING_POLICY_VERSION,
+    CURRENT_PATH_BINDING_VERSION,
+};
+use std::path::{Path, PathBuf};
 
 #[cfg(windows)]
 fn native_absolute(parts: &[&str]) -> PathBuf {
@@ -56,6 +62,18 @@ fn active_ref(index: usize) -> ActiveAudioReference {
     }
 }
 
+fn project_local_ref(index: usize, relative_path: &str) -> ActiveAudioReference {
+    let mut reference = active_ref(index);
+    reference.raw_path = Some(
+        native_absolute(&["source", "Project", relative_path])
+            .to_string_lossy()
+            .to_string(),
+    );
+    reference.raw_relative_path = Some(relative_path.to_string());
+    reference.relative_path_type = Some("3".to_string());
+    reference
+}
+
 fn als_model(reference_count: usize) -> ALSReadModel {
     ALSReadModel {
         set_metadata: SetMetadata {
@@ -104,6 +122,10 @@ fn asset(id: &str, dependency_start: usize, occurrence_count: usize) -> Required
         extension: Some("wav".to_string()),
         original_file_size: Some("100".to_string()),
         original_crc: Some("42".to_string()),
+        source_category: "unclassified".to_string(),
+        management_class: "unclassified".to_string(),
+        source_classification_status: "unknown".to_string(),
+        source_classification_basis: "insufficient_source_category_evidence".to_string(),
         candidate_observations: Vec::new(),
         availability_status: "regular_file_candidate_observed".to_string(),
         resolution_status: "unresolved".to_string(),
@@ -116,7 +138,7 @@ fn assessment(assets: Vec<RequiredAsset>) -> DependencyAssessmentResult {
     let occurrence_count = assets.iter().map(|asset| asset.occurrence_count).sum();
     DependencyAssessmentResult {
         assessment_metadata: DependencyAssessmentMetadata {
-            assessment_version: "0.1.0".to_string(),
+            assessment_version: "0.2.0".to_string(),
             input_dependency_ref_version: "0.1".to_string(),
             input_path_observation_model_version: "0.2".to_string(),
             source_als_path: native_absolute(&["source", "Set.als"])
@@ -210,8 +232,12 @@ fn resolution(
                     .then(|| occurrence.map(|item| item.content_id.clone()))
                     .flatten(),
                 score: accepted.then_some(100),
-                policy_version: "0.2.0".to_string(),
-                decision_basis: "strong_expected_content_identity_match".to_string(),
+                policy_version: "0.3.0".to_string(),
+                decision_basis: if accepted {
+                    "current_recorded_path_binding".to_string()
+                } else {
+                    "fixture_unresolved".to_string()
+                },
                 requires_user_confirmation: !accepted && statuses[index] != "unresolved",
             }
         })
@@ -219,8 +245,8 @@ fn resolution(
     AssetResolutionResult {
         metadata: AssetResolutionMetadata {
             resolution_version: "0.1.0".to_string(),
-            policy_version: "0.2.0".to_string(),
-            input_assessment_version: "0.1.0".to_string(),
+            policy_version: "0.3.0".to_string(),
+            input_assessment_version: "0.2.0".to_string(),
             input_inventory_version: "0.1.0".to_string(),
             scan_run_id: "scan0".to_string(),
             required_asset_count: assets.len(),
@@ -283,6 +309,11 @@ fn valid_lab_input_builds_copy_and_rewrite_plan() {
     );
 
     assert_eq!(plan.plan_status, "ready_for_laboratory_execution");
+    assert_eq!(plan.directory_operations.len(), 3);
+    assert!(plan.directory_operations.iter().any(|operation| {
+        operation.target_relative_path == Path::new("Ableton Project Info")
+            && operation.purpose == "ableton_project_marker"
+    }));
     assert_eq!(plan.copy_operations.len(), 2);
     assert_eq!(plan.rewrite_operations.len(), 1);
     assert_eq!(
@@ -326,6 +357,300 @@ fn unresolved_decision_blocks_plan() {
 }
 
 #[test]
+fn missing_current_path_produces_non_blocking_incomplete_plan() {
+    let model = als_model(1);
+    let assets = vec![asset("asset0", 0, 1)];
+    let assessment = assessment(assets.clone());
+    let inventory = inventory(&[]);
+    let resolution = resolution(&assets, &[], &["unresolved"]);
+    let plan = plan_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "ready_current_paths_incomplete");
+    assert_eq!(plan.copy_operations.len(), 1);
+    assert!(plan.rewrite_operations.is_empty());
+    assert_eq!(plan.unresolved_requirements.len(), 1);
+    assert_eq!(
+        plan.unresolved_requirements[0].reason,
+        "recorded_path_missing"
+    );
+    assert!(!plan.unresolved_requirements[0].blocks_execution);
+}
+
+#[test]
+fn available_current_path_produces_copy_and_rewrite() {
+    let (model, assessment, inventory, resolution) = valid_inputs(1);
+    let plan = plan_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "ready_current_paths_complete");
+    assert_eq!(plan.copy_operations.len(), 2);
+    assert_eq!(plan.rewrite_operations.len(), 1);
+    assert!(plan.unresolved_requirements.is_empty());
+}
+
+#[test]
+fn metadata_only_current_path_plan_has_no_audio_hash_or_content_id() {
+    let model = als_model(1);
+    let assets = vec![asset("asset0", 0, 1)];
+    let assessment = assessment(assets);
+    let source_path = native_absolute(&["source", "sample0.wav"]);
+    let bindings = CurrentPathBindingResult {
+        metadata: CurrentPathBindingMetadata {
+            binding_version: CURRENT_PATH_BINDING_VERSION.to_string(),
+            policy_version: CURRENT_PATH_BINDING_POLICY_VERSION.to_string(),
+            input_assessment_version: "0.1.0".to_string(),
+            source_file_hash: "als-hash".to_string(),
+            required_asset_count: 1,
+            binding_count: 1,
+            omission_count: 0,
+            error_count: 0,
+        },
+        bindings: vec![CurrentPathBinding {
+            required_asset_id: "asset0".to_string(),
+            candidate_id: "candidate0".to_string(),
+            source_path,
+            filename: "sample0.wav".to_string(),
+            observed_size: 100,
+            decision_basis: "current_recorded_path_metadata_binding".to_string(),
+        }],
+        omissions: Vec::new(),
+        errors: Vec::new(),
+    };
+
+    let plan = plan_current_path_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &bindings,
+    );
+    let als = plan
+        .copy_operations
+        .iter()
+        .find(|operation| operation.operation_kind == "copy_als")
+        .expect("ALS operation");
+    let audio = plan
+        .copy_operations
+        .iter()
+        .find(|operation| operation.operation_kind == "copy_audio")
+        .expect("audio operation");
+
+    assert_eq!(plan.plan_status, "ready_current_paths_complete");
+    assert!(als.expected_source_sha256.is_some());
+    assert_eq!(audio.expected_source_sha256, None);
+    assert_eq!(audio.content_id, None);
+    assert_eq!(
+        audio.verification_policy,
+        rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE
+    );
+}
+
+#[test]
+fn confirmed_core_library_dependency_is_left_system_managed_without_blocking() {
+    let mut model = als_model(1);
+    model.active_audio_references[0].relative_path_type = Some("5".to_string());
+    model.active_audio_references[0].is_rewrite_candidate = false;
+    model.active_audio_references[0].rewrite_support_status = "requires_test".to_string();
+    let mut system_asset = asset("asset0", 0, 1);
+    system_asset.source_category = "ableton_core_library".to_string();
+    system_asset.management_class = "system_dependency".to_string();
+    system_asset.source_classification_status = "confirmed".to_string();
+    system_asset.source_classification_basis =
+        "macos_core_library_path_relative_type_5_and_regular_file".to_string();
+    let assessment = assessment(vec![system_asset]);
+    let source_path = native_absolute(&["Applications", "Ableton Core Library", "sample.wav"]);
+    let bindings = CurrentPathBindingResult {
+        metadata: CurrentPathBindingMetadata {
+            binding_version: CURRENT_PATH_BINDING_VERSION.to_string(),
+            policy_version: CURRENT_PATH_BINDING_POLICY_VERSION.to_string(),
+            input_assessment_version: "0.2.0".to_string(),
+            source_file_hash: "als-hash".to_string(),
+            required_asset_count: 1,
+            binding_count: 1,
+            omission_count: 0,
+            error_count: 0,
+        },
+        bindings: vec![CurrentPathBinding {
+            required_asset_id: "asset0".to_string(),
+            candidate_id: "candidate0".to_string(),
+            source_path,
+            filename: "sample.wav".to_string(),
+            observed_size: 100,
+            decision_basis: "current_recorded_path_metadata_binding".to_string(),
+        }],
+        omissions: Vec::new(),
+        errors: Vec::new(),
+    };
+
+    let plan = plan_current_path_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &bindings,
+    );
+
+    assert_eq!(plan.plan_status, "ready_current_paths_complete");
+    assert_eq!(plan.system_dependencies.len(), 1);
+    assert_eq!(plan.metadata.system_dependency_count, 1);
+    assert_eq!(
+        plan.system_dependencies[0].package_action,
+        "leave_system_managed"
+    );
+    assert!(plan.unresolved_requirements.is_empty());
+    assert!(plan.rewrite_operations.is_empty());
+    assert!(plan
+        .copy_operations
+        .iter()
+        .all(|operation| operation.operation_kind == "copy_als"));
+}
+
+#[test]
+fn project_local_type3_preserves_target_and_changes_path_only() {
+    let mut model = als_model(1);
+    model.active_audio_references[0] =
+        project_local_ref(0, "Samples/Processed/Consolidate/sample.wav");
+    let assets = vec![asset("asset0", 0, 1)];
+    let assessment = assessment(assets.clone());
+    let inventory = inventory(&[(
+        "/source/Project/Samples/Processed/Consolidate/sample.wav",
+        "sample.wav",
+        "aaa",
+    )]);
+    let resolution = resolution(&assets, &inventory.file_occurrences, &["auto_accepted"]);
+
+    let plan = plan_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "ready_current_paths_complete");
+    assert_eq!(plan.rewrite_operations[0].fields_to_change, vec!["Path"]);
+    assert_eq!(
+        plan.copy_operations[1].target_relative_path,
+        Path::new("Samples/Processed/Consolidate/sample.wav")
+    );
+    assert!(plan.directory_operations.iter().any(|operation| {
+        operation.target_relative_path == Path::new("Samples/Processed/Consolidate")
+    }));
+}
+
+#[test]
+fn mixed_type1_and_type3_plan_has_no_orphan_audio_copy() {
+    let mut model = als_model(2);
+    model.active_audio_references[1] = project_local_ref(1, "Samples/Recorded/project-local.wav");
+    let assets = vec![asset("asset0", 0, 2)];
+    let assessment = assessment(assets.clone());
+    let inventory = inventory(&[(
+        "/source/Project/Samples/Recorded/project-local.wav",
+        "sample.wav",
+        "aaa",
+    )]);
+    let resolution = resolution(&assets, &inventory.file_occurrences, &["auto_accepted"]);
+
+    let plan = plan_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "ready_current_paths_complete");
+    assert_eq!(plan.rewrite_operations.len(), 2);
+    let audio_targets: Vec<_> = plan
+        .copy_operations
+        .iter()
+        .filter(|operation| operation.operation_kind == "copy_audio")
+        .map(|operation| operation.target_relative_path.clone())
+        .collect();
+    assert_eq!(audio_targets.len(), 2);
+    assert!(audio_targets.contains(&PathBuf::from("Samples/Imported/sample.wav")));
+    assert!(audio_targets.contains(&PathBuf::from("Samples/Recorded/project-local.wav")));
+    assert!(audio_targets.iter().all(|target| plan
+        .rewrite_operations
+        .iter()
+        .any(|rewrite| Path::new(&rewrite.new_relative_path) == target.as_path())));
+}
+
+#[test]
+fn unsupported_existing_reference_blocks_without_audio_copy() {
+    let (mut model, assessment, inventory, resolution) = valid_inputs(1);
+    model.active_audio_references[0].relative_path_type = Some("5".to_string());
+
+    let plan = plan_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "blocked");
+    assert!(plan
+        .copy_operations
+        .iter()
+        .all(|operation| operation.operation_kind == "copy_als"));
+    assert!(plan.unresolved_requirements[0].blocks_execution);
+}
+
+#[test]
+fn unsafe_type3_relative_path_blocks_without_audio_copy() {
+    let mut model = als_model(1);
+    model.active_audio_references[0] = project_local_ref(0, "Samples/../outside/sample.wav");
+    let assets = vec![asset("asset0", 0, 1)];
+    let assessment = assessment(assets.clone());
+    let inventory = inventory(&[("/source/outside/sample.wav", "sample.wav", "aaa")]);
+    let resolution = resolution(&assets, &inventory.file_occurrences, &["auto_accepted"]);
+
+    let plan = plan_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "blocked");
+    assert!(plan
+        .copy_operations
+        .iter()
+        .all(|operation| operation.operation_kind == "copy_als"));
+}
+
+#[test]
+fn safety_failure_still_blocks_current_paths_copy() {
+    let (model, assessment, inventory, resolution) = valid_inputs(1);
+    let mut unsafe_request = request("current_paths_copy");
+    unsafe_request.target_project_root = native_absolute(&["source"]);
+    let plan = plan_package(
+        &unsafe_request,
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.plan_status, "blocked");
+    assert!(plan
+        .errors
+        .iter()
+        .any(|error| error.error_code == "PACKAGE_TARGET_EQUALS_SOURCE"));
+}
+
+#[test]
 fn zero_reference_laboratory_plan_is_blocked() {
     let model = als_model(0);
     let assessment = assessment(Vec::new());
@@ -360,6 +685,55 @@ fn target_equal_to_source_is_rejected() {
 
     assert_eq!(plan.plan_status, "blocked");
     assert_eq!(plan.errors[0].error_code, "PACKAGE_TARGET_EQUALS_SOURCE");
+}
+
+#[test]
+fn plan_fingerprint_is_order_independent() {
+    let (model, assessment, inventory, resolution) = valid_inputs(2);
+    let plan = plan_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+    let mut reordered = plan.clone();
+    reordered.metadata.plan_id = "another-run:plan".to_string();
+    reordered.directory_operations.reverse();
+    reordered.copy_operations.reverse();
+    reordered.rewrite_operations.reverse();
+    for (index, operation) in reordered.copy_operations.iter_mut().enumerate() {
+        operation.operation_id = format!("runtime-copy-{index}");
+        operation.preconditions.reverse();
+    }
+    for (index, operation) in reordered.rewrite_operations.iter_mut().enumerate() {
+        operation.operation_id = format!("runtime-rewrite-{index}");
+        operation.fields_to_change.reverse();
+    }
+
+    assert_eq!(
+        fingerprint_package_plan(&plan).expect("fingerprint"),
+        fingerprint_package_plan(&reordered).expect("reordered fingerprint")
+    );
+}
+
+#[test]
+fn plan_fingerprint_changes_with_semantic_plan() {
+    let (model, assessment, inventory, resolution) = valid_inputs(1);
+    let plan = plan_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+    let mut changed = plan.clone();
+    changed.copy_operations[1].expected_source_size += 1;
+
+    assert_ne!(
+        fingerprint_package_plan(&plan).expect("fingerprint"),
+        fingerprint_package_plan(&changed).expect("changed fingerprint")
+    );
 }
 
 #[test]

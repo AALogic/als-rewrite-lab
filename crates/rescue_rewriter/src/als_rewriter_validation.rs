@@ -10,9 +10,16 @@ pub(crate) fn validate_inputs(
     staging: &StagingExecutionResult,
 ) -> Vec<ALSRewriteError> {
     let mut errors = Vec::new();
-    if plan.plan_status != "ready_for_laboratory_execution"
-        || !plan.errors.is_empty()
-        || !plan.unresolved_requirements.is_empty()
+    if !matches!(
+        plan.plan_status.as_str(),
+        "ready_for_laboratory_execution"
+            | "ready_current_paths_complete"
+            | "ready_current_paths_incomplete"
+    ) || !plan.errors.is_empty()
+        || plan
+            .unresolved_requirements
+            .iter()
+            .any(|item| item.blocks_execution)
     {
         errors.push(error(
             "REWRITE_PLAN_NOT_READY",
@@ -60,7 +67,6 @@ pub(crate) fn validate_inputs(
 }
 
 fn validate_operations(plan: &PackagePlan, errors: &mut Vec<ALSRewriteError>) {
-    let expected_fields = ["Path", "RelativePath", "RelativePathType"];
     let copy_targets: BTreeSet<_> = plan
         .copy_operations
         .iter()
@@ -74,25 +80,37 @@ fn validate_operations(plan: &PackagePlan, errors: &mut Vec<ALSRewriteError>) {
                 operation,
             ));
         }
-        if operation.rule_id != plan.metadata.rewrite_ruleset_version
-            || operation.support_status != "experimental_lab_only"
-        {
+        if operation.rule_id != plan.metadata.rewrite_ruleset_version {
             errors.push(operation_error(
                 "REWRITE_RULE_UNSUPPORTED",
                 "Rewrite operation is outside the accepted laboratory ruleset",
                 operation,
             ));
         }
-        if operation.fields_to_change
-            != expected_fields
-                .iter()
-                .map(|field| field.to_string())
-                .collect::<Vec<_>>()
-            || operation.new_relative_path_type != "3"
-        {
+        let fields: Vec<_> = operation
+            .fields_to_change
+            .iter()
+            .map(String::as_str)
+            .collect();
+        let supported_profile = match fields.as_slice() {
+            ["Path", "RelativePath", "RelativePathType"] => {
+                operation.support_status == "experimental_lab_only"
+                    && operation.old_relative_path_type.as_deref() == Some("1")
+                    && operation.new_relative_path_type == "3"
+            }
+            ["Path"] => {
+                operation.support_status == "confirmed_lab"
+                    && operation.old_relative_path_type.as_deref() == Some("3")
+                    && operation.new_relative_path_type == "3"
+                    && operation.old_relative_path.as_deref()
+                        == Some(operation.new_relative_path.as_str())
+            }
+            _ => false,
+        };
+        if !supported_profile {
             errors.push(operation_error(
                 "REWRITE_FIELDS_UNSUPPORTED",
-                "Only the three E-03 path fields may change",
+                "Rewrite fields do not match an accepted Live 11.3 profile",
                 operation,
             ));
         }

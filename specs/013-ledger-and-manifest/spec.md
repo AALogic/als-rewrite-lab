@@ -5,10 +5,11 @@
 This module records a validated packaging run in two deliberately different
 artifacts:
 
-- `PrivateLedger v0.1` is local audit evidence containing full paths, plans,
+- `PrivateLedger v0.4` is local audit evidence containing full paths, plans,
   operation results, errors, and validation facts.
-- `PackageManifest v0.1` is placed in the portable project and contains only
-  relative package paths, hashes, sizes, rewrite rules, and validation summary.
+- `PackageManifest v0.4` is placed in the portable project and contains only
+  relative package paths, optional hashes, sizes, verification methods,
+  content-identity status, rewrite rules, and validation summary.
 
 The separation prevents a handoff package from leaking the user's local folder
 layout while retaining enough private evidence to diagnose a failed run.
@@ -21,8 +22,8 @@ CONFIRMED for laboratory package evidence.
 
 - `ManifestWriteRequest` with a private absolute ledger path outside staging
   and a safe relative package-manifest path.
-- One `PackagePlan v0.1`, successful staging and rewrite results, and a
-  `PackageValidationResult v0.1` with `validation_passed`.
+- One `PackagePlan v0.5`, successful staging and rewrite results, and a
+  `PackageValidationResult v0.4` with `validation_passed`.
 
 ## Outputs
 
@@ -31,12 +32,20 @@ statuses, run identities, and structured errors.
 
 ## Portable Manifest Rules
 
-- Include relative package paths, content SHA-256, byte sizes, file roles,
+- Include relative package paths, optional content SHA-256, byte sizes, file roles,
   approved XML locators/fields, ruleset version, and validation summary.
+- Include every verified project directory with its relative path, purpose,
+  and status, including `Ableton Project Info`.
 - Exclude source paths, staging root, final absolute root, old absolute sample
   paths, new absolute paths, and private diagnostics.
 - Reject any serialized string that looks like a POSIX, UNC, or drive-letter
   absolute path.
+- For metadata-only current-path audio, write `sha256 = null`,
+  `verification_method = stable_source_and_size`, and
+  `content_identity_status = not_computed`.
+- Record confirmed system dependencies with category, filename, occurrence
+  count, `leave_system_managed`, `portable_risk` and required environment, but
+  never include their absolute local paths in the portable manifest.
 
 ## Write Rules
 

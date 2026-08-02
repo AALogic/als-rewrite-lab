@@ -2,7 +2,7 @@ use crate::laboratory_pipeline_read::ReadStage;
 use crate::{LaboratoryPackageError, LaboratoryPackageRequest};
 use rescue_catalog::{scan_assets, AssetInventoryRequest, AssetInventoryResult};
 use rescue_packaging::{plan_package, PackagePlan, PackagePlanningRequest};
-use rescue_resolution::{resolve_assets, AssetResolutionResult};
+use rescue_resolution::{resolve_assets_with_selections, AssetResolutionResult};
 
 pub(crate) struct ResolveStage {
     pub inventory: AssetInventoryResult,
@@ -36,7 +36,11 @@ pub(crate) fn resolve_and_plan(
             None,
         ));
     }
-    let resolution = resolve_assets(&read.assessment, &inventory);
+    let resolution = resolve_assets_with_selections(
+        &read.assessment,
+        &inventory,
+        request.user_selection_set.as_ref(),
+    );
     if !resolution.errors.is_empty() {
         return Err(failure(
             "PIPELINE_ASSET_RESOLUTION_FAILED",

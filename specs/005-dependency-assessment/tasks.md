@@ -26,6 +26,9 @@ Date: 2026-07-27
 - [x] ENFORCED_BY_TYPE: DependencyAssessmentMetadata
 - [x] ENFORCED_BY_TYPE: RequiredAsset
 - [x] ENFORCED_BY_TYPE: RequiredAssetCandidateObservation
+- [x] ENFORCED_BY_TEST: confirmed_macos_core_library_reference_is_system_dependency
+- [x] ENFORCED_BY_TEST: relative_type_5_outside_core_library_is_not_silently_system_managed
+- [x] ENFORCED_BY_TEST: core_library_path_without_relative_type_5_is_not_system_dependency
 - [x] ENFORCED_BY_TYPE: DependencyAssessmentWarning
 - [x] ENFORCED_BY_TYPE: DependencyAssessmentError
 

@@ -1,6 +1,9 @@
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use rescue_catalog::{scan_assets, AssetInventoryRequest};
+use rescue_core::analyze_als;
 use rescue_pipeline::{run_laboratory_package, LaboratoryPackageRequest};
+use rescue_resolution::{UserAssetSelection, UserSelectionSet};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -43,6 +46,18 @@ fn xml_for(path: &Path, minor: &str, creator: &str) -> String {
   </LiveSet>
 </Ableton>"#
     )
+}
+
+fn audio_clip_xml_for(path: &Path, minor: &str, creator: &str) -> String {
+    xml_for(path, minor, creator)
+        .replace(
+            "<LiveSet>\n    <SampleRef>",
+            "<LiveSet>\n    <AudioClip>\n    <SampleRef>",
+        )
+        .replace(
+            "    </SampleRef>\n  </LiveSet>",
+            "    </SampleRef>\n    </AudioClip>\n  </LiveSet>",
+        )
 }
 
 fn zero_reference_xml(minor: &str, creator: &str) -> String {
@@ -95,12 +110,23 @@ fn request(fixture: &Fixture) -> LaboratoryPackageRequest {
         staging_root: fixture.staging_root.clone(),
         target_project_root: fixture.target_root.clone(),
         private_ledger_path: fixture.ledger_path.clone(),
+        user_selection_set: None,
     }
 }
 
 #[test]
 fn complete_pipeline_blocks_unconfirmed_candidate_before_staging() {
     let fixture = fixture();
+    let missing = fixture.source_root.join("missing").join("shared.wav");
+    fs::write(
+        &fixture.source_als,
+        gzip(&audio_clip_xml_for(
+            &missing,
+            "11.0_11300",
+            "Ableton Live 11.3.43",
+        )),
+    )
+    .expect("ALS");
     let source_als_before = fs::read(&fixture.source_als).expect("ALS before");
     let source_audio_before = fs::read(&fixture.source_audio).expect("audio before");
     let result = run_laboratory_package(&request(&fixture));
@@ -121,6 +147,150 @@ fn complete_pipeline_blocks_unconfirmed_candidate_before_staging() {
         fs::read(&fixture.source_audio).expect("audio after"),
         source_audio_before
     );
+}
+
+fn user_selection_for(
+    fixture: &Fixture,
+    candidate: &Path,
+    expected_digest: Option<&str>,
+) -> UserSelectionSet {
+    let model = analyze_als(&fixture.source_als).expect("ALS model");
+    let parent = candidate.parent().expect("candidate parent");
+    let inventory = scan_assets(&AssetInventoryRequest {
+        scan_run_id: "selection-fixture".to_string(),
+        roots: vec![parent.to_path_buf()],
+        max_entries: 100,
+    });
+    let occurrence = inventory
+        .file_occurrences
+        .iter()
+        .find(|occurrence| occurrence.native_path == candidate)
+        .expect("candidate occurrence");
+    let digest = expected_digest.unwrap_or_else(|| {
+        occurrence
+            .content_id
+            .strip_prefix("sha256:")
+            .expect("sha256 content ID")
+    });
+    UserSelectionSet {
+        selection_schema_version: "0.1".to_string(),
+        source_als_sha256: model.set_metadata.source_file_hash,
+        selections: vec![UserAssetSelection {
+            required_asset_id: "required_asset_000000".to_string(),
+            selected_native_path: candidate.to_path_buf(),
+            selected_content_sha256: digest.to_string(),
+        }],
+    }
+}
+
+#[test]
+fn selected_missing_sample_completes_narrow_pipeline() {
+    let fixture = fixture();
+    let missing = fixture.source_root.join("missing").join("shared.wav");
+    fs::write(
+        &fixture.source_als,
+        gzip(&audio_clip_xml_for(
+            &missing,
+            "11.0_11300",
+            "Ableton Live 11.3.43",
+        )),
+    )
+    .expect("ALS");
+    let candidate_root = fixture._temp.path().join("candidate-library");
+    fs::create_dir(&candidate_root).expect("candidate root");
+    let candidate = candidate_root.join("shared.wav");
+    fs::write(&candidate, b"audio").expect("candidate");
+    let mut request = request(&fixture);
+    request.scan_roots = vec![candidate_root];
+    request.user_selection_set = Some(user_selection_for(&fixture, &candidate, None));
+    let source_before = fs::read(&fixture.source_als).expect("source before");
+
+    let result = run_laboratory_package(&request);
+
+    assert_eq!(result.run_status, "ready_for_manual_ableton_check");
+    assert_eq!(
+        result.resolution.as_ref().expect("resolution").decisions[0].decision_basis,
+        "explicit_user_selection"
+    );
+    assert!(fixture.target_root.join("Set.als").exists());
+    assert!(fixture.target_root.join("Ableton Project Info").is_dir());
+    assert!(fixture
+        .target_root
+        .join("Samples/Imported/shared.wav")
+        .exists());
+    let manifest: serde_json::Value = serde_json::from_slice(
+        &fs::read(
+            fixture
+                .target_root
+                .join("Rescue Manifest/package-manifest.json"),
+        )
+        .expect("package manifest"),
+    )
+    .expect("manifest JSON");
+    assert!(manifest["directories"]
+        .as_array()
+        .is_some_and(|directories| {
+            directories.iter().any(|directory| {
+                directory["relative_path"] == "Ableton Project Info"
+                    && directory["status"] == "verified"
+            })
+        }));
+    assert_eq!(
+        fs::read(&fixture.source_als).expect("source after"),
+        source_before
+    );
+}
+
+#[test]
+fn changed_selected_sample_blocks_before_staging() {
+    let fixture = fixture();
+    let missing = fixture.source_root.join("missing").join("shared.wav");
+    fs::write(
+        &fixture.source_als,
+        gzip(&audio_clip_xml_for(
+            &missing,
+            "11.0_11300",
+            "Ableton Live 11.3.43",
+        )),
+    )
+    .expect("ALS");
+    let candidate_root = fixture._temp.path().join("candidate-library");
+    fs::create_dir(&candidate_root).expect("candidate root");
+    let candidate = candidate_root.join("shared.wav");
+    fs::write(&candidate, b"audio").expect("candidate");
+    let selection = user_selection_for(&fixture, &candidate, None);
+    fs::write(&candidate, b"other").expect("changed candidate");
+    let mut request = request(&fixture);
+    request.scan_roots = vec![candidate_root];
+    request.user_selection_set = Some(selection);
+
+    let result = run_laboratory_package(&request);
+
+    assert_eq!(result.run_status, "resolution_or_plan_blocked");
+    assert!(result.staging.is_none());
+    assert!(!fixture.staging_root.exists());
+    assert!(!fixture.target_root.exists());
+}
+
+#[test]
+fn selection_for_different_als_blocks_before_staging() {
+    let fixture = fixture();
+    let mut request = request(&fixture);
+    request.user_selection_set = Some(UserSelectionSet {
+        selection_schema_version: "0.1".to_string(),
+        source_als_sha256: "different-als".to_string(),
+        selections: Vec::new(),
+    });
+
+    let result = run_laboratory_package(&request);
+
+    assert_eq!(result.run_status, "resolution_or_plan_blocked");
+    assert_eq!(
+        result.errors[0].error_code,
+        "PIPELINE_ASSET_RESOLUTION_FAILED"
+    );
+    assert!(result.staging.is_none());
+    assert!(!fixture.staging_root.exists());
 }
 
 #[test]

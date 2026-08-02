@@ -27,8 +27,12 @@ pub(crate) fn analyze_als_impl(path: &Path) -> Result<ALSReadModel, ALSError> {
     let mut warnings = Vec::new();
     let mut next_warning_id = 0;
 
-    let (active_audio_references, sample_ref_count) =
-        extract_active_audio_references(&document, &mut warnings, &mut next_warning_id);
+    let (active_audio_references, sample_ref_count) = extract_active_audio_references(
+        &document,
+        live_11_3_rewrite_profile(root),
+        &mut warnings,
+        &mut next_warning_id,
+    );
     let historical_refs = extract_historical_refs(&document);
     let non_audio_dependency_signals = extract_non_audio_dependency_signals(&document);
 
@@ -112,6 +116,7 @@ fn build_set_metadata(
 
 fn extract_active_audio_references(
     document: &roxmltree::Document<'_>,
+    live_11_3_profile: bool,
     warnings: &mut Vec<ALSReadWarning>,
     next_warning_id: &mut usize,
 ) -> (Vec<ActiveAudioReference>, usize) {
@@ -187,6 +192,16 @@ fn extract_active_audio_references(
         let filename = filename_from(raw_path.as_deref(), raw_relative_path.as_deref());
         let extension = extension_from(raw_path.as_deref(), raw_relative_path.as_deref());
 
+        let usage_context = usage_context_for(*sample_ref);
+        let rewrite_supported = live_11_3_profile
+            && matches!(usage_context.as_str(), "audio_clip" | "simpler_multisample")
+            && match relative_path_type.as_deref() {
+                Some("1") => true,
+                Some("3") => raw_relative_path
+                    .as_deref()
+                    .is_some_and(supported_project_relative_path),
+                _ => false,
+            };
         active_audio_references.push(ActiveAudioReference {
             ref_id: sample_index,
             source_kind: "sample_ref_file_ref".to_string(),
@@ -200,16 +215,46 @@ fn extract_active_audio_references(
             original_crc: child_value(file_ref, "OriginalCrc"),
             default_duration: child_value(*sample_ref, "DefaultDuration"),
             default_sample_rate: child_value(*sample_ref, "DefaultSampleRate"),
-            usage_context: "unknown".to_string(),
+            usage_context,
             xml_context: "SampleRef/FileRef".to_string(),
             xml_locator: format!("SampleRef[{sample_index}]/FileRef"),
-            is_rewrite_candidate: false,
-            rewrite_support_status: "requires_test".to_string(),
+            is_rewrite_candidate: rewrite_supported,
+            rewrite_support_status: if rewrite_supported {
+                "supported".to_string()
+            } else {
+                "requires_test".to_string()
+            },
             warnings: ref_warnings,
         });
     }
 
     (active_audio_references, sample_refs.len())
+}
+
+fn live_11_3_rewrite_profile(root: roxmltree::Node<'_, '_>) -> bool {
+    root.attribute("MajorVersion") == Some("5")
+        && root.attribute("MinorVersion") == Some("11.0_11300")
+        && root
+            .attribute("Creator")
+            .is_some_and(|creator| creator.starts_with("Ableton Live 11.3."))
+}
+
+fn usage_context_for(sample_ref: roxmltree::Node<'_, '_>) -> String {
+    match sample_ref.parent().map(|parent| parent.tag_name().name()) {
+        Some("AudioClip") => "audio_clip".to_string(),
+        Some("MultiSamplePart") => "simpler_multisample".to_string(),
+        _ => "unknown".to_string(),
+    }
+}
+
+fn supported_project_relative_path(raw: &str) -> bool {
+    let normalized = raw.replace('\\', "/");
+    let components: Vec<_> = normalized.split('/').collect();
+    components.len() >= 2
+        && components.first() == Some(&"Samples")
+        && components
+            .iter()
+            .all(|component| !component.is_empty() && !matches!(*component, "." | ".."))
 }
 
 fn extract_historical_refs(document: &roxmltree::Document<'_>) -> Vec<HistoricalReference> {

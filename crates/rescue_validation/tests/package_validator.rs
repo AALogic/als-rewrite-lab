@@ -3,7 +3,8 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use rescue_execution::{execute_staging, StagingExecutionRequest, StagingExecutionResult};
 use rescue_packaging::{
-    CopyOperation, PackagePlan, PackagePlanMetadata, PlannedSourceAls, RewriteOperation,
+    CopyOperation, CreateDirectoryOperation, PackagePlan, PackagePlanMetadata, PlannedSourceAls,
+    RewriteOperation, SystemDependencyRequirement,
 };
 use rescue_rewriter::ALSRewriteResult;
 use rescue_validation::{validate_staged_package, PackageValidationRequest};
@@ -68,9 +69,11 @@ fn copy_operation(id: &str, kind: &str, source: &Path, target: &str) -> CopyOper
         operation_kind: kind.to_string(),
         source_path: source.to_path_buf(),
         target_relative_path: PathBuf::from(target),
-        expected_source_sha256: digest_file(source),
+        expected_source_sha256: Some(digest_file(source)),
         expected_source_size: fs::metadata(source).expect("metadata").len(),
-        content_id: format!("sha256:{}", digest_file(source)),
+        content_id: Some(format!("sha256:{}", digest_file(source))),
+        source_binding_id: format!("test:{id}"),
+        verification_policy: rescue_packaging::VERIFY_SHA256_AND_SIZE.to_string(),
         collision_policy: "fail_if_exists".to_string(),
         preconditions: Vec::new(),
     }
@@ -172,6 +175,19 @@ fn prepare_run() -> Run {
             target_relative,
         ),
     ];
+    let directories = vec![
+        directory(
+            "create_project_info",
+            "Ableton Project Info",
+            "ableton_project_marker",
+        ),
+        directory("create_samples", "Samples", "ableton_samples_root"),
+        directory(
+            "create_imported_samples",
+            "Samples/Imported",
+            "imported_audio_root",
+        ),
+    ];
     let rewrites = vec![RewriteOperation {
         operation_id: "rewrite_active_000000".to_string(),
         required_asset_id: "asset0".to_string(),
@@ -193,7 +209,7 @@ fn prepare_run() -> Run {
             "RelativePath".to_string(),
             "RelativePathType".to_string(),
         ],
-        rule_id: "live11_3_external_to_imported_v0.1-experimental".to_string(),
+        rule_id: "live11_3_current_paths_v0.2-lab".to_string(),
         support_status: "experimental_lab_only".to_string(),
     }];
     let plan = PackagePlan {
@@ -204,10 +220,12 @@ fn prepare_run() -> Run {
             planning_mode: "laboratory_rescue_rewrite".to_string(),
             source_als_hash: als_hash.clone(),
             resolution_policy_version: "0.2.0".to_string(),
-            rewrite_ruleset_version: "live11_3_external_to_imported_v0.1-experimental".to_string(),
+            rewrite_ruleset_version: "live11_3_current_paths_v0.2-lab".to_string(),
             required_asset_count: 1,
+            directory_operation_count: directories.len(),
             copy_operation_count: copies.len(),
             rewrite_operation_count: rewrites.len(),
+            system_dependency_count: 0,
             unresolved_count: 0,
             warning_count: 0,
             error_count: 0,
@@ -222,8 +240,10 @@ fn prepare_run() -> Run {
             ableton_minor_version: Some("11.0_11300".to_string()),
         },
         target_project_root: final_root.clone(),
+        directory_operations: directories,
         copy_operations: copies,
         rewrite_operations: rewrites,
+        system_dependencies: Vec::new(),
         unresolved_requirements: Vec::new(),
         plan_status: "ready_for_laboratory_execution".to_string(),
         warnings: Vec::new(),
@@ -247,6 +267,15 @@ fn prepare_run() -> Run {
         plan,
         staging,
         rewrite,
+    }
+}
+
+fn directory(id: &str, path: &str, purpose: &str) -> CreateDirectoryOperation {
+    CreateDirectoryOperation {
+        operation_id: id.to_string(),
+        target_relative_path: PathBuf::from(path),
+        purpose: purpose.to_string(),
+        collision_policy: "fail_if_exists".to_string(),
     }
 }
 
@@ -275,9 +304,94 @@ fn complete_staging_and_exact_semantic_diff_pass_validation() {
     let result = validate(&run);
 
     assert_eq!(result.validation_status, "validation_passed");
+    assert_eq!(result.metadata.verified_directory_count, 3);
     assert_eq!(result.metadata.verified_file_count, 2);
     assert_eq!(result.metadata.verified_rewrite_count, 1);
     assert!(result.errors.is_empty());
+}
+
+#[test]
+fn metadata_only_audio_validates_without_content_hash() {
+    let mut run = prepare_run();
+    let operation = run
+        .plan
+        .copy_operations
+        .iter_mut()
+        .find(|operation| operation.operation_kind == "copy_audio")
+        .expect("audio operation");
+    operation.expected_source_sha256 = None;
+    operation.content_id = None;
+    operation.verification_policy = rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE.to_string();
+    let staging_record = run
+        .staging
+        .copy_records
+        .iter_mut()
+        .find(|record| record.operation_kind == "copy_audio")
+        .expect("audio staging record");
+    staging_record.expected_sha256 = None;
+    staging_record.observed_sha256 = None;
+    staging_record.verification_method =
+        rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE.to_string();
+
+    let result = validate(&run);
+    let record = result
+        .file_records
+        .iter()
+        .find(|record| record.operation_id == "copy_audio_000000")
+        .expect("audio validation record");
+
+    assert_eq!(result.validation_status, "validation_passed");
+    assert_eq!(record.expected_sha256, None);
+    assert_eq!(record.observed_sha256, None);
+    assert_eq!(
+        record.verification_method,
+        rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE
+    );
+}
+
+#[test]
+fn path_only_semantic_diff_preserves_relative_fields() {
+    let mut run = prepare_run();
+    let source_xml = gunzip(&run.source_als)
+        .replacen(OLD_RELATIVE, "Samples/Imported/shared.wav", 1)
+        .replacen(
+            "RelativePathType Value=\"1\"",
+            "RelativePathType Value=\"3\"",
+            1,
+        );
+    let source_bytes = gzip(&source_xml);
+    fs::write(&run.source_als, &source_bytes).expect("project-local source ALS");
+    let source_hash = digest_bytes(&source_bytes);
+
+    run.plan.metadata.source_als_hash = source_hash.clone();
+    run.plan.source_als.source_file_hash = source_hash.clone();
+    run.plan.source_als.source_file_size = source_bytes.len() as u64;
+    run.plan.copy_operations[0].expected_source_sha256 = Some(source_hash.clone());
+    run.plan.copy_operations[0].expected_source_size = source_bytes.len() as u64;
+    run.plan.rewrite_operations[0].source_als_hash = source_hash.clone();
+    run.plan.rewrite_operations[0].old_relative_path =
+        Some("Samples/Imported/shared.wav".to_string());
+    run.plan.rewrite_operations[0].old_relative_path_type = Some("3".to_string());
+    run.plan.rewrite_operations[0].fields_to_change = vec!["Path".to_string()];
+    run.plan.rewrite_operations[0].support_status = "confirmed_lab".to_string();
+
+    run.staging.metadata.source_als_hash = source_hash.clone();
+    run.staging.copy_records[0].expected_sha256 = Some(source_hash.clone());
+    run.staging.copy_records[0].observed_sha256 = Some(source_hash.clone());
+    run.staging.copy_records[0].expected_size = source_bytes.len() as u64;
+    run.staging.copy_records[0].observed_size = Some(source_bytes.len() as u64);
+
+    run.rewrite.metadata.source_als_hash = source_hash.clone();
+    run.rewrite.original_staged_als_hash = Some(source_hash);
+    run.rewrite.operation_records[0].changed_fields = vec!["Path".to_string()];
+
+    let result = validate(&run);
+
+    assert_eq!(result.validation_status, "validation_passed");
+    assert_eq!(
+        result.semantic_diff_records[0].verified_fields,
+        vec!["Path"]
+    );
 }
 
 #[test]
@@ -392,6 +506,37 @@ fn existing_final_target_blocks_validation() {
 }
 
 #[test]
+fn missing_ableton_project_marker_blocks_validation() {
+    let run = prepare_run();
+    fs::remove_dir(run.staging_root.join("Ableton Project Info")).expect("remove marker");
+    let result = validate(&run);
+
+    assert_eq!(result.validation_status, "validation_failed");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| error.error_code == "VALIDATION_ABLETON_PROJECT_MARKER_MISSING"));
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink_ableton_project_marker_blocks_validation() {
+    use std::os::unix::fs::symlink;
+
+    let run = prepare_run();
+    let marker = run.staging_root.join("Ableton Project Info");
+    fs::remove_dir(&marker).expect("remove marker");
+    symlink(run._temp.path(), &marker).expect("marker symlink");
+    let result = validate(&run);
+
+    assert_eq!(result.validation_status, "validation_failed");
+    assert!(result.errors.iter().any(|error| {
+        error.error_code == "VALIDATION_PLANNED_DIRECTORY_INVALID"
+            || error.error_code == "VALIDATION_STAGING_SYMLINK"
+    }));
+}
+
+#[test]
 fn mismatched_run_contracts_are_rejected() {
     let mut run = prepare_run();
     run.rewrite.metadata.plan_id = "another-plan".to_string();
@@ -402,6 +547,37 @@ fn mismatched_run_contracts_are_rejected() {
         .errors
         .iter()
         .any(|error| error.error_code == "VALIDATION_CONTRACT_IDENTITY_MISMATCH"));
+}
+
+#[test]
+fn system_dependency_cannot_be_copied_or_rewritten() {
+    let mut run = prepare_run();
+    run.plan.metadata.system_dependency_count = 1;
+    run.plan
+        .system_dependencies
+        .push(SystemDependencyRequirement {
+            required_asset_id: "asset0".to_string(),
+            source_category: "ableton_core_library".to_string(),
+            filename: Some("shared.wav".to_string()),
+            occurrence_count: 1,
+            als_ref_ids: vec![0],
+            observed_source_paths: vec![run.source_audio.clone()],
+            package_action: "leave_system_managed".to_string(),
+            portability_status: "portable_risk".to_string(),
+            reason: "ableton_core_library_dependency".to_string(),
+        });
+
+    let result = validate(&run);
+
+    assert_eq!(result.validation_status, "validation_failed");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| { error.error_code == "VALIDATION_SYSTEM_DEPENDENCY_COPY_FORBIDDEN" }));
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| { error.error_code == "VALIDATION_SYSTEM_DEPENDENCY_REWRITE_FORBIDDEN" }));
 }
 
 #[test]

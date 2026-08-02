@@ -11,7 +11,9 @@ members = [
   "crates/rescue_manifest",
   "crates/rescue_promotion",
   "crates/rescue_pipeline",
+  "crates/rescue_application",
   "cli/rescue-cli",
+  "apps/rescue-desktop/src-tauri",
 ]
 resolver = "2"
 

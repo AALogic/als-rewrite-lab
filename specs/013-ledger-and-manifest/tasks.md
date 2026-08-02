@@ -1,6 +1,6 @@
 # Tasks: 013 PrivateLedger / PackageManifest
 
-- [x] Define PrivateLedger v0.1 and PackageManifest v0.1.
+- [x] Define PrivateLedger v0.3 and PackageManifest v0.3.
 - [x] ENFORCED_BY_TEST: passed_validation_writes_portable_manifest_and_private_ledger
 - [x] ENFORCED_BY_TEST: portable_manifest_contains_no_absolute_local_paths
 - [x] ENFORCED_BY_TEST: private_ledger_retains_full_audit_paths
@@ -11,11 +11,16 @@
 - [x] ENFORCED_BY_TEST: package_manifest_cannot_replace_planned_file
 - [x] ENFORCED_BY_TEST: existing_final_target_blocks_manifest_write
 - [x] ENFORCED_BY_TEST: successful_atomic_writes_leave_no_temporary_files
+- [x] ENFORCED_BY_TEST: metadata_only_audio_manifest_marks_content_identity_not_computed
+- [x] ENFORCED_BY_TEST: portable_manifest_records_system_dependency_without_local_path
+- [x] ENFORCED_BY_TYPE: ManifestSystemDependency
 - [x] ENFORCED_BY_TYPE: ManifestWriteRequest
 - [x] ENFORCED_BY_TYPE: PrivateLedger
 - [x] ENFORCED_BY_TYPE: PackageManifest
+- [x] ENFORCED_BY_TYPE: ManifestDirectory
 - [x] ENFORCED_BY_TYPE: ManifestFile
 - [x] ENFORCED_BY_TYPE: ManifestRewrite
+- [x] ENFORCED_BY_TYPE: ManifestOmission
 - [x] ENFORCED_BY_TYPE: ManifestValidationSummary
 - [x] ENFORCED_BY_TYPE: ManifestWriteResult
 - [x] ENFORCED_BY_TYPE: ManifestWriteMetadata

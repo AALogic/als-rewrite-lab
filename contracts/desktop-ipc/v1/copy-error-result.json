@@ -1,0 +1,17 @@
+{
+  "service_version": "0.4.0",
+  "request_id": "wire-execution",
+  "run_status": "preview_plan_changed",
+  "final_target_root": null,
+  "system_dependency_count": 0,
+  "copied_asset_count": 0,
+  "rewritten_reference_count": 0,
+  "omitted_asset_count": 0,
+  "errors": [
+    {
+      "error_code": "CURRENT_PATH_PREVIEW_PLAN_CHANGED",
+      "stage": "plan_binding",
+      "message": "Fixture error"
+    }
+  ]
+}

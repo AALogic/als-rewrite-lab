@@ -1,4 +1,5 @@
 use rescue_catalog::{scan_assets, AssetInventoryRequest, AssetInventoryResult};
+use rescue_catalog::{snapshot_asset_files, AssetFileSnapshotRequest};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -205,4 +206,40 @@ fn fake_resolution_consumer_uses_inventory_contract() {
     assert_eq!(records.len(), 1);
     assert!(records[0].0.starts_with("sha256:"));
     assert!(records[0].1.ends_with("one.wav"));
+}
+
+#[test]
+fn exact_file_snapshot_does_not_scan_siblings() {
+    let tree = TempTree::new("exact-snapshot");
+    let selected = tree.root.join("selected.wav");
+    let sibling = tree.root.join("sibling.wav");
+    fs::write(&selected, b"selected").expect("selected fixture");
+    fs::write(&sibling, b"sibling").expect("sibling fixture");
+
+    let result = snapshot_asset_files(&AssetFileSnapshotRequest {
+        scan_run_id: "exact-001".to_string(),
+        paths: vec![selected.clone()],
+    });
+
+    assert_eq!(result.metadata.scan_status, "complete");
+    assert_eq!(result.file_occurrences.len(), 1);
+    assert_eq!(result.file_occurrences[0].native_path, selected);
+    assert_ne!(result.file_occurrences[0].native_path, sibling);
+}
+
+#[test]
+fn exact_file_snapshot_fails_when_observed_file_disappears() {
+    let tree = TempTree::new("exact-missing");
+    let missing = tree.root.join("gone.wav");
+
+    let result = snapshot_asset_files(&AssetFileSnapshotRequest {
+        scan_run_id: "exact-002".to_string(),
+        paths: vec![missing],
+    });
+
+    assert_eq!(result.metadata.scan_status, "failed");
+    assert_eq!(
+        result.errors[0].error_code,
+        "INVENTORY_SNAPSHOT_PATH_UNAVAILABLE"
+    );
 }

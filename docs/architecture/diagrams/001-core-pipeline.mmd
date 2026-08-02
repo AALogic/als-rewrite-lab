@@ -8,6 +8,7 @@ flowchart TD
     Preflight["006 PreflightReport"]
     Inventory["007 AssetInventory"]
     Resolution["008 AssetResolution"]
+    CurrentBinding["008 CurrentPathBinding"]
     Planner["009 PackagePlanner"]
     Staging["010 StagingExecutor"]
     Rewriter["011 ALSRewriter"]
@@ -25,6 +26,8 @@ flowchart TD
     Observation --> Assessment
     Discovery --> Preflight
     Assessment --> Preflight
+    Assessment --> CurrentBinding
+    CurrentBinding --> Planner
     Preflight --> Inventory
     Inventory --> Resolution
     Assessment --> Resolution
@@ -39,7 +42,7 @@ flowchart TD
 
     Original["Original ALS and media: read-only"]
     Original -. "read only" .-> Reader
-    Original -. "hash and copy only" .-> Staging
+    Original -. "ALS hash; audio stable metadata and one copy" .-> Staging
 
     Gate1["Complete inventory and unique evidence"]
     Gate2["Ready immutable plan"]

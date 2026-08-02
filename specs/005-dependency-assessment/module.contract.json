@@ -8,7 +8,7 @@
     "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
   },
   "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
-  "required_spec_literals": ["DependencyAssessmentResult v0.1", "OriginalCrc", "pure transformation only"],
+  "required_spec_literals": ["DependencyAssessmentResult v0.2", "OriginalCrc", "pure transformation only", "ableton_core_library/system_dependency", "Type 5 alone is insufficient"],
   "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
   "required_checked_obligations": true,
   "required_obligations": [
@@ -26,6 +26,9 @@
     "ENFORCED_BY_TEST: occurrence_handoff_mismatch_fails_closed",
     "ENFORCED_BY_TEST: assessment_output_is_deterministic",
     "ENFORCED_BY_TEST: fake_preflight_consumer_uses_assessment_contract",
+    "ENFORCED_BY_TEST: confirmed_macos_core_library_reference_is_system_dependency",
+    "ENFORCED_BY_TEST: relative_type_5_outside_core_library_is_not_silently_system_managed",
+    "ENFORCED_BY_TEST: core_library_path_without_relative_type_5_is_not_system_dependency",
     "ENFORCED_BY_TYPE: DependencyAssessmentResult",
     "ENFORCED_BY_TYPE: DependencyAssessmentMetadata",
     "ENFORCED_BY_TYPE: RequiredAsset",
@@ -43,7 +46,10 @@
     "snapshot_mismatch_fails_closed",
     "occurrence_handoff_mismatch_fails_closed",
     "assessment_output_is_deterministic",
-    "fake_preflight_consumer_uses_assessment_contract"
+    "fake_preflight_consumer_uses_assessment_contract",
+    "confirmed_macos_core_library_reference_is_system_dependency",
+    "relative_type_5_outside_core_library_is_not_silently_system_managed",
+    "core_library_path_without_relative_type_5_is_not_system_dependency"
   ],
   "required_tests_must_not_be_ignored": true,
   "required_tests_must_have_substance": true,
@@ -51,14 +57,14 @@
   "public_contract": {
     "DependencyAssessmentResult": ["assessment_metadata", "required_assets", "warnings", "errors"],
     "DependencyAssessmentMetadata": ["assessment_version", "input_dependency_ref_version", "input_path_observation_model_version", "source_als_path", "source_file_hash", "occurrence_count", "required_asset_count", "regular_file_candidate_asset_count", "missing_candidate_asset_count", "unknown_asset_count", "warning_count", "error_count"],
-    "RequiredAsset": ["required_asset_id", "grouping_basis", "dependency_ids", "als_ref_ids", "occurrence_count", "filename", "extension", "original_file_size", "original_crc", "candidate_observations", "availability_status", "resolution_status", "risk_flags", "evidence_status"],
+    "RequiredAsset": ["required_asset_id", "grouping_basis", "dependency_ids", "als_ref_ids", "occurrence_count", "filename", "extension", "original_file_size", "original_crc", "source_category", "management_class", "source_classification_status", "source_classification_basis", "candidate_observations", "availability_status", "resolution_status", "risk_flags", "evidence_status"],
     "RequiredAssetCandidateObservation": ["dependency_id", "als_ref_id", "candidate_id", "candidate_basis", "candidate_path", "platform_status", "safety_status", "availability_status", "entry_kind", "size_evidence_status", "observed_file_size", "expected_file_size"],
     "DependencyAssessmentWarning": ["warning_id", "warning_code", "message", "required_asset_id", "dependency_id", "evidence_status"],
     "DependencyAssessmentError": ["error_code", "message", "source_file_hash"]
   },
-  "expected_source_files": ["crates/rescue_analyzer/src/dependency_assessment.rs", "crates/rescue_analyzer/src/dependency_assessment_impl.rs", "crates/rescue_analyzer/src/dependency_assessment_grouping.rs", "crates/rescue_analyzer/src/dependency_assessment_status.rs", "crates/rescue_analyzer/src/dependency_assessment_result.rs"],
-  "quality_source_globs": ["crates/rescue_analyzer/src/dependency_assessment*.rs"],
-  "guarded_source_globs": ["crates/rescue_analyzer/src/dependency_assessment*.rs"],
+  "expected_source_files": ["crates/rescue_analyzer/src/dependency_assessment.rs", "crates/rescue_analyzer/src/dependency_assessment_impl.rs", "crates/rescue_analyzer/src/dependency_assessment_grouping.rs", "crates/rescue_analyzer/src/dependency_assessment_status.rs", "crates/rescue_analyzer/src/dependency_assessment_result.rs", "crates/rescue_analyzer/src/dependency_source_classification.rs"],
+  "quality_source_globs": ["crates/rescue_analyzer/src/dependency_assessment*.rs", "crates/rescue_analyzer/src/dependency_source_classification.rs"],
+  "guarded_source_globs": ["crates/rescue_analyzer/src/dependency_assessment*.rs", "crates/rescue_analyzer/src/dependency_source_classification.rs"],
   "forbidden_output_fields": ["selected_path", "resolved_path", "match_score", "copy_operation", "rewrite_operation", "content_hash"],
   "forbidden_guarded_source_patterns": [
     {"literal": "std::fs", "label": "filesystem access"},

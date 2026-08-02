@@ -23,7 +23,10 @@ Date: 2026-07-27
 - [x] ENFORCED_BY_TEST: inventory_is_read_only
 - [x] ENFORCED_BY_TEST: inventory_output_is_deterministic
 - [x] ENFORCED_BY_TEST: fake_resolution_consumer_uses_inventory_contract
+- [ ] ENFORCED_BY_TEST: exact_file_snapshot_does_not_scan_siblings
+- [ ] ENFORCED_BY_TEST: exact_file_snapshot_fails_when_observed_file_disappears
 - [x] ENFORCED_BY_TYPE: AssetInventoryRequest
+- [ ] ENFORCED_BY_TYPE: AssetFileSnapshotRequest
 - [x] ENFORCED_BY_TYPE: AssetInventoryResult
 - [x] ENFORCED_BY_TYPE: AssetInventoryMetadata
 - [x] ENFORCED_BY_TYPE: FileOccurrence

@@ -3,6 +3,7 @@ mod dependency_assessment_grouping;
 mod dependency_assessment_impl;
 mod dependency_assessment_result;
 mod dependency_assessment_status;
+mod dependency_source_classification;
 mod preflight_report;
 mod preflight_report_impl;
 mod project_discovery;

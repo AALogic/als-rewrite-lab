@@ -17,9 +17,6 @@ from typing import Any, Dict, Iterable, List, Set
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SPECS_DIR = ROOT / "specs"
-
-
 @dataclass
 class GuardResult:
     command: str
@@ -57,7 +54,18 @@ def load_json(path: Path) -> Dict[str, Any]:
 
 
 def module_dir(module_id: str) -> Path:
-    return SPECS_DIR / module_id
+    return ROOT / "specs" / module_id
+
+
+def discover_module_ids() -> List[str]:
+    specs_dir = ROOT / "specs"
+    if not specs_dir.exists():
+        return []
+    return sorted(
+        path.parent.name
+        for path in specs_dir.glob("*/module.contract.json")
+        if path.is_file()
+    )
 
 
 def markdown_heading_exists(text: str, heading: str) -> bool:
@@ -577,6 +585,25 @@ def check_verify_module(module_id: str) -> GuardResult:
     return result
 
 
+def check_verify_all() -> GuardResult:
+    result = GuardResult("verify-all", "all-modules")
+    module_ids = discover_module_ids()
+    if not module_ids:
+        result.fail("no module.contract.json files found under specs/")
+        return result
+
+    for module_id in module_ids:
+        module_result = check_verify_module(module_id)
+        for failure in module_result.failures:
+            result.fail(f"{module_id}: {failure}")
+        for warning in module_result.warnings:
+            result.warn(f"{module_id}: {warning}")
+
+    if result.passed:
+        result.warnings = [f"verified {len(module_ids)} module contracts"]
+    return result
+
+
 def emit_result(result: GuardResult, as_json: bool) -> int:
     if as_json:
         print(json.dumps(result.__dict__, indent=2))
@@ -592,12 +619,18 @@ def emit_result(result: GuardResult, as_json: bool) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Guarded workflow checks")
-    parser.add_argument("command", choices=["module-ready", "verify-module"])
-    parser.add_argument("module_id")
+    parser.add_argument("command", choices=["module-ready", "verify-module", "verify-all"])
+    parser.add_argument("module_id", nargs="?")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
-    if args.command == "module-ready":
+    if args.command == "verify-all":
+        if args.module_id is not None:
+            parser.error("verify-all does not accept a module_id")
+        result = check_verify_all()
+    elif args.module_id is None:
+        parser.error(f"{args.command} requires a module_id")
+    elif args.command == "module-ready":
         result = check_module_ready(args.module_id)
     else:
         result = check_verify_module(args.module_id)

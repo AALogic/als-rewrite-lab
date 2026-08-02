@@ -1,6 +1,6 @@
 # Tasks: 014 PackagePromoter
 
-- [x] Define PackagePromotionResult v0.1.
+- [x] Define PackagePromotionResult v0.2.
 - [x] ENFORCED_BY_TEST: validated_staging_is_promoted_without_touching_sources
 - [x] ENFORCED_BY_TEST: existing_final_target_is_never_overwritten
 - [x] ENFORCED_BY_TEST: tampered_staged_file_blocks_promotion
@@ -10,6 +10,7 @@
 - [x] ENFORCED_BY_TEST: repeated_promotion_verifies_existing_package
 - [x] ENFORCED_BY_TEST: symlink_inside_staging_blocks_promotion
 - [x] ENFORCED_BY_TEST: changed_original_source_blocks_promotion
+- [x] ENFORCED_BY_TEST: current_path_audio_uses_metadata_only_verification_end_to_end
 - [x] ENFORCED_BY_TYPE: PackagePromotionRequest
 - [x] ENFORCED_BY_TYPE: PackagePromotionResult
 - [x] ENFORCED_BY_TYPE: PackagePromotionMetadata

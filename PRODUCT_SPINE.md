@@ -1,7 +1,7 @@
 # Product Spine
 
 Status: active product spine  
-Date: 2026-06-02  
+Date: 2026-08-03
 Scope: global product promise, use cases, capability map and gates from vision to code
 
 ## 1. Purpose
@@ -107,6 +107,10 @@ It is not a RequiredAsset, FileOccurrence or ContentIdentity.
 
 Path is location evidence, not identity.
 File existence is availability evidence, not proof of the expected sample.
+For packaging current project state, an exact existing active path may be
+preserved as the current binding without claiming historical content identity.
+Moved recovery candidates still require strong expected identity or explicit
+source-bound user selection.
 The parent of an ALS file is not automatically the Ableton Project root.
 Facts, observations, evidence and decisions must not share one catch-all model.
 ```
@@ -235,6 +239,9 @@ Observe recorded path candidates
 Group occurrences into logical requirements
   -> DependencyAssessment
 
+Bind audio still present at one recorded path without claiming identity
+  -> CurrentPathBinding
+
 Scan selected filesystem scopes
   -> AssetInventory
 
@@ -290,7 +297,6 @@ Still outside the current MVP:
 ```text
 automatic full-disk UX and persistent incremental index
 batch execution and resume
-desktop UI
 plugin, preset, Pack and Max for Live portability
 cleanup or deletion
 Live 9/10/12 and Windows rewrite support claims
@@ -298,6 +304,41 @@ Live 9/10/12 and Windows rewrite support claims
 
 Implemented write modules remain laboratory-only until the real Ableton runtime
 gate and release hardening are complete.
+
+Desktop Alpha is now inside the current MVP. It covers one selected project,
+shows preflight facts, collects explicit user choices, invokes approved
+application-service workflows and presents final evidence. It does not add new
+matching, copy or rewrite policy.
+
+### 5.2 Desktop Alpha Boundary
+
+Required first vertical slice:
+
+```text
+choose one ALS
+-> run read-only analysis through DesktopApplicationService
+-> show project/dependency summary
+-> save a local run report
+```
+
+Implemented write-capable desktop slice:
+
+```text
+use only audio that still exists at paths recorded by the selected ALS
+-> report missing audio without searching for replacements
+-> choose an absent output target
+-> preview a complete or incomplete immutable copy plan
+-> create and validate the copy after explicit confirmation
+-> show whether the result is complete or still has missing files
+```
+
+Whole-computer indexing, moved-file matching and candidate selection remain a
+later product stage. They are not prerequisites for the first write-capable
+Desktop workflow.
+
+Diagnostic exports are local and user-initiated. A shareable export must omit
+ALS bytes, audio bytes and private absolute paths by default. The unredacted
+private ledger remains local unless the user deliberately chooses otherwise.
 
 ## 6. Gate Statuses
 

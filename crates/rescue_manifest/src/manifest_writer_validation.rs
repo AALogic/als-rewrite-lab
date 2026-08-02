@@ -23,6 +23,7 @@ pub(crate) fn validate_inputs(
     }
     if validation.validation_status != "validation_passed"
         || !validation.errors.is_empty()
+        || validation.metadata.verified_directory_count != plan.directory_operations.len()
         || validation.metadata.verified_file_count != plan.copy_operations.len()
         || validation.metadata.verified_rewrite_count != plan.rewrite_operations.len()
     {

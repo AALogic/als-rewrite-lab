@@ -13,7 +13,7 @@ Direction:
 ```text
 Rust core
 CLI first
-desktop UI later
+Tauri + React/TypeScript Desktop Alpha is the active product surface
 SQLite only when a persistent inventory is proven necessary
 macOS first without avoidable assumptions that block Windows
 Python only for experiments and one-off research
@@ -55,6 +55,9 @@ docs/audits/
 
 session-digests/ and docs/archive/
   history only; never active instructions
+
+PROJECT_NAVIGATOR.md, PROJECT_WORKFLOW.md, PROJECT_STRUCTURE.md
+  historical discovery material; never current status or build order
 ```
 
 If active sources conflict, `CURRENT_STATE.md` wins for project position and
@@ -70,6 +73,10 @@ does not authorize production use or scope expansion.
 Before changing a module, confirm that the work is within the boundary in
 `CURRENT_STATE.md` and is covered by that module's active specification. Do not
 revive superseded contracts from historical documents.
+
+The active Desktop Alpha may display reports, collect explicit decisions and
+invoke application-service workflows. Frontend code never imports domain
+crates, implements matching policy, copies files or rewrites ALS.
 
 ## 4. Product Model Rules
 

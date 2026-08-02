@@ -8,11 +8,12 @@
     "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
   },
   "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
-  "required_spec_literals": ["PackagePlan v0.1", "StagingExecutionResult v0.1", "ALSRewriteResult v0.1", "live11_3_external_to_imported_v0.1-experimental"],
+  "required_spec_literals": ["PackagePlan v0.4", "StagingExecutionResult v0.3", "ALSRewriteResult v0.1", "live11_3_current_paths_v0.2-lab"],
   "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
   "required_checked_obligations": true,
   "required_obligations": [
     "ENFORCED_BY_TEST: approved_locator_changes_only_three_active_fields",
+    "ENFORCED_BY_TEST: project_local_operation_changes_only_path",
     "ENFORCED_BY_TEST: source_snapshot_mismatch_leaves_staged_als_unchanged",
     "ENFORCED_BY_TEST: old_value_mismatch_fails_closed",
     "ENFORCED_BY_TEST: locator_mismatch_fails_closed",
@@ -34,6 +35,7 @@
   ],
   "required_tests": [
     "approved_locator_changes_only_three_active_fields",
+    "project_local_operation_changes_only_path",
     "source_snapshot_mismatch_leaves_staged_als_unchanged",
     "old_value_mismatch_fails_closed",
     "locator_mismatch_fails_closed",

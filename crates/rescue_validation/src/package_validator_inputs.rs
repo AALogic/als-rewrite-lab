@@ -13,9 +13,16 @@ pub(crate) fn validate_inputs(
     rewrite: &ALSRewriteResult,
 ) -> Vec<PackageValidationError> {
     let mut errors = Vec::new();
-    if plan.plan_status != "ready_for_laboratory_execution"
-        || !plan.errors.is_empty()
-        || !plan.unresolved_requirements.is_empty()
+    if !matches!(
+        plan.plan_status.as_str(),
+        "ready_for_laboratory_execution"
+            | "ready_current_paths_complete"
+            | "ready_current_paths_incomplete"
+    ) || !plan.errors.is_empty()
+        || plan
+            .unresolved_requirements
+            .iter()
+            .any(|item| item.blocks_execution)
     {
         errors.push(error(
             "VALIDATION_PLAN_NOT_READY",
@@ -45,7 +52,54 @@ pub(crate) fn validate_inputs(
     validate_identity(request, plan, staging, rewrite, &mut errors);
     validate_roots(request, plan, &mut errors);
     validate_operation_sets(plan, staging, rewrite, &mut errors);
+    validate_system_dependencies(plan, &mut errors);
     errors
+}
+
+fn validate_system_dependencies(plan: &PackagePlan, errors: &mut Vec<PackageValidationError>) {
+    if plan.metadata.system_dependency_count != plan.system_dependencies.len() {
+        errors.push(error(
+            "VALIDATION_SYSTEM_DEPENDENCY_COUNT_MISMATCH",
+            "System dependency metadata must match the planned dispositions",
+            None,
+        ));
+    }
+    let mut ids = BTreeSet::new();
+    for dependency in &plan.system_dependencies {
+        let contract_valid = ids.insert(dependency.required_asset_id.as_str())
+            && dependency.source_category == "ableton_core_library"
+            && dependency.package_action == "leave_system_managed"
+            && dependency.portability_status == "portable_risk";
+        if !contract_valid {
+            errors.push(error(
+                "VALIDATION_SYSTEM_DEPENDENCY_CONTRACT_INVALID",
+                "System dependency records must be unique confirmed Core Library dispositions",
+                None,
+            ));
+            break;
+        }
+        if plan.rewrite_operations.iter().any(|operation| {
+            operation.required_asset_id == dependency.required_asset_id
+                || dependency.als_ref_ids.contains(&operation.als_ref_id)
+        }) {
+            errors.push(error(
+                "VALIDATION_SYSTEM_DEPENDENCY_REWRITE_FORBIDDEN",
+                "System-managed references must remain unchanged",
+                None,
+            ));
+        }
+        if plan.copy_operations.iter().any(|operation| {
+            dependency
+                .observed_source_paths
+                .contains(&operation.source_path)
+        }) {
+            errors.push(error(
+                "VALIDATION_SYSTEM_DEPENDENCY_COPY_FORBIDDEN",
+                "System-managed files must not be copied by the default package policy",
+                None,
+            ));
+        }
+    }
 }
 
 fn validate_identity(
@@ -120,6 +174,27 @@ fn validate_operation_sets(
     rewrite: &ALSRewriteResult,
     errors: &mut Vec<PackageValidationError>,
 ) {
+    let planned_directory_ids: BTreeSet<_> = plan
+        .directory_operations
+        .iter()
+        .map(|operation| operation.operation_id.as_str())
+        .collect();
+    let staged_directory_ids: BTreeSet<_> = staging
+        .directory_records
+        .iter()
+        .filter(|record| record.operation_status == "created")
+        .map(|record| record.operation_id.as_str())
+        .collect();
+    if planned_directory_ids.len() != plan.directory_operations.len()
+        || staged_directory_ids != planned_directory_ids
+        || staging.metadata.completed_directory_count != plan.directory_operations.len()
+    {
+        errors.push(error(
+            "VALIDATION_DIRECTORY_RECORD_MISMATCH",
+            "Staging records are not one-to-one with planned directories",
+            None,
+        ));
+    }
     let planned_copy_ids: BTreeSet<_> = plan
         .copy_operations
         .iter()

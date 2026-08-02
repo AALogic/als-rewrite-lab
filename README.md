@@ -10,9 +10,10 @@ read ALS -> extract audio references -> observe paths -> assess requirements
 -> rewrite a copied ALS -> validate -> write manifests -> promote a fresh package
 ```
 
-The original ALS and original media remain read-only. The laboratory command is
-not a finished desktop product and does not yet claim rewrite support for Live 9,
-Live 10, Live 12, or native Windows projects.
+The original ALS and original media remain read-only. A local Tauri Desktop
+Alpha can analyze one project and create a plan-bound current-path copy, but it
+is not yet a distributable product and does not claim rewrite support for Live
+9, Live 10, Live 12, or native Windows projects.
 
 The write modules remain available for isolated laboratory verification, but
 the composed command currently blocks before staging until expected content
@@ -29,6 +30,11 @@ cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 python3 tools/private_path_guard.py
 python3 -m unittest discover -s tools/tests -p "test_*.py"
+python3 tools/workflow_guard.py verify-all
+npm --prefix apps/rescue-desktop ci
+npm --prefix apps/rescue-desktop test
+npm --prefix apps/rescue-desktop run check
+npm --prefix apps/rescue-desktop run build
 ```
 
 The CLI can then be built with:
@@ -38,9 +44,9 @@ cargo build --release --locked -p rescue-cli
 ```
 
 The [quality workflow](.github/workflows/quality.yml) runs the locked Rust
-workspace on macOS and Windows, then checks the private-data policy and all
-module workflow contracts on Ubuntu. A configured workflow is not evidence of
-native Windows support until its run passes.
+workspace on macOS and Windows, checks the private-data policy and every
+discovered module contract, and tests/builds the desktop frontend. A configured
+workflow is not evidence of native Windows product support until its run passes.
 
 ## Repository Map
 
@@ -78,7 +84,8 @@ or Windows read-only laboratory handoff.
 
 The default guard checks the staged index and untracked worktree. It checks
 private home paths, private-corpus identifiers, UTF-8 and UTF-16 path dumps, and
-rejects unscannable tracked binary content. It also rejects tracked Ableton and
+rejects unscannable tracked binary content except for an exact allowlist of
+required Tauri application icons. It also rejects tracked Ableton and
 common audio extensions case-insensitively before decoding payloads, including
 OGG, AAC, and SD2. Eligible objects are size-checked before their contents are
 streamed, and oversized objects fail closed without loading their payloads. No

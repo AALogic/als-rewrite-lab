@@ -2,6 +2,7 @@
 
 - [x] Define ALSRewriteResult v0.1.
 - [x] ENFORCED_BY_TEST: approved_locator_changes_only_three_active_fields
+- [x] ENFORCED_BY_TEST: project_local_operation_changes_only_path
 - [x] ENFORCED_BY_TEST: source_snapshot_mismatch_leaves_staged_als_unchanged
 - [x] ENFORCED_BY_TEST: old_value_mismatch_fails_closed
 - [x] ENFORCED_BY_TEST: locator_mismatch_fails_closed

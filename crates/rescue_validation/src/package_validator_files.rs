@@ -21,12 +21,14 @@ pub(crate) fn validate_files(
     validate_tree_membership(staging_root, &plan.copy_operations, &mut errors);
     let mut records = Vec::new();
     for operation in &plan.copy_operations {
-        let (expected_hash, expected_size) = expected_file_state(operation, rewrite);
+        let (expected_hash, expected_size, verification_method) =
+            expected_file_state(operation, rewrite);
         records.push(validate_file(
             staging_root,
             operation,
             expected_hash,
             expected_size,
+            verification_method,
             &mut errors,
         ));
     }
@@ -36,16 +38,18 @@ pub(crate) fn validate_files(
 fn expected_file_state<'a>(
     operation: &'a CopyOperation,
     rewrite: &'a ALSRewriteResult,
-) -> (&'a str, Option<u64>) {
+) -> (Option<&'a str>, Option<u64>, &'a str) {
     if operation.operation_kind == "copy_als" && rewrite.rewrite_status == "rewrite_complete" {
         (
-            rewrite.rewritten_staged_als_hash.as_deref().unwrap_or(""),
+            rewrite.rewritten_staged_als_hash.as_deref(),
             None,
+            rescue_packaging::VERIFY_SHA256_AND_SIZE,
         )
     } else {
         (
-            operation.expected_source_sha256.as_str(),
+            operation.expected_source_sha256.as_deref(),
             Some(operation.expected_source_size),
+            operation.verification_policy.as_str(),
         )
     }
 }
@@ -53,20 +57,22 @@ fn expected_file_state<'a>(
 fn validate_file(
     staging_root: &Path,
     operation: &CopyOperation,
-    expected_hash: &str,
+    expected_hash: Option<&str>,
     expected_size: Option<u64>,
+    verification_method: &str,
     errors: &mut Vec<PackageValidationError>,
 ) -> FileValidationRecord {
     let path = staging_root.join(&operation.target_relative_path);
-    let observed = hash_regular_file(&path);
+    let observed = inspect_regular_file(&path, verification_method);
     let (observed_hash, observed_size, status) = match observed {
         Ok((hash, size))
-            if hash == expected_hash && expected_size.is_none_or(|value| value == size) =>
+            if hash.as_deref() == expected_hash
+                && expected_size.is_none_or(|value| value == size) =>
         {
-            (Some(hash), Some(size), "verified")
+            (hash, Some(size), "verified")
         }
         Ok((hash, size)) => {
-            let code = if hash != expected_hash {
+            let code = if hash.as_deref() != expected_hash {
                 "VALIDATION_FILE_HASH_MISMATCH"
             } else {
                 "VALIDATION_FILE_SIZE_MISMATCH"
@@ -77,7 +83,7 @@ fn validate_file(
                 Some(&operation.operation_id),
                 Some(&path),
             ));
-            (Some(hash), Some(size), "mismatch")
+            (hash, Some(size), "mismatch")
         }
         Err(error) => {
             errors.push(crate::package_validator_result::error(
@@ -92,10 +98,11 @@ fn validate_file(
     FileValidationRecord {
         operation_id: operation.operation_id.clone(),
         target_relative_path: operation.target_relative_path.clone(),
-        expected_sha256: expected_hash.to_string(),
+        expected_sha256: expected_hash.map(str::to_string),
         observed_sha256: observed_hash,
         expected_size,
         observed_size,
+        verification_method: verification_method.to_string(),
         file_status: status.to_string(),
     }
 }
@@ -226,6 +233,38 @@ pub(crate) fn hash_regular_file(path: &Path) -> Result<(String, u64), FileFailur
         size += read as u64;
     }
     Ok((format!("{:x}", hasher.finalize()), size))
+}
+
+fn inspect_regular_file(
+    path: &Path,
+    verification_method: &str,
+) -> Result<(Option<String>, u64), FileFailure> {
+    match verification_method {
+        rescue_packaging::VERIFY_SHA256_AND_SIZE => {
+            hash_regular_file(path).map(|(hash, size)| (Some(hash), size))
+        }
+        rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE => {
+            regular_file_size(path).map(|size| (None, size))
+        }
+        _ => Err(FileFailure {
+            code: "VALIDATION_VERIFICATION_POLICY_UNSUPPORTED",
+            message: "File validation policy is unsupported".to_string(),
+        }),
+    }
+}
+
+fn regular_file_size(path: &Path) -> Result<u64, FileFailure> {
+    let metadata = fs::symlink_metadata(path).map_err(|error| FileFailure {
+        code: "VALIDATION_FILE_UNAVAILABLE",
+        message: format!("Cannot inspect staged file: {error}"),
+    })?;
+    if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
+        return Err(FileFailure {
+            code: "VALIDATION_FILE_NOT_REGULAR",
+            message: "Staged path must be a regular non-symlink file".to_string(),
+        });
+    }
+    Ok(metadata.len())
 }
 
 pub(crate) struct FileFailure {

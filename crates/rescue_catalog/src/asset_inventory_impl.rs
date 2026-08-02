@@ -120,7 +120,7 @@ fn normalized_roots(roots: &[PathBuf]) -> Vec<PathBuf> {
     roots
 }
 
-fn build_records(
+pub(crate) fn build_records(
     mut hashed_files: Vec<(
         crate::asset_inventory_walk::DiscoveredAudioFile,
         crate::asset_inventory_hash::HashObservation,

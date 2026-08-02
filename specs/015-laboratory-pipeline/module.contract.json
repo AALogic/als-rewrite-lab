@@ -8,7 +8,7 @@
     "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
   },
   "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
-  "required_spec_literals": ["LaboratoryPackageRequest v0.1", "LaboratoryPackageResult v0.1", "ready_for_manual_ableton_check"],
+  "required_spec_literals": ["LaboratoryPackageRequest v0.2", "UserSelectionSet v0.1", "LaboratoryPackageResult v0.1", "ready_for_manual_ableton_check"],
   "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
   "required_checked_obligations": true,
   "required_obligations": [
@@ -33,7 +33,10 @@
     "REVIEW_ONLY: completed discovery evidence is retained on output-scope rejection",
     "DOCUMENTED_ONLY: successful static validation still requires manual Ableton verification",
     "ENFORCED_BY_TEST: laboratory_command_requires_explicit_write_flag",
-    "ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs"
+    "ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs",
+    "ENFORCED_BY_TEST: selected_missing_sample_completes_narrow_pipeline",
+    "ENFORCED_BY_TEST: changed_selected_sample_blocks_before_staging",
+    "ENFORCED_BY_TEST: selection_for_different_als_blocks_before_staging"
   ],
   "required_tests": [
     "complete_pipeline_blocks_unconfirmed_candidate_before_staging",
@@ -50,13 +53,16 @@
     "unbounded_filesystem_root_is_rejected",
     "unsupported_live_version_blocks_before_staging",
     "laboratory_command_requires_explicit_write_flag",
-    "laboratory_command_accepts_bounded_inputs"
+    "laboratory_command_accepts_bounded_inputs",
+    "selected_missing_sample_completes_narrow_pipeline",
+    "changed_selected_sample_blocks_before_staging",
+    "selection_for_different_als_blocks_before_staging"
   ],
   "required_tests_must_not_be_ignored": true,
   "required_tests_must_have_substance": true,
   "public_contract_mode": "exact",
   "public_contract": {
-    "LaboratoryPackageRequest": ["run_id", "source_als_path", "scan_roots", "max_scan_entries", "staging_root", "target_project_root", "private_ledger_path"],
+    "LaboratoryPackageRequest": ["run_id", "source_als_path", "scan_roots", "max_scan_entries", "staging_root", "target_project_root", "private_ledger_path", "user_selection_set"],
     "LaboratoryPackageResult": ["pipeline_version", "run_id", "run_status", "completed_stage", "discovery", "als_read_model", "extraction", "path_observations", "assessment", "preflight", "inventory", "resolution", "package_plan", "staging", "rewrite", "validation", "manifests", "promotion", "errors"],
     "LaboratoryPackageError": ["error_code", "stage", "message"]
   },
@@ -77,6 +83,6 @@
     {"literal": "unwrap(", "label": "unwrap"},
     {"literal": "expect(", "label": "expect"}
   ],
-  "allowed_dependency_names": ["clap", "rescue_analyzer", "rescue_catalog", "rescue_core", "rescue_execution", "rescue_manifest", "rescue_packaging", "rescue_pipeline", "rescue_promotion", "rescue_resolution", "rescue_rewriter", "rescue_validation", "serde", "serde_json", "flate2", "roxmltree", "tempfile"],
+  "allowed_dependency_names": ["clap", "rescue_analyzer", "rescue_application", "rescue_catalog", "rescue_core", "rescue_execution", "rescue_manifest", "rescue_packaging", "rescue_pipeline", "rescue_promotion", "rescue_resolution", "rescue_rewriter", "rescue_validation", "serde", "serde_json", "flate2", "roxmltree", "tempfile"],
   "quality_limits": {"max_source_file_lines": 360, "max_function_lines": 105}
 }

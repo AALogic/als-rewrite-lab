@@ -106,7 +106,8 @@ fn add_size_evidence(
     let expected = asset
         .original_file_size
         .as_deref()
-        .and_then(|value| value.parse::<u64>().ok());
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|value| *value > 0);
     match expected {
         Some(size) if size == occurrence.file_size => push_evidence(
             evidence,

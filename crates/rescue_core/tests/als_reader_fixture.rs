@@ -53,6 +53,50 @@ fn minimal_ableton_with_historical_and_non_audio_refs() -> &'static str {
 </Ableton>"#
 }
 
+fn live_11_3_audio_clip_with_file_ref() -> &'static str {
+    r#"<Ableton MajorVersion="5" MinorVersion="11.0_11300" SchemaChangeCount="7" Creator="Ableton Live 11.3.43">
+  <LiveSet>
+    <AudioClip>
+      <SampleRef>
+        <FileRef>
+          <Path Value="/external/kick.wav" />
+          <RelativePath Value="../kick.wav" />
+          <RelativePathType Value="1" />
+          <Type Value="2" />
+          <OriginalFileSize Value="123" />
+          <OriginalCrc Value="456" />
+        </FileRef>
+        <DefaultDuration Value="44.1" />
+        <DefaultSampleRate Value="44100" />
+      </SampleRef>
+    </AudioClip>
+  </LiveSet>
+</Ableton>"#
+}
+
+fn live_11_3_type3_reference(parent: &str, relative_path: &str) -> String {
+    format!(
+        r#"<Ableton MajorVersion="5" MinorVersion="11.0_11300" SchemaChangeCount="7" Creator="Ableton Live 11.3.43">
+  <LiveSet>
+    <{parent}>
+      <SampleRef>
+        <FileRef>
+          <Path Value="/old/Project/{relative_path}" />
+          <RelativePath Value="{relative_path}" />
+          <RelativePathType Value="3" />
+          <Type Value="2" />
+          <OriginalFileSize Value="123" />
+          <OriginalCrc Value="456" />
+        </FileRef>
+        <DefaultDuration Value="44.1" />
+        <DefaultSampleRate Value="44100" />
+      </SampleRef>
+    </{parent}>
+  </LiveSet>
+</Ableton>"#
+    )
+}
+
 fn relative_path_type_counts(model: &ALSReadModel) -> BTreeMap<String, usize> {
     let mut counts = BTreeMap::new();
 
@@ -168,6 +212,69 @@ fn active_audio_refs_preserve_rewrite_relevant_fields() {
 }
 
 #[test]
+fn live_11_3_audio_clip_reference_is_supported_for_laboratory_rewrite() {
+    let fixture = gzip_als("live_11_3_audio_clip", live_11_3_audio_clip_with_file_ref());
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert_eq!(reference.usage_context, "audio_clip");
+    assert!(reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "supported");
+}
+
+#[test]
+fn live_11_3_project_local_type3_reference_is_supported_for_path_only_rewrite() {
+    let xml = live_11_3_type3_reference("AudioClip", "Samples/Recorded/kick.wav");
+    let fixture = gzip_als("live_11_3_project_local_type3", &xml);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert_eq!(reference.usage_context, "audio_clip");
+    assert!(reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "supported");
+}
+
+#[test]
+fn live_11_3_multisample_type3_reference_is_supported_for_path_only_rewrite() {
+    let xml = live_11_3_type3_reference("MultiSamplePart", "Samples/Recorded/kick.wav");
+    let fixture = gzip_als("live_11_3_multisample_type3", &xml);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert_eq!(reference.usage_context, "simpler_multisample");
+    assert!(reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "supported");
+}
+
+#[test]
+fn unsafe_project_local_relative_path_requires_test() {
+    let xml = live_11_3_type3_reference("AudioClip", "Samples/../outside.wav");
+    let fixture = gzip_als("live_11_3_unsafe_project_local", &xml);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert!(!reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "requires_test");
+}
+
+#[test]
+fn unknown_or_unsupported_context_is_not_a_rewrite_candidate() {
+    let xml = minimal_ableton_with_file_ref("/external/kick.wav", "../kick.wav")
+        .replace("MinorVersion=\"12\"", "MinorVersion=\"11.0_11300\"")
+        .replace(
+            "Creator=\"Ableton Live\"",
+            "Creator=\"Ableton Live 11.3.43\"",
+        );
+    let fixture = gzip_als("live_11_3_unknown_context", &xml);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert_eq!(reference.usage_context, "unknown");
+    assert!(!reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "requires_test");
+}
+
+#[test]
 fn als_reader_does_not_infer_project_root_from_als_parent() {
     let fixture = gzip_als(
         "project_root_not_inferred",
@@ -175,7 +282,7 @@ fn als_reader_does_not_infer_project_root_from_als_parent() {
     );
     let model = analyze_als(fixture.path()).unwrap();
 
-    assert_eq!(model.set_metadata.reader_version, "0.2.2");
+    assert_eq!(model.set_metadata.reader_version, "0.2.4");
     assert_eq!(model.set_metadata.source_project_root, None);
 }
 

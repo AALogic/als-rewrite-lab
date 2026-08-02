@@ -4,8 +4,8 @@ use rescue_rewriter::ALSRewriteResult;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-pub const PACKAGE_VALIDATOR_VERSION: &str = "0.1.0";
-pub const PACKAGE_VALIDATION_SCHEMA_VERSION: &str = "0.1";
+pub const PACKAGE_VALIDATOR_VERSION: &str = "0.4.0";
+pub const PACKAGE_VALIDATION_SCHEMA_VERSION: &str = "0.4";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PackageValidationRequest {
@@ -18,6 +18,7 @@ pub struct PackageValidationResult {
     pub metadata: PackageValidationMetadata,
     pub staging_root: PathBuf,
     pub final_target_root: PathBuf,
+    pub directory_records: Vec<DirectoryValidationRecord>,
     pub file_records: Vec<FileValidationRecord>,
     pub semantic_diff_records: Vec<SemanticDiffRecord>,
     pub validation_status: String,
@@ -34,6 +35,8 @@ pub struct PackageValidationMetadata {
     pub execution_id: String,
     pub rewrite_id: String,
     pub source_als_hash: String,
+    pub planned_directory_count: usize,
+    pub verified_directory_count: usize,
     pub planned_file_count: usize,
     pub verified_file_count: usize,
     pub planned_rewrite_count: usize,
@@ -43,13 +46,22 @@ pub struct PackageValidationMetadata {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DirectoryValidationRecord {
+    pub operation_id: String,
+    pub target_relative_path: PathBuf,
+    pub purpose: String,
+    pub directory_status: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FileValidationRecord {
     pub operation_id: String,
     pub target_relative_path: PathBuf,
-    pub expected_sha256: String,
+    pub expected_sha256: Option<String>,
     pub observed_sha256: Option<String>,
     pub expected_size: Option<u64>,
     pub observed_size: Option<u64>,
+    pub verification_method: String,
     pub file_status: String,
 }
 

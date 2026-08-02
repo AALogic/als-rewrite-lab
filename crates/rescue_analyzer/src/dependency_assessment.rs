@@ -1,7 +1,7 @@
 use rescue_core::{DependencyExtractionResult, PathObservationResult};
 use serde::{Deserialize, Serialize};
 
-pub const DEPENDENCY_ASSESSMENT_VERSION: &str = "0.1.0";
+pub const DEPENDENCY_ASSESSMENT_VERSION: &str = "0.2.0";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DependencyAssessmentResult {
@@ -38,11 +38,22 @@ pub struct RequiredAsset {
     pub extension: Option<String>,
     pub original_file_size: Option<String>,
     pub original_crc: Option<String>,
+    pub source_category: String,
+    pub management_class: String,
+    pub source_classification_status: String,
+    pub source_classification_basis: String,
     pub candidate_observations: Vec<RequiredAssetCandidateObservation>,
     pub availability_status: String,
     pub resolution_status: String,
     pub risk_flags: Vec<String>,
     pub evidence_status: String,
+}
+
+impl RequiredAsset {
+    pub fn is_confirmed_system_dependency(&self) -> bool {
+        self.management_class == "system_dependency"
+            && self.source_classification_status == "confirmed"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

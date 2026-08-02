@@ -2,15 +2,14 @@ use crate::{PackagePromotionError, PromotedFileRecord};
 use rescue_manifest::ManifestWriteResult;
 use rescue_packaging::PackagePlan;
 use rescue_validation::PackageValidationResult;
-use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs::{self, File};
-use std::io::Read;
+use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 struct ExpectedFile {
-    sha256: String,
+    sha256: Option<String>,
     size: u64,
+    verification_method: String,
 }
 
 pub(crate) struct RootVerification {
@@ -57,12 +56,15 @@ pub(crate) fn verify_package_root(
     let mut records = Vec::new();
     for (relative, expected_file) in expected {
         let path = root.join(&relative);
-        match hash_regular_file(&path) {
+        match crate::package_promoter_verification::inspect_regular_file(
+            &path,
+            &expected_file.verification_method,
+        ) {
             Ok((hash, size)) if hash == expected_file.sha256 && size == expected_file.size => {
                 records.push(record(
                     relative,
                     expected_file,
-                    Some(hash),
+                    hash,
                     Some(size),
                     "verified",
                 ));
@@ -76,7 +78,7 @@ pub(crate) fn verify_package_root(
                 records.push(record(
                     relative,
                     expected_file,
-                    Some(hash),
+                    hash,
                     Some(size),
                     "mismatch",
                 ));
@@ -113,7 +115,8 @@ pub(crate) fn verify_private_ledger(
             Some(&manifests.private_ledger_path),
         )
     })?;
-    let (hash, size) = hash_regular_file(&manifests.private_ledger_path)?;
+    let (hash, size) =
+        crate::package_promoter_verification::hash_regular_file(&manifests.private_ledger_path)?;
     if hash != expected_hash || size != expected_size {
         return Err(error(
             "PROMOTION_PRIVATE_LEDGER_MISMATCH",
@@ -125,7 +128,8 @@ pub(crate) fn verify_private_ledger(
 }
 
 pub(crate) fn verify_original_source(plan: &PackagePlan) -> Result<(), PackagePromotionError> {
-    let (hash, _) = hash_regular_file(&plan.source_als.source_als_path)?;
+    let (hash, _) =
+        crate::package_promoter_verification::hash_regular_file(&plan.source_als.source_als_path)?;
     if hash != plan.source_als.source_file_hash {
         return Err(error(
             "ORIGINAL_FILE_CHANGED",
@@ -150,13 +154,18 @@ fn expected_files(
                 Some(&record.target_relative_path),
             ));
         }
-        let hash = record.observed_sha256.clone().ok_or_else(|| {
-            error(
+        let hash_valid = match record.verification_method.as_str() {
+            rescue_packaging::VERIFY_SHA256_AND_SIZE => record.observed_sha256.is_some(),
+            rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE => record.observed_sha256.is_none(),
+            _ => false,
+        };
+        if !hash_valid {
+            return Err(error(
                 "PROMOTION_VALIDATION_RECORD_INVALID",
-                "Validation file hash is missing",
+                "Validation evidence does not match its verification method",
                 Some(&record.target_relative_path),
-            )
-        })?;
+            ));
+        }
         let size = record.observed_size.ok_or_else(|| {
             error(
                 "PROMOTION_VALIDATION_RECORD_INVALID",
@@ -166,7 +175,11 @@ fn expected_files(
         })?;
         expected.insert(
             record.target_relative_path.clone(),
-            ExpectedFile { sha256: hash, size },
+            ExpectedFile {
+                sha256: record.observed_sha256.clone(),
+                size,
+                verification_method: record.verification_method.clone(),
+            },
         );
     }
     if expected.len() != plan.copy_operations.len() {
@@ -194,8 +207,9 @@ fn expected_files(
         .insert(
             manifests.package_manifest_relative_path.clone(),
             ExpectedFile {
-                sha256: manifest_hash,
+                sha256: Some(manifest_hash),
                 size: manifest_size,
+                verification_method: rescue_packaging::VERIFY_SHA256_AND_SIZE.to_string(),
             },
         )
         .is_some()
@@ -282,39 +296,6 @@ fn collect_files(root: &Path) -> Result<BTreeSet<PathBuf>, PackagePromotionError
     Ok(files)
 }
 
-fn hash_regular_file(path: &Path) -> Result<(String, u64), PackagePromotionError> {
-    let metadata = fs::symlink_metadata(path).map_err(|_| {
-        error(
-            "PROMOTION_FILE_UNAVAILABLE",
-            "Cannot inspect file",
-            Some(path),
-        )
-    })?;
-    if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
-        return Err(error(
-            "PROMOTION_FILE_NOT_REGULAR",
-            "Expected path is not a regular non-symlink file",
-            Some(path),
-        ));
-    }
-    let mut file = File::open(path)
-        .map_err(|_| error("PROMOTION_FILE_READ_FAILED", "Cannot open file", Some(path)))?;
-    let mut hasher = Sha256::new();
-    let mut size = 0_u64;
-    let mut buffer = [0_u8; 64 * 1024];
-    loop {
-        let read = file
-            .read(&mut buffer)
-            .map_err(|_| error("PROMOTION_FILE_READ_FAILED", "Cannot read file", Some(path)))?;
-        if read == 0 {
-            break;
-        }
-        hasher.update(&buffer[..read]);
-        size += read as u64;
-    }
-    Ok((format!("{:x}", hasher.finalize()), size))
-}
-
 fn record(
     relative_path: PathBuf,
     expected: ExpectedFile,
@@ -328,6 +309,7 @@ fn record(
         observed_sha256: observed_hash,
         expected_size: expected.size,
         observed_size,
+        verification_method: expected.verification_method,
         file_status: status.to_string(),
     }
 }

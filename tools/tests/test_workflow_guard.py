@@ -48,6 +48,27 @@ class WorkspaceTestDiscoveryTest(unittest.TestCase):
             guard.ROOT = original_root
 
 
+class ModuleContractDiscoveryTest(unittest.TestCase):
+    def test_module_contracts_are_discovered_without_a_manual_list(self) -> None:
+        original_root = guard.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                for module_id in ("018-desktop-copy", "001-reader"):
+                    module_dir = root / "specs" / module_id
+                    module_dir.mkdir(parents=True)
+                    (module_dir / "module.contract.json").write_text("{}", encoding="utf-8")
+                (root / "specs" / "999-not-a-module").mkdir(parents=True)
+                guard.ROOT = root
+
+                self.assertEqual(
+                    guard.discover_module_ids(),
+                    ["001-reader", "018-desktop-copy"],
+                )
+        finally:
+            guard.ROOT = original_root
+
+
 class ModuleDependencyScopeTest(unittest.TestCase):
     def test_dependency_check_uses_only_module_owning_crates(self) -> None:
         original_root = guard.ROOT

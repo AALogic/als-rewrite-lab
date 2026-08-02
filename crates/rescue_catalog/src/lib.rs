@@ -1,8 +1,10 @@
+mod asset_file_snapshot;
 mod asset_inventory;
 mod asset_inventory_hash;
 mod asset_inventory_impl;
 mod asset_inventory_walk;
 
+pub use asset_file_snapshot::{snapshot_asset_files, AssetFileSnapshotRequest};
 pub use asset_inventory::{
     scan_assets, AssetInventoryError, AssetInventoryMetadata, AssetInventoryRequest,
     AssetInventoryResult, AssetInventoryWarning, ContentRecord, FileOccurrence,

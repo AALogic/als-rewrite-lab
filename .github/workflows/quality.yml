@@ -57,26 +57,34 @@ jobs:
         run: python3 tools/private_path_guard.py
 
       - name: Verify module contracts
-        shell: bash
-        run: |
-          set -euo pipefail
-          modules=(
-            001-als-reader
-            002-dependency-extractor
-            003-path-verifier
-            004-project-discovery
-            005-dependency-assessment
-            006-preflight-report
-            007-asset-inventory
-            008-asset-resolution
-            009-package-planner
-            010-staging-executor
-            011-als-rewriter
-            012-package-validator
-            013-ledger-and-manifest
-            014-package-promoter
-            015-laboratory-pipeline
-          )
-          for module in "${modules[@]}"; do
-            python3 tools/workflow_guard.py verify-module "$module"
-          done
+        run: python3 tools/workflow_guard.py verify-all
+
+  frontend:
+    name: Desktop frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/rescue-desktop
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/rescue-desktop/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Test desktop wire contract
+        run: npm test
+
+      - name: Check TypeScript
+        run: npm run check
+
+      - name: Build frontend
+        run: npm run build

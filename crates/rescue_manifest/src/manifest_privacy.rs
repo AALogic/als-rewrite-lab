@@ -3,6 +3,11 @@ use serde_json::Value;
 use std::path::{Component, Path};
 
 pub(crate) fn validate_portable_manifest(manifest: &PackageManifest) -> Result<(), String> {
+    for directory in &manifest.directories {
+        if !safe_relative(&directory.relative_path) {
+            return Err("Package manifest contains an unsafe directory path".to_string());
+        }
+    }
     for file in &manifest.files {
         if !safe_relative(&file.relative_path) {
             return Err("Package manifest contains an unsafe file path".to_string());

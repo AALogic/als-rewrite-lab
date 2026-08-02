@@ -1,10 +1,8 @@
 use clap::{Parser, Subcommand};
-use rescue_analyzer::{
-    assess_dependencies, build_preflight_report, discover_project, ProjectDiscoveryRequest,
+use rescue_application::{
+    analyze_project, prepare_copy, DesktopAnalyzeRequest, DesktopPrepareCopyRequest,
 };
-use rescue_core::{
-    analyze_als, extract_dependencies, observe_dependency_paths, ALSError, PathObservationContext,
-};
+use rescue_core::{analyze_als, extract_dependencies, ALSError};
 use serde::Serialize;
 use serde_json::json;
 use std::path::PathBuf;
@@ -31,6 +29,12 @@ enum Command {
     Preflight {
         path: PathBuf,
     },
+    #[command(name = "copy-preview")]
+    CopyPreview {
+        path: PathBuf,
+        #[arg(long)]
+        target_root: PathBuf,
+    },
     #[command(name = "lab-package")]
     LabPackage {
         path: PathBuf,
@@ -46,6 +50,8 @@ enum Command {
         target_root: PathBuf,
         #[arg(long)]
         private_ledger: PathBuf,
+        #[arg(long)]
+        selection_file: Option<PathBuf>,
         #[arg(long, required = true)]
         laboratory_write: bool,
     },
@@ -75,6 +81,7 @@ fn main() -> ExitCode {
             Err(error) => print_als_error(error),
         },
         Command::Preflight { path } => run_preflight(path),
+        Command::CopyPreview { path, target_root } => run_copy_preview(path, target_root),
         Command::LabPackage {
             path,
             run_id,
@@ -83,6 +90,7 @@ fn main() -> ExitCode {
             staging_root,
             target_root,
             private_ledger,
+            selection_file,
             laboratory_write: _,
         } => laboratory_command::run(laboratory_command::Arguments {
             path,
@@ -92,46 +100,28 @@ fn main() -> ExitCode {
             staging_root,
             target_root,
             private_ledger,
+            selection_file,
         }),
     }
 }
 
-fn run_preflight(path: PathBuf) -> ExitCode {
-    let discovery = discover_project(&ProjectDiscoveryRequest {
-        source_als_path: path.clone(),
+fn run_copy_preview(path: PathBuf, target_root: PathBuf) -> ExitCode {
+    let preview = prepare_copy(&DesktopPrepareCopyRequest {
+        request_id: "cli-copy-preview".to_string(),
+        source_als_path: path,
+        target_project_root: target_root,
     });
-    if !discovery.errors.is_empty() {
-        return print_json_with_domain_status(&discovery, false);
-    }
-    let analysis = match analyze_als(path) {
-        Ok(analysis) => analysis,
-        Err(error) => return print_als_error(error),
-    };
-    let extraction = extract_dependencies(&analysis);
-    let observations = observe_dependency_paths(
-        &extraction,
-        &PathObservationContext {
-            host_platform: current_host_platform().to_string(),
-            confirmed_project_root: discovery.confirmed_project_root.clone(),
-            project_root_basis: discovery
-                .confirmed_project_root
-                .as_ref()
-                .map(|_| "confirmed_ableton_project_structure".to_string()),
-        },
-    );
-    let assessment = assess_dependencies(&extraction, &observations);
-    let report = build_preflight_report(&discovery, &assessment);
-    let success = report.errors.is_empty();
-    print_json_with_domain_status(&report, success)
+    print_json_with_domain_status(&preview, preview.errors.is_empty())
 }
 
-fn current_host_platform() -> &'static str {
-    if cfg!(target_os = "windows") {
-        "windows"
-    } else if cfg!(target_os = "macos") {
-        "macos"
-    } else {
-        "posix"
+fn run_preflight(path: PathBuf) -> ExitCode {
+    let result = analyze_project(&DesktopAnalyzeRequest {
+        request_id: "cli-preflight".to_string(),
+        source_als_path: path,
+    });
+    match result.preflight_report {
+        Some(report) => print_json_with_domain_status(&report, result.errors.is_empty()),
+        None => print_json_with_domain_status(&result, false),
     }
 }
 
@@ -221,6 +211,18 @@ mod tests {
         assert_eq!(error.kind(), ErrorKind::UnknownArgument);
     }
 
+    #[test]
+    fn copy_preview_cli_command_is_available() {
+        assert!(Cli::try_parse_from([
+            "rescue",
+            "copy-preview",
+            "fixture.als",
+            "--target-root",
+            "/tmp/fixture Rescue Project",
+        ])
+        .is_ok());
+    }
+
     fn laboratory_args() -> [&'static str; 16] {
         [
             "rescue",
@@ -253,5 +255,16 @@ mod tests {
     #[test]
     fn laboratory_command_accepts_bounded_inputs() {
         assert!(Cli::try_parse_from(laboratory_args()).is_ok());
+    }
+
+    #[test]
+    fn laboratory_command_accepts_optional_selection_file() {
+        let mut args = laboratory_args().to_vec();
+        let Some(write_flag) = args.pop() else {
+            panic!("laboratory fixture must contain the write flag");
+        };
+        args.extend(["--selection-file", "/lab/selection.json", write_flag]);
+
+        assert!(Cli::try_parse_from(args).is_ok());
     }
 }

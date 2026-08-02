@@ -1,11 +1,15 @@
-use rescue_execution::{CopyExecutionRecord, StagingExecutionMetadata, StagingExecutionResult};
+use rescue_execution::{
+    CopyExecutionRecord, DirectoryExecutionRecord, StagingExecutionMetadata, StagingExecutionResult,
+};
 use rescue_manifest::{write_package_evidence, ManifestWriteRequest, PrivateLedger};
 use rescue_packaging::{
-    CopyOperation, PackagePlan, PackagePlanMetadata, PlannedSourceAls, RewriteOperation,
+    CopyOperation, CreateDirectoryOperation, PackagePlan, PackagePlanMetadata, PlannedSourceAls,
+    RewriteOperation, SystemDependencyRequirement,
 };
 use rescue_rewriter::{ALSRewriteMetadata, ALSRewriteResult, RewriteExecutionRecord};
 use rescue_validation::{
-    FileValidationRecord, PackageValidationMetadata, PackageValidationResult, SemanticDiffRecord,
+    DirectoryValidationRecord, FileValidationRecord, PackageValidationMetadata,
+    PackageValidationResult, SemanticDiffRecord,
 };
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -28,6 +32,15 @@ fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
+fn directory(id: &str, path: &str, purpose: &str) -> CreateDirectoryOperation {
+    CreateDirectoryOperation {
+        operation_id: id.to_string(),
+        target_relative_path: PathBuf::from(path),
+        purpose: purpose.to_string(),
+        collision_policy: "fail_if_exists".to_string(),
+    }
+}
+
 fn fixture() -> Fixture {
     let temp = tempfile::tempdir().expect("tempdir");
     let source_root = temp.path().join("private-source");
@@ -36,13 +49,16 @@ fn fixture() -> Fixture {
     let evidence_root = temp.path().join("private-evidence");
     fs::create_dir_all(&source_root).expect("source root");
     fs::create_dir_all(staging_root.join("Samples/Imported")).expect("staging");
+    fs::create_dir(staging_root.join("Ableton Project Info")).expect("project marker");
     fs::create_dir(&evidence_root).expect("evidence");
     let source_als = source_root.join("Set.als");
     let source_audio = source_root.join("shared.wav");
+    let system_audio = source_root.join("Core Library Kick.wav");
     let staged_als = staging_root.join("Set.als");
     let staged_audio = staging_root.join("Samples/Imported/shared.wav");
     fs::write(&source_als, b"source ALS").expect("source ALS");
     fs::write(&source_audio, b"audio").expect("source audio");
+    fs::write(&system_audio, b"system audio").expect("system audio");
     fs::write(&staged_als, b"rewritten ALS").expect("staged ALS");
     fs::write(&staged_audio, b"audio").expect("staged audio");
     let source_hash = digest(b"source ALS");
@@ -54,9 +70,11 @@ fn fixture() -> Fixture {
             operation_kind: "copy_als".to_string(),
             source_path: source_als.clone(),
             target_relative_path: PathBuf::from("Set.als"),
-            expected_source_sha256: source_hash.clone(),
+            expected_source_sha256: Some(source_hash.clone()),
             expected_source_size: 10,
-            content_id: format!("als:{source_hash}"),
+            content_id: Some(format!("als:{source_hash}")),
+            source_binding_id: format!("als:{source_hash}"),
+            verification_policy: rescue_packaging::VERIFY_SHA256_AND_SIZE.to_string(),
             collision_policy: "fail_if_exists".to_string(),
             preconditions: Vec::new(),
         },
@@ -65,9 +83,11 @@ fn fixture() -> Fixture {
             operation_kind: "copy_audio".to_string(),
             source_path: source_audio,
             target_relative_path: PathBuf::from("Samples/Imported/shared.wav"),
-            expected_source_sha256: audio_hash.clone(),
+            expected_source_sha256: Some(audio_hash.clone()),
             expected_source_size: 5,
-            content_id: format!("sha256:{audio_hash}"),
+            content_id: Some(format!("sha256:{audio_hash}")),
+            source_binding_id: "occ:audio".to_string(),
+            verification_policy: rescue_packaging::VERIFY_SHA256_AND_SIZE.to_string(),
             collision_policy: "fail_if_exists".to_string(),
             preconditions: Vec::new(),
         },
@@ -93,9 +113,22 @@ fn fixture() -> Fixture {
             "RelativePath".to_string(),
             "RelativePathType".to_string(),
         ],
-        rule_id: "live11_3_external_to_imported_v0.1-experimental".to_string(),
+        rule_id: "live11_3_current_paths_v0.2-lab".to_string(),
         support_status: "experimental_lab_only".to_string(),
     }];
+    let directories = vec![
+        directory(
+            "create_project_info",
+            "Ableton Project Info",
+            "ableton_project_marker",
+        ),
+        directory("create_samples", "Samples", "ableton_samples_root"),
+        directory(
+            "create_imported_samples",
+            "Samples/Imported",
+            "imported_audio_root",
+        ),
+    ];
     let plan = PackagePlan {
         metadata: PackagePlanMetadata {
             planner_version: "0.1.0".to_string(),
@@ -104,10 +137,12 @@ fn fixture() -> Fixture {
             planning_mode: "laboratory_rescue_rewrite".to_string(),
             source_als_hash: source_hash.clone(),
             resolution_policy_version: "0.2.0".to_string(),
-            rewrite_ruleset_version: "live11_3_external_to_imported_v0.1-experimental".to_string(),
-            required_asset_count: 1,
+            rewrite_ruleset_version: "live11_3_current_paths_v0.2-lab".to_string(),
+            required_asset_count: 2,
+            directory_operation_count: directories.len(),
             copy_operation_count: 2,
             rewrite_operation_count: 1,
+            system_dependency_count: 1,
             unresolved_count: 0,
             warning_count: 0,
             error_count: 0,
@@ -122,8 +157,20 @@ fn fixture() -> Fixture {
             ableton_minor_version: Some("11.0_11300".to_string()),
         },
         target_project_root: final_root.clone(),
+        directory_operations: directories.clone(),
         copy_operations: copies.clone(),
         rewrite_operations: rewrites.clone(),
+        system_dependencies: vec![SystemDependencyRequirement {
+            required_asset_id: "system_asset0".to_string(),
+            source_category: "ableton_core_library".to_string(),
+            filename: Some("Core Library Kick.wav".to_string()),
+            occurrence_count: 4,
+            als_ref_ids: vec![10, 11, 12, 13],
+            observed_source_paths: vec![system_audio],
+            package_action: "leave_system_managed".to_string(),
+            portability_status: "portable_risk".to_string(),
+            reason: "ableton_core_library_dependency".to_string(),
+        }],
         unresolved_requirements: Vec::new(),
         plan_status: "ready_for_laboratory_execution".to_string(),
         warnings: Vec::new(),
@@ -136,6 +183,8 @@ fn fixture() -> Fixture {
             execution_id: "execution0".to_string(),
             plan_id: "plan0".to_string(),
             source_als_hash: source_hash.clone(),
+            planned_directory_count: directories.len(),
+            completed_directory_count: directories.len(),
             planned_copy_count: 2,
             completed_copy_count: 2,
             warning_count: 0,
@@ -143,6 +192,15 @@ fn fixture() -> Fixture {
         },
         staging_root: staging_root.clone(),
         staged_als_relative_path: PathBuf::from("Set.als"),
+        directory_records: directories
+            .iter()
+            .map(|operation| DirectoryExecutionRecord {
+                operation_id: operation.operation_id.clone(),
+                target_relative_path: operation.target_relative_path.clone(),
+                purpose: operation.purpose.clone(),
+                operation_status: "created".to_string(),
+            })
+            .collect(),
         copy_records: copies
             .iter()
             .map(|operation| CopyExecutionRecord {
@@ -151,9 +209,10 @@ fn fixture() -> Fixture {
                 source_path: operation.source_path.clone(),
                 target_relative_path: operation.target_relative_path.clone(),
                 expected_sha256: operation.expected_source_sha256.clone(),
-                observed_sha256: Some(operation.expected_source_sha256.clone()),
+                observed_sha256: operation.expected_source_sha256.clone(),
                 expected_size: operation.expected_source_size,
                 observed_size: Some(operation.expected_source_size),
+                verification_method: operation.verification_policy.clone(),
                 operation_status: "copied_and_verified".to_string(),
             })
             .collect(),
@@ -169,7 +228,7 @@ fn fixture() -> Fixture {
             execution_id: "execution0".to_string(),
             plan_id: "plan0".to_string(),
             source_als_hash: source_hash.clone(),
-            rewrite_ruleset_version: "live11_3_external_to_imported_v0.1-experimental".to_string(),
+            rewrite_ruleset_version: "live11_3_current_paths_v0.2-lab".to_string(),
             planned_operation_count: 1,
             completed_operation_count: 1,
             warning_count: 0,
@@ -202,6 +261,8 @@ fn fixture() -> Fixture {
             execution_id: "execution0".to_string(),
             rewrite_id: "rewrite-run0".to_string(),
             source_als_hash: source_hash,
+            planned_directory_count: directories.len(),
+            verified_directory_count: directories.len(),
             planned_file_count: 2,
             verified_file_count: 2,
             planned_rewrite_count: 1,
@@ -211,23 +272,34 @@ fn fixture() -> Fixture {
         },
         staging_root: staging_root.clone(),
         final_target_root: final_root.clone(),
+        directory_records: directories
+            .iter()
+            .map(|operation| DirectoryValidationRecord {
+                operation_id: operation.operation_id.clone(),
+                target_relative_path: operation.target_relative_path.clone(),
+                purpose: operation.purpose.clone(),
+                directory_status: "verified".to_string(),
+            })
+            .collect(),
         file_records: vec![
             FileValidationRecord {
                 operation_id: "copy_als".to_string(),
                 target_relative_path: PathBuf::from("Set.als"),
-                expected_sha256: rewritten_hash.clone(),
+                expected_sha256: Some(rewritten_hash.clone()),
                 observed_sha256: Some(rewritten_hash),
                 expected_size: None,
                 observed_size: Some(13),
+                verification_method: rescue_packaging::VERIFY_SHA256_AND_SIZE.to_string(),
                 file_status: "verified".to_string(),
             },
             FileValidationRecord {
                 operation_id: "copy_audio".to_string(),
                 target_relative_path: PathBuf::from("Samples/Imported/shared.wav"),
-                expected_sha256: audio_hash.clone(),
+                expected_sha256: Some(audio_hash.clone()),
                 observed_sha256: Some(audio_hash),
                 expected_size: Some(5),
                 observed_size: Some(5),
+                verification_method: rescue_packaging::VERIFY_SHA256_AND_SIZE.to_string(),
                 file_status: "verified".to_string(),
             },
         ],
@@ -289,6 +361,86 @@ fn passed_validation_writes_portable_manifest_and_private_ledger() {
         .staging_root
         .join("Rescue Manifest/package-manifest.json")
         .exists());
+    let manifest: serde_json::Value = serde_json::from_slice(
+        &fs::read(
+            fixture
+                .staging_root
+                .join("Rescue Manifest/package-manifest.json"),
+        )
+        .expect("portable manifest"),
+    )
+    .expect("manifest JSON");
+    assert_eq!(
+        manifest["system_dependencies"].as_array().map(Vec::len),
+        Some(1)
+    );
+    assert_eq!(
+        manifest["system_dependencies"][0]["package_action"],
+        "leave_system_managed"
+    );
+    assert_eq!(
+        manifest["system_dependencies"][0]["portability_status"],
+        "portable_risk"
+    );
+}
+
+#[test]
+fn metadata_only_audio_manifest_marks_content_identity_not_computed() {
+    let mut fixture = fixture();
+    let operation = fixture
+        .plan
+        .copy_operations
+        .iter_mut()
+        .find(|operation| operation.operation_kind == "copy_audio")
+        .expect("audio operation");
+    operation.expected_source_sha256 = None;
+    operation.content_id = None;
+    operation.verification_policy = rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE.to_string();
+    let staging_record = fixture
+        .staging
+        .copy_records
+        .iter_mut()
+        .find(|record| record.operation_kind == "copy_audio")
+        .expect("audio staging record");
+    staging_record.expected_sha256 = None;
+    staging_record.observed_sha256 = None;
+    staging_record.verification_method =
+        rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE.to_string();
+    let validation_record = fixture
+        .validation
+        .file_records
+        .iter_mut()
+        .find(|record| record.operation_id == "copy_audio")
+        .expect("audio validation record");
+    validation_record.expected_sha256 = None;
+    validation_record.observed_sha256 = None;
+    validation_record.verification_method =
+        rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE.to_string();
+
+    let result = write(&fixture);
+    let manifest: serde_json::Value = serde_json::from_slice(
+        &fs::read(
+            fixture
+                .staging_root
+                .join("Rescue Manifest/package-manifest.json"),
+        )
+        .expect("portable manifest"),
+    )
+    .expect("manifest JSON");
+    let audio = manifest["files"]
+        .as_array()
+        .expect("files")
+        .iter()
+        .find(|file| file["role"] == "copy_audio")
+        .expect("audio manifest record");
+
+    assert_eq!(result.write_status, "manifests_written");
+    assert!(audio["sha256"].is_null());
+    assert_eq!(audio["content_identity_status"], "not_computed");
+    assert_eq!(
+        audio["verification_method"],
+        rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE
+    );
 }
 
 #[test]
@@ -307,7 +459,33 @@ fn portable_manifest_contains_no_absolute_local_paths() {
     assert!(!text.contains(fixture.source_als.to_string_lossy().as_ref()));
     assert!(!text.contains(fixture.final_root.to_string_lossy().as_ref()));
     assert!(!text.contains("/private/source/shared.wav"));
+    assert!(text.contains("Ableton Project Info"));
+    assert!(text.contains("ableton_project_marker"));
     assert!(text.contains("Samples/Imported/shared.wav"));
+}
+
+#[test]
+fn portable_manifest_records_system_dependency_without_local_path() {
+    let fixture = fixture();
+    let result = write(&fixture);
+    let text = fs::read_to_string(
+        fixture
+            .staging_root
+            .join("Rescue Manifest/package-manifest.json"),
+    )
+    .expect("portable manifest");
+    let manifest: serde_json::Value = serde_json::from_str(&text).expect("manifest JSON");
+
+    assert_eq!(result.write_status, "manifests_written");
+    assert_eq!(
+        manifest["system_dependencies"].as_array().map(Vec::len),
+        Some(1)
+    );
+    assert_eq!(
+        manifest["system_dependencies"][0]["required_environment"],
+        "compatible_ableton_core_library"
+    );
+    assert!(!text.contains(fixture._temp.path().to_string_lossy().as_ref()));
 }
 
 #[test]
@@ -323,6 +501,13 @@ fn private_ledger_retains_full_audit_paths() {
     assert_eq!(
         ledger.plan.rewrite_operations[0].old_path.as_deref(),
         Some("/private/source/shared.wav")
+    );
+    assert_eq!(ledger.plan.system_dependencies.len(), 1);
+    assert_eq!(
+        ledger.plan.system_dependencies[0]
+            .observed_source_paths
+            .len(),
+        1
     );
 }
 

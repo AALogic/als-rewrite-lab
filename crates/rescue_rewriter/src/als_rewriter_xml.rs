@@ -41,7 +41,12 @@ pub(crate) fn rewrite_xml(
         .descendants()
         .filter(|node| node.is_element() && node.has_tag_name("SampleRef"))
         .collect();
-    let mut replacements = Vec::with_capacity(operations.len() * 3);
+    let mut replacements = Vec::with_capacity(
+        operations
+            .iter()
+            .map(|operation| operation.fields_to_change.len())
+            .sum(),
+    );
     for operation in operations {
         let sample_ref = sample_refs
             .get(operation.als_ref_id)
@@ -68,30 +73,17 @@ pub(crate) fn rewrite_xml(
                 Some(operation.operation_id.clone()),
             )
         })?;
-        collect_replacement(
-            file_ref,
-            "Path",
-            operation.old_path.as_deref(),
-            &operation.new_path,
-            operation,
-            &mut replacements,
-        )?;
-        collect_replacement(
-            file_ref,
-            "RelativePath",
-            operation.old_relative_path.as_deref(),
-            &operation.new_relative_path,
-            operation,
-            &mut replacements,
-        )?;
-        collect_replacement(
-            file_ref,
-            "RelativePathType",
-            operation.old_relative_path_type.as_deref(),
-            &operation.new_relative_path_type,
-            operation,
-            &mut replacements,
-        )?;
+        for field in &operation.fields_to_change {
+            let (old_value, new_value) = operation_field_values(operation, field)?;
+            collect_replacement(
+                file_ref,
+                field,
+                old_value,
+                new_value,
+                operation,
+                &mut replacements,
+            )?;
+        }
     }
     ensure_non_overlapping(&mut replacements)?;
     let mut rewritten = xml.to_string();
@@ -214,14 +206,23 @@ fn verify_rewritten_values(
                     Some(operation.operation_id.clone()),
                 )
             })?;
-        for (field, expected) in [
-            ("Path", operation.new_path.as_str()),
-            ("RelativePath", operation.new_relative_path.as_str()),
-            (
-                "RelativePathType",
-                operation.new_relative_path_type.as_str(),
-            ),
-        ] {
+        for field in ["Path", "RelativePath", "RelativePathType"] {
+            let (old_value, new_value) = operation_field_values(operation, field)?;
+            let expected = if operation
+                .fields_to_change
+                .iter()
+                .any(|candidate| candidate == field)
+            {
+                new_value
+            } else {
+                old_value.ok_or_else(|| {
+                    failure(
+                        "REWRITE_OLD_VALUE_MISSING",
+                        format!("Plan has no old value for {field}"),
+                        Some(operation.operation_id.clone()),
+                    )
+                })?
+            };
             let observed = direct_child(file_ref, field)
                 .and_then(|node| node.attribute("Value"))
                 .unwrap_or("");
@@ -235,6 +236,28 @@ fn verify_rewritten_values(
         }
     }
     Ok(())
+}
+
+fn operation_field_values<'a>(
+    operation: &'a RewriteOperation,
+    field: &str,
+) -> Result<(Option<&'a str>, &'a str), XmlRewriteFailure> {
+    match field {
+        "Path" => Ok((operation.old_path.as_deref(), &operation.new_path)),
+        "RelativePath" => Ok((
+            operation.old_relative_path.as_deref(),
+            &operation.new_relative_path,
+        )),
+        "RelativePathType" => Ok((
+            operation.old_relative_path_type.as_deref(),
+            &operation.new_relative_path_type,
+        )),
+        _ => Err(failure(
+            "REWRITE_FIELD_UNSUPPORTED",
+            format!("Rewrite field {field} is unsupported"),
+            Some(operation.operation_id.clone()),
+        )),
+    }
 }
 
 fn direct_child<'a, 'input>(

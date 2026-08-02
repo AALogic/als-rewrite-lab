@@ -19,6 +19,7 @@ Date: 2026-07-27
 - [x] ENFORCED_BY_TEST: source_mismatch_blocks_report
 - [x] ENFORCED_BY_TEST: local_candidate_paths_are_explainable
 - [x] ENFORCED_BY_TEST: preflight_output_is_deterministic
+- [x] ENFORCED_BY_TEST: system_dependency_is_exposed_separately_from_missing_assets
 - [x] ENFORCED_BY_TEST: preflight_cli_command_is_available
 - [x] ENFORCED_BY_TYPE: PreflightReport
 - [x] ENFORCED_BY_TYPE: PreflightReportMetadata

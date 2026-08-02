@@ -3,6 +3,7 @@ mod package_promoter_files;
 mod package_promoter_impl;
 mod package_promoter_inputs;
 mod package_promoter_result;
+mod package_promoter_verification;
 
 pub use package_promoter::{
     promote_validated_package, PackagePromotionError, PackagePromotionMetadata,

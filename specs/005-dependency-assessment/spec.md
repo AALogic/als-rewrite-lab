@@ -1,6 +1,6 @@
 # Module Spec 005: DependencyAssessment
 
-Status: ready for implementation, v0.1
+Status: implemented, v0.2
 Date: 2026-07-27
 Implementation target: `rescue_analyzer`
 
@@ -11,7 +11,7 @@ read-only path observations into conservative logical audio requirements.
 
 ```text
 DependencyExtractionResult v0.1 + PathObservationResult v0.2
--> DependencyAssessmentResult v0.1
+-> DependencyAssessmentResult v0.2
 ```
 
 It groups only occurrences carrying the same complete recorded reference
@@ -74,7 +74,7 @@ path text are preserved. The rule groups equal claims, not proven content.
 
 ## Output Contract
 
-`DependencyAssessmentResult v0.1` contains:
+`DependencyAssessmentResult v0.2` contains:
 
 ```text
 assessment_metadata
@@ -88,6 +88,12 @@ IDs, copied recorded hints, all path observations relevant to the group,
 availability status, unresolved resolution status, risk flags and evidence
 status.
 
+It also contains a conservative source classification. A macOS reference is
+confirmed as `ableton_core_library/system_dependency` only when type 5, safe
+Core Library path, safe `Samples/...` relative path and regular-file
+observation evidence agree. Type 5 alone is insufficient. Other source
+categories remain `unclassified/unknown` until separately confirmed.
+
 Availability statuses:
 
 ```text
@@ -96,7 +102,8 @@ no_regular_file_candidate_observed
 unknown
 ```
 
-Resolution status is always `unresolved` in v0.1.
+Resolution status is always `unresolved` in v0.2. Source classification is not
+an asset match and does not select a candidate path.
 
 ## Safety And Boundaries
 

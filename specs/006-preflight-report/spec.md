@@ -1,6 +1,6 @@
 # Module Spec 006: PreflightReport
 
-Status: ready for implementation, v0.1
+Status: implemented, v0.2
 Date: 2026-07-27
 Implementation target: `rescue_analyzer` and read-only `rescue preflight`
 
@@ -10,8 +10,8 @@ PreflightReport turns confirmed project-structure evidence and a dependency
 assessment into a local, user-readable report for one selected ALS.
 
 ```text
-ProjectDiscoveryResult v0.1 + DependencyAssessmentResult v0.1
--> PreflightReport v0.1
+ProjectDiscoveryResult v0.1 + DependencyAssessmentResult v0.2
+-> PreflightReport v0.2
 ```
 
 It reports requirements with observed candidates, requirements needing search,
@@ -36,8 +36,12 @@ requirement details.
 
 ## Output
 
-`PreflightReport v0.1` contains report metadata, project context, aggregate
+`PreflightReport v0.2` contains report metadata, project context, aggregate
 summary, one presentation record per `RequiredAsset`, notices and errors.
+
+Confirmed system dependencies are reported separately from missing assets.
+Their requirement records include source category, management class and
+portability status.
 
 Overall statuses:
 

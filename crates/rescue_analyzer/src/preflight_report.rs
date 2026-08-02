@@ -1,7 +1,7 @@
 use crate::{DependencyAssessmentResult, ProjectDiscoveryResult};
 use serde::{Deserialize, Serialize};
 
-pub const PREFLIGHT_REPORT_VERSION: &str = "0.1.0";
+pub const PREFLIGHT_REPORT_VERSION: &str = "0.2.0";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PreflightReport {
@@ -37,6 +37,7 @@ pub struct PreflightSummary {
     pub overall_status: String,
     pub reference_occurrence_count: usize,
     pub required_asset_count: usize,
+    pub system_dependency_count: usize,
     pub candidate_observed_count: usize,
     pub needs_search_count: usize,
     pub unknown_count: usize,
@@ -48,6 +49,9 @@ pub struct PreflightRequirement {
     pub required_asset_id: String,
     pub filename: Option<String>,
     pub occurrence_count: usize,
+    pub source_category: String,
+    pub management_class: String,
+    pub portability_status: String,
     pub availability_status: String,
     pub resolution_status: String,
     pub candidate_paths: Vec<String>,

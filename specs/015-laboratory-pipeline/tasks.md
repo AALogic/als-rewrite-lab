@@ -1,6 +1,6 @@
 # Tasks: 015 LaboratoryPipeline
 
-- [x] Define LaboratoryPackageRequest v0.1.
+- [x] Define LaboratoryPackageRequest v0.2 with optional UserSelectionSet v0.1.
 - [x] Define LaboratoryPackageResult v0.1.
 - [x] ENFORCED_BY_TEST: complete_pipeline_blocks_unconfirmed_candidate_before_staging
 - [x] ENFORCED_BY_TEST: confirmed_project_root_is_preserved_in_blocked_result
@@ -24,6 +24,9 @@
 - [x] DOCUMENTED_ONLY: successful static validation still requires manual Ableton verification
 - [x] ENFORCED_BY_TEST: laboratory_command_requires_explicit_write_flag
 - [x] ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs
+- [x] ENFORCED_BY_TEST: selected_missing_sample_completes_narrow_pipeline
+- [x] ENFORCED_BY_TEST: changed_selected_sample_blocks_before_staging
+- [x] ENFORCED_BY_TEST: selection_for_different_als_blocks_before_staging
 - [x] Add an explicit laboratory CLI command and parser tests.
 - [x] Run the pipeline on a copied real ALS and preserve private evidence.
 - [ ] Perform and record manual Ableton verification when UI control is available.

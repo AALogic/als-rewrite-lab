@@ -1,5 +1,7 @@
 use rescue_execution::{execute_staging, StagingExecutionRequest};
-use rescue_packaging::{CopyOperation, PackagePlan, PackagePlanMetadata, PlannedSourceAls};
+use rescue_packaging::{
+    CopyOperation, CreateDirectoryOperation, PackagePlan, PackagePlanMetadata, PlannedSourceAls,
+};
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -45,9 +47,11 @@ fn operation(id: &str, kind: &str, source: &Path, target: &str) -> CopyOperation
         operation_kind: kind.to_string(),
         source_path: source.to_path_buf(),
         target_relative_path: PathBuf::from(target),
-        expected_source_sha256: digest(source),
+        expected_source_sha256: Some(digest(source)),
         expected_source_size: fs::metadata(source).expect("metadata").len(),
-        content_id: format!("sha256:{}", digest(source)),
+        content_id: Some(format!("sha256:{}", digest(source))),
+        source_binding_id: format!("test:{id}"),
+        verification_policy: rescue_packaging::VERIFY_SHA256_AND_SIZE.to_string(),
         collision_policy: "fail_if_exists".to_string(),
         preconditions: vec!["source_hash_matches_plan".to_string()],
     }
@@ -69,6 +73,19 @@ fn plan(fixture: &Fixture) -> PackagePlan {
             "Samples/Imported/sample.wav",
         ),
     ];
+    let directories = vec![
+        directory(
+            "create_project_info",
+            "Ableton Project Info",
+            "ableton_project_marker",
+        ),
+        directory("create_samples", "Samples", "ableton_samples_root"),
+        directory(
+            "create_imported_samples",
+            "Samples/Imported",
+            "imported_audio_root",
+        ),
+    ];
     PackagePlan {
         metadata: PackagePlanMetadata {
             planner_version: "0.1.0".to_string(),
@@ -77,10 +94,12 @@ fn plan(fixture: &Fixture) -> PackagePlan {
             planning_mode: "laboratory_rescue_rewrite".to_string(),
             source_als_hash: als_hash.clone(),
             resolution_policy_version: "0.2.0".to_string(),
-            rewrite_ruleset_version: "live11_3_external_to_imported_v0.1-experimental".to_string(),
+            rewrite_ruleset_version: "live11_3_current_paths_v0.2-lab".to_string(),
             required_asset_count: 1,
+            directory_operation_count: directories.len(),
             copy_operation_count: operations.len(),
             rewrite_operation_count: 0,
+            system_dependency_count: 0,
             unresolved_count: 0,
             warning_count: 0,
             error_count: 0,
@@ -95,12 +114,23 @@ fn plan(fixture: &Fixture) -> PackagePlan {
             ableton_minor_version: Some("11.0_11300".to_string()),
         },
         target_project_root: fixture.final_root.clone(),
+        directory_operations: directories,
         copy_operations: operations,
         rewrite_operations: Vec::new(),
+        system_dependencies: Vec::new(),
         unresolved_requirements: Vec::new(),
         plan_status: "ready_for_laboratory_execution".to_string(),
         warnings: Vec::new(),
         errors: Vec::new(),
+    }
+}
+
+fn directory(id: &str, path: &str, purpose: &str) -> CreateDirectoryOperation {
+    CreateDirectoryOperation {
+        operation_id: id.to_string(),
+        target_relative_path: PathBuf::from(path),
+        purpose: purpose.to_string(),
+        collision_policy: "fail_if_exists".to_string(),
     }
 }
 
@@ -117,7 +147,9 @@ fn ready_plan_is_copied_and_hash_verified_in_new_staging_root() {
     let result = execute_staging(&request(&fixture), &plan(&fixture));
 
     assert_eq!(result.execution_status, "staging_complete");
+    assert_eq!(result.metadata.completed_directory_count, 3);
     assert_eq!(result.metadata.completed_copy_count, 2);
+    assert!(fixture.staging_root.join("Ableton Project Info").is_dir());
     assert_eq!(
         fs::read(fixture.staging_root.join("Set.als")).expect("staged ALS"),
         b"als fixture"
@@ -129,10 +161,39 @@ fn ready_plan_is_copied_and_hash_verified_in_new_staging_root() {
 }
 
 #[test]
+fn metadata_only_audio_copy_records_no_content_hash() {
+    let fixture = fixture();
+    let mut plan = plan(&fixture);
+    let audio = plan
+        .copy_operations
+        .iter_mut()
+        .find(|operation| operation.operation_kind == "copy_audio")
+        .expect("audio operation");
+    audio.expected_source_sha256 = None;
+    audio.content_id = None;
+    audio.verification_policy = rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE.to_string();
+
+    let result = execute_staging(&request(&fixture), &plan);
+    let record = result
+        .copy_records
+        .iter()
+        .find(|record| record.operation_kind == "copy_audio")
+        .expect("audio record");
+
+    assert_eq!(result.execution_status, "staging_complete");
+    assert_eq!(record.expected_sha256, None);
+    assert_eq!(record.observed_sha256, None);
+    assert_eq!(
+        record.verification_method,
+        rescue_packaging::VERIFY_STABLE_SOURCE_AND_SIZE
+    );
+}
+
+#[test]
 fn source_hash_mismatch_fails_before_target_promotion() {
     let fixture = fixture();
     let mut plan = plan(&fixture);
-    plan.copy_operations[0].expected_source_sha256 = "wrong".to_string();
+    plan.copy_operations[0].expected_source_sha256 = Some("wrong".to_string());
     let result = execute_staging(&request(&fixture), &plan);
 
     assert_eq!(result.execution_status, "copy_failed");
@@ -180,6 +241,23 @@ fn blocked_plan_is_rejected() {
         .errors
         .iter()
         .any(|error| error.error_code == "STAGING_PLAN_NOT_READY"));
+}
+
+#[test]
+fn missing_ableton_project_marker_in_plan_is_rejected_before_writes() {
+    let fixture = fixture();
+    let mut plan = plan(&fixture);
+    plan.directory_operations
+        .retain(|operation| operation.purpose != "ableton_project_marker");
+    plan.metadata.directory_operation_count = plan.directory_operations.len();
+    let result = execute_staging(&request(&fixture), &plan);
+
+    assert_eq!(result.execution_status, "rejected");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| { error.error_code == "STAGING_ABLETON_PROJECT_MARKER_NOT_PLANNED" }));
+    assert!(!fixture.staging_root.exists());
 }
 
 #[test]

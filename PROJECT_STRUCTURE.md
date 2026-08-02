@@ -1,8 +1,12 @@
 # Project Structure
 
-Status: official working structure  
+Status: historical structure proposal; not authoritative for the current tree
 Date: 2026-06-02  
 Scope: repository layout for spec-driven development, Rust core, CLI-first implementation and future Tauri desktop app
+
+> The implemented repository map is maintained in `README.md` and ownership in
+> `PROJECT_MAP.md`. The future-Tauri sequence below is historical because the
+> Tauri Desktop Alpha already exists.
 
 ## 1. Zasada nadrzedna
 

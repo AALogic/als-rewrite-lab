@@ -1,0 +1,11 @@
+{
+  "service_version": "0.4.0",
+  "request_id": "wire-execution",
+  "run_status": "complete_copy_ready_for_manual_check",
+  "final_target_root": "/fixture/target/Set Rescue Project",
+  "system_dependency_count": 0,
+  "copied_asset_count": 1,
+  "rewritten_reference_count": 1,
+  "omitted_asset_count": 0,
+  "errors": []
+}

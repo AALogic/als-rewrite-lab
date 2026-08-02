@@ -5,9 +5,9 @@ use rescue_validation::PackageValidationResult;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-pub const MANIFEST_WRITER_VERSION: &str = "0.1.0";
-pub const PRIVATE_LEDGER_SCHEMA_VERSION: &str = "0.1";
-pub const PACKAGE_MANIFEST_SCHEMA_VERSION: &str = "0.1";
+pub const MANIFEST_WRITER_VERSION: &str = "0.4.0";
+pub const PRIVATE_LEDGER_SCHEMA_VERSION: &str = "0.4";
+pub const PACKAGE_MANIFEST_SCHEMA_VERSION: &str = "0.4";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManifestWriteRequest {
@@ -35,17 +35,29 @@ pub struct PackageManifest {
     pub source_als_sha256: String,
     pub rewrite_ruleset_version: String,
     pub package_status: String,
+    pub directories: Vec<ManifestDirectory>,
     pub files: Vec<ManifestFile>,
     pub rewrites: Vec<ManifestRewrite>,
+    pub system_dependencies: Vec<ManifestSystemDependency>,
+    pub omissions: Vec<ManifestOmission>,
     pub validation: ManifestValidationSummary,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ManifestDirectory {
+    pub relative_path: PathBuf,
+    pub purpose: String,
+    pub status: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManifestFile {
     pub role: String,
     pub relative_path: PathBuf,
-    pub sha256: String,
+    pub sha256: Option<String>,
     pub size: u64,
+    pub verification_method: String,
+    pub content_identity_status: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -58,10 +70,29 @@ pub struct ManifestRewrite {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ManifestSystemDependency {
+    pub required_asset_id: String,
+    pub source_category: String,
+    pub filename: Option<String>,
+    pub occurrence_count: usize,
+    pub package_action: String,
+    pub portability_status: String,
+    pub required_environment: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ManifestOmission {
+    pub required_asset_id: String,
+    pub reason: String,
+    pub reference_status: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManifestValidationSummary {
     pub validator_version: String,
     pub validation_id: String,
     pub validation_status: String,
+    pub verified_directory_count: usize,
     pub verified_file_count: usize,
     pub verified_rewrite_count: usize,
 }

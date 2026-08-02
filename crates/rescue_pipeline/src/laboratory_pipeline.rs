@@ -5,13 +5,13 @@ use rescue_execution::StagingExecutionResult;
 use rescue_manifest::ManifestWriteResult;
 use rescue_packaging::PackagePlan;
 use rescue_promotion::PackagePromotionResult;
-use rescue_resolution::AssetResolutionResult;
+use rescue_resolution::{AssetResolutionResult, UserSelectionSet};
 use rescue_rewriter::ALSRewriteResult;
 use rescue_validation::PackageValidationResult;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-pub const LABORATORY_PIPELINE_VERSION: &str = "0.1.0";
+pub const LABORATORY_PIPELINE_VERSION: &str = "0.2.0";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LaboratoryPackageRequest {
@@ -22,6 +22,7 @@ pub struct LaboratoryPackageRequest {
     pub staging_root: PathBuf,
     pub target_project_root: PathBuf,
     pub private_ledger_path: PathBuf,
+    pub user_selection_set: Option<UserSelectionSet>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

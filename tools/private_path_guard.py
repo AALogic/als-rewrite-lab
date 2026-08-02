@@ -78,7 +78,26 @@ PROHIBITED_TRACKED_MEDIA_EXTENSIONS = frozenset(
     }
 )
 ALLOWED_TRACKED_MEDIA_FIXTURES: frozenset[str] = frozenset()
-ALLOWED_TRACKED_BINARY_FILES: frozenset[str] = frozenset()
+ALLOWED_TRACKED_BINARY_FILES = frozenset(
+    {
+        "apps/rescue-desktop/src-tauri/icons/128x128.png",
+        "apps/rescue-desktop/src-tauri/icons/128x128@2x.png",
+        "apps/rescue-desktop/src-tauri/icons/32x32.png",
+        "apps/rescue-desktop/src-tauri/icons/Square107x107Logo.png",
+        "apps/rescue-desktop/src-tauri/icons/Square142x142Logo.png",
+        "apps/rescue-desktop/src-tauri/icons/Square150x150Logo.png",
+        "apps/rescue-desktop/src-tauri/icons/Square284x284Logo.png",
+        "apps/rescue-desktop/src-tauri/icons/Square30x30Logo.png",
+        "apps/rescue-desktop/src-tauri/icons/Square310x310Logo.png",
+        "apps/rescue-desktop/src-tauri/icons/Square44x44Logo.png",
+        "apps/rescue-desktop/src-tauri/icons/Square71x71Logo.png",
+        "apps/rescue-desktop/src-tauri/icons/Square89x89Logo.png",
+        "apps/rescue-desktop/src-tauri/icons/StoreLogo.png",
+        "apps/rescue-desktop/src-tauri/icons/icon.icns",
+        "apps/rescue-desktop/src-tauri/icons/icon.ico",
+        "apps/rescue-desktop/src-tauri/icons/icon.png",
+    }
+)
 GIT_BLOB_MODES = frozenset({"100644", "100755", "120000"})
 GITLINK_MODE = "160000"
 GIT_SCANNABLE_OBJECT_TYPES = frozenset({"blob", "commit", "tag"})
@@ -598,7 +617,19 @@ def scan_reachable_history(
         )
 
     objects = git_reachable_objects(repository)
-    for entry in git_history_entries(repository, objects):
+    history_entries = git_history_entries(repository, objects)
+    allowed_binary_object_ids = {
+        entry.object_id
+        for entry in history_entries
+        if entry.path.as_posix() in ALLOWED_TRACKED_BINARY_FILES
+    }
+    disallowed_binary_object_ids = {
+        entry.object_id
+        for entry in history_entries
+        if entry.path.as_posix() not in ALLOWED_TRACKED_BINARY_FILES
+    }
+    allowed_binary_object_ids.difference_update(disallowed_binary_object_ids)
+    for entry in history_entries:
         marker_id = (
             entry.object_id if entry.object_type == "blob" else entry.snapshot_id
         )
@@ -627,6 +658,8 @@ def scan_reachable_history(
     bounded_object_ids = []
     for item in objects:
         if item.object_type == "tree":
+            continue
+        if item.object_id in allowed_binary_object_ids:
             continue
         if item.object_type not in GIT_SCANNABLE_OBJECT_TYPES:
             violations.append(

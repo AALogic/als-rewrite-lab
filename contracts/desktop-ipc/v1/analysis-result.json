@@ -1,0 +1,23 @@
+{
+  "service_version": "0.2.0",
+  "request_id": "wire-analysis",
+  "run_status": "analysis_failed",
+  "preflight_report": null,
+  "diagnostic_report": {
+    "diagnostic_schema_version": "0.2",
+    "request_id": "wire-analysis",
+    "service_version": "0.2.0",
+    "run_status": "analysis_failed",
+    "source_als_sha256": null,
+    "summary": null,
+    "requirements": [],
+    "error_codes": ["ALS_NOT_FOUND"]
+  },
+  "errors": [
+    {
+      "error_code": "ALS_NOT_FOUND",
+      "stage": "input",
+      "message": "Fixture error"
+    }
+  ]
+}

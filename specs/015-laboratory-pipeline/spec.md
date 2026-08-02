@@ -9,19 +9,18 @@ modifying source files.
 
 ## Gate Status
 
-PARTIAL for read-only composition and fail-closed planning. Execution remains
-blocked until the request flow has an explicit user-selection or expected
-content-identity contract and ALSReader supplies explicit supported rewrite
-evidence for every planned reference.
+READY for the narrow Live 11.3 `AudioClip` laboratory profile after policy v0.3
+selection validation. Other versions and usage contexts remain blocked.
 
 ## Inputs
 
-`LaboratoryPackageRequest v0.1` contains:
+`LaboratoryPackageRequest v0.2` contains:
 
 - a non-empty run ID;
 - one existing, regular, non-symlink ALS source path;
 - one or more explicitly selected, bounded, non-symlink scan roots;
 - a finite scan-entry limit;
+- an optional `UserSelectionSet v0.1`, already parsed at the CLI boundary;
 - fresh and isolated staging, final-target, and private-ledger paths.
 
 Every path is native `PathBuf` data. Platform-specific path interpretation
@@ -37,7 +36,8 @@ remains inside the modules that own it.
 6. Assess which audio assets are required.
 7. Build a read-only preflight report.
 8. Inventory only the explicitly selected roots.
-9. Resolve inventory occurrences against required assets.
+9. Resolve inventory occurrences against required assets and validate any
+   source-bound explicit user selections.
 10. Build an immutable package plan.
 11. Execute verified copies in a fresh staging directory.
 12. Rewrite only approved, snapshot-bound FileRef fields in the staged ALS.
@@ -63,6 +63,8 @@ No write-capable module is called before the package plan is ready.
   must remain outside it.
 - The pipeline never removes, merges, cleans, or overwrites user data.
 - Ambiguous or unresolved dependencies block before staging.
+- A moved candidate without explicit selection blocks before staging.
+- A stale selection, changed selected file or selection for another ALS blocks.
 - Unsupported rewrite evidence blocks before staging.
 - A laboratory plan with zero approved rewrite operations blocks before staging.
 - Successful static validation yields `ready_for_manual_ableton_check`; it is

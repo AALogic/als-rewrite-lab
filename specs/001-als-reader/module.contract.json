@@ -83,6 +83,11 @@
     "ENFORCED_BY_TEST: gzip_with_invalid_xml_returns_structured_error",
     "ENFORCED_BY_TEST: gzip_without_ableton_root_returns_structured_error",
     "ENFORCED_BY_TEST: active_relative_path_type_zero_is_preserved",
+    "ENFORCED_BY_TEST: live_11_3_audio_clip_reference_is_supported_for_laboratory_rewrite",
+    "ENFORCED_BY_TEST: live_11_3_project_local_type3_reference_is_supported_for_path_only_rewrite",
+    "ENFORCED_BY_TEST: live_11_3_multisample_type3_reference_is_supported_for_path_only_rewrite",
+    "ENFORCED_BY_TEST: unsafe_project_local_relative_path_requires_test",
+    "ENFORCED_BY_TEST: unknown_or_unsupported_context_is_not_a_rewrite_candidate",
     "ENFORCED_BY_TEST: read_only_safety",
     "ENFORCED_BY_TYPE: ALSReadModel",
     "ENFORCED_BY_TYPE: SetMetadata",
@@ -139,6 +144,11 @@
     "gzip_with_invalid_xml_returns_structured_error",
     "gzip_without_ableton_root_returns_structured_error",
     "active_relative_path_type_zero_is_preserved",
+    "live_11_3_audio_clip_reference_is_supported_for_laboratory_rewrite",
+    "live_11_3_project_local_type3_reference_is_supported_for_path_only_rewrite",
+    "live_11_3_multisample_type3_reference_is_supported_for_path_only_rewrite",
+    "unsafe_project_local_relative_path_requires_test",
+    "unknown_or_unsupported_context_is_not_a_rewrite_candidate",
     "read_only_safety"
   ],
   "public_contract": {

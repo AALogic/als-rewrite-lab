@@ -1,0 +1,67 @@
+mod desktop_analysis;
+mod desktop_copy;
+mod desktop_copy_impl;
+mod desktop_diagnostic;
+
+pub use desktop_copy::{
+    default_target_project_root, execute_copy, prepare_copy, DesktopCopyPreview, DesktopCopyResult,
+    DesktopExecuteCopyRequest, DesktopPrepareCopyRequest, DESKTOP_COPY_SERVICE_VERSION,
+};
+
+use rescue_analyzer::{PreflightReport, PreflightSummary};
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+
+pub const DESKTOP_APPLICATION_SERVICE_VERSION: &str = "0.2.0";
+pub const DESKTOP_DIAGNOSTIC_SCHEMA_VERSION: &str = "0.2";
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopAnalyzeRequest {
+    pub request_id: String,
+    pub source_als_path: PathBuf,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopAnalyzeResult {
+    pub service_version: String,
+    pub request_id: String,
+    pub run_status: String,
+    pub preflight_report: Option<PreflightReport>,
+    pub diagnostic_report: DesktopDiagnosticReport,
+    pub errors: Vec<DesktopApplicationError>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopDiagnosticReport {
+    pub diagnostic_schema_version: String,
+    pub request_id: String,
+    pub service_version: String,
+    pub run_status: String,
+    pub source_als_sha256: Option<String>,
+    pub summary: Option<PreflightSummary>,
+    pub requirements: Vec<DiagnosticRequirement>,
+    pub error_codes: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiagnosticRequirement {
+    pub required_asset_id: String,
+    pub occurrence_count: usize,
+    pub source_category: String,
+    pub management_class: String,
+    pub portability_status: String,
+    pub availability_status: String,
+    pub resolution_status: String,
+    pub risk_flags: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopApplicationError {
+    pub error_code: String,
+    pub stage: String,
+    pub message: String,
+}
+
+pub fn analyze_project(request: &DesktopAnalyzeRequest) -> DesktopAnalyzeResult {
+    desktop_analysis::analyze_project_impl(request)
+}

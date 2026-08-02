@@ -1,23 +1,29 @@
 use crate::asset_resolution_result::{complete_result, fatal_result};
 use crate::asset_resolution_scoring::scored_candidate;
+use crate::asset_resolution_selection;
 use crate::{
     AssetResolutionResult, AssetResolutionWarning, ResolutionCandidate, ResolutionDecision,
-    ResolutionProposal, RESOLUTION_POLICY_VERSION,
+    ResolutionProposal, UserAssetSelection, UserSelectionSet, RESOLUTION_POLICY_VERSION,
 };
 use rescue_analyzer::{DependencyAssessmentResult, RequiredAsset};
 use rescue_catalog::AssetInventoryResult;
 
 const AUTO_ACCEPT_THRESHOLD: u8 = 95;
-const STRONG_IDENTITY_EVIDENCE: &str = "expected_content_sha256_match";
+const EXACT_PATH_EVIDENCE: &str = "exact_observed_native_path";
 
 pub(crate) fn resolve_assets_impl(
     assessment: &DependencyAssessmentResult,
     inventory: &AssetInventoryResult,
+    selections: Option<&UserSelectionSet>,
 ) -> AssetResolutionResult {
     if let Some((code, message)) = validate_inputs(assessment, inventory) {
         return fatal_result(assessment, inventory, code, message);
     }
 
+    let validated_selections = match asset_resolution_selection::validate(assessment, selections) {
+        Ok(value) => value,
+        Err((code, message)) => return fatal_result(assessment, inventory, code, message),
+    };
     let mut warnings = Vec::new();
     if inventory.metadata.scan_status == "partial" {
         push_warning(
@@ -43,6 +49,7 @@ pub(crate) fn resolve_assets_impl(
             asset,
             &candidates,
             &inventory.metadata.scan_status,
+            validated_selections.get(&asset.required_asset_id),
             &mut warnings,
         );
         proposals.push(ResolutionProposal {
@@ -59,10 +66,10 @@ fn validate_inputs(
     assessment: &DependencyAssessmentResult,
     inventory: &AssetInventoryResult,
 ) -> Option<(&'static str, &'static str)> {
-    if assessment.assessment_metadata.assessment_version != "0.1.0" {
+    if assessment.assessment_metadata.assessment_version != "0.2.0" {
         return Some((
             "RESOLUTION_UNSUPPORTED_ASSESSMENT_MODEL",
-            "DependencyAssessmentResult v0.1.0 is required",
+            "DependencyAssessmentResult v0.2.0 is required",
         ));
     }
     if inventory.metadata.inventory_version != "0.1.0" {
@@ -109,22 +116,45 @@ fn decide(
     asset: &RequiredAsset,
     candidates: &[ResolutionCandidate],
     scan_status: &str,
+    selection: Option<&UserAssetSelection>,
     warnings: &mut Vec<AssetResolutionWarning>,
 ) -> ResolutionDecision {
+    if scan_status == "complete" {
+        if let Some(selection) = selection {
+            if let Some(candidate) =
+                asset_resolution_selection::matching_candidate(candidates, selection)
+            {
+                return accepted_decision(asset, candidate, "explicit_user_selection");
+            }
+            push_warning(
+                warnings,
+                "RESOLUTION_USER_SELECTION_STALE_OR_CHANGED",
+                "Selected path and SHA-256 do not match a current candidate",
+                Some(&asset.required_asset_id),
+            );
+            return empty_selection_decision(
+                asset,
+                "needs_user_confirmation",
+                "user_selection_stale_or_changed",
+                true,
+            );
+        }
+        let bound: Vec<_> = candidates
+            .iter()
+            .filter(|candidate| {
+                candidate.conflicts.is_empty() && has_evidence(candidate, EXACT_PATH_EVIDENCE)
+            })
+            .collect();
+        if bound.len() == 1 {
+            return accepted_decision(asset, bound[0], "current_recorded_path_binding");
+        }
+    }
     let qualified: Vec<_> = candidates
         .iter()
         .filter(|candidate| {
             candidate.score >= AUTO_ACCEPT_THRESHOLD && candidate.conflicts.is_empty()
         })
         .collect();
-    let strongly_identified: Vec<_> = qualified
-        .iter()
-        .copied()
-        .filter(|candidate| has_strong_expected_identity(candidate))
-        .collect();
-    if scan_status == "complete" && strongly_identified.len() == 1 {
-        return accepted_decision(asset, strongly_identified[0]);
-    }
     if qualified.len() > 1 {
         push_warning(
             warnings,
@@ -133,34 +163,25 @@ fn decide(
             Some(&asset.required_asset_id),
         );
     }
-    if qualified.len() == 1 && strongly_identified.is_empty() {
-        push_warning(
-            warnings,
-            "RESOLUTION_STRONG_IDENTITY_REQUIRED",
-            "Candidate lacks a full-hash match against expected content identity",
-            Some(&asset.required_asset_id),
-        );
-    }
     if candidates.is_empty() {
         unresolved_decision(asset)
     } else {
-        manual_decision(
-            asset,
-            scan_status,
-            qualified.len(),
-            strongly_identified.len(),
-        )
+        manual_decision(asset, scan_status, qualified.len())
     }
 }
 
-fn has_strong_expected_identity(candidate: &ResolutionCandidate) -> bool {
+fn has_evidence(candidate: &ResolutionCandidate, code: &str) -> bool {
     candidate
         .evidence
         .iter()
-        .any(|evidence| evidence.evidence_code == STRONG_IDENTITY_EVIDENCE)
+        .any(|evidence| evidence.evidence_code == code)
 }
 
-fn accepted_decision(asset: &RequiredAsset, candidate: &ResolutionCandidate) -> ResolutionDecision {
+fn accepted_decision(
+    asset: &RequiredAsset,
+    candidate: &ResolutionCandidate,
+    basis: &str,
+) -> ResolutionDecision {
     ResolutionDecision {
         required_asset_id: asset.required_asset_id.clone(),
         decision_status: "auto_accepted".to_string(),
@@ -169,7 +190,7 @@ fn accepted_decision(asset: &RequiredAsset, candidate: &ResolutionCandidate) -> 
         selected_content_id: Some(candidate.content_id.clone()),
         score: Some(candidate.score),
         policy_version: RESOLUTION_POLICY_VERSION.to_string(),
-        decision_basis: "strong_expected_content_identity_match".to_string(),
+        decision_basis: basis.to_string(),
         requires_user_confirmation: false,
     }
 }
@@ -178,16 +199,13 @@ fn manual_decision(
     asset: &RequiredAsset,
     scan_status: &str,
     qualified_count: usize,
-    strongly_identified_count: usize,
 ) -> ResolutionDecision {
     let basis = if scan_status != "complete" {
         "inventory_incomplete"
-    } else if strongly_identified_count > 1 {
-        "ambiguous_strong_identity_candidates"
     } else if qualified_count > 1 {
         "ambiguous_high_confidence_candidates"
     } else if qualified_count == 1 {
-        "strong_expected_content_identity_missing"
+        "explicit_user_selection_required"
     } else {
         "candidate_below_automatic_threshold"
     };

@@ -1,7 +1,7 @@
 # Fixture Contract 008: AssetResolution
 
-Status: ready
-Date: 2026-07-27
+Status: ready for policy v0.3
+Date: 2026-08-02
 
 All tests use synthetic immutable assessment and inventory contracts.
 
@@ -17,4 +17,8 @@ same OriginalCrc without path/name evidence
 partial inventory
 untrusted upstream result
 stable candidate ordering
+exact recorded-path binding without a historical identity claim
+source-bound explicit path-and-SHA-256 selection
+selected file changed after the decision
+selection bound to another ALS snapshot
 ```

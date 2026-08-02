@@ -13,7 +13,7 @@ CONFIRMED for a same-filesystem laboratory promotion to an absent target.
 ## Inputs
 
 - `PackagePromotionRequest` with a promotion ID.
-- The same successful `PackagePlan v0.1`, staging, rewrite, validation, and
+- The same successful `PackagePlan v0.4`, staging, rewrite, validation, and
   manifest-write results from one pipeline run.
 - A package manifest inside staging and a private ledger outside it.
 
@@ -23,7 +23,8 @@ CONFIRMED for a same-filesystem laboratory promotion to an absent target.
 2. Original ALS still has the planned SHA-256.
 3. Private ledger still has the recorded hash and size.
 4. Staging contains exactly every validated package file plus the portable
-   manifest, with matching full hashes and sizes.
+   manifest. Hash-backed files match full hashes and sizes; metadata-only audio
+   matches regular-file type and size without another byte read.
 5. No symlink or unexpected file exists in the package.
 6. Final target parent already exists and is a non-symlink directory.
 7. Final target is absent.
@@ -39,7 +40,7 @@ rollback succeeded.
 ## Idempotency
 
 If staging is absent and the final target exists, the module does not rewrite
-or move it. It verifies the complete package against the same evidence and
+or move it. It verifies the complete package against the same policy-specific evidence and
 returns `already_promoted_verified` only when every byte still matches.
 
 ## Safety Boundary
@@ -52,7 +53,7 @@ no-replace directory primitive remains required before commercial release.
 
 ## Outputs
 
-`PackagePromotionResult v0.1` records final status, all verified files,
+`PackagePromotionResult v0.2` records final status, all verified files,
 pipeline identities, final root, manual-check readiness, and structured errors.
 Successful promotion sets manual-check status to
 `ready_for_manual_ableton_check`; it is not yet user verification.

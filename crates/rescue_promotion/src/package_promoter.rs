@@ -6,8 +6,8 @@ use rescue_validation::PackageValidationResult;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-pub const PACKAGE_PROMOTER_VERSION: &str = "0.1.0";
-pub const PACKAGE_PROMOTION_SCHEMA_VERSION: &str = "0.1";
+pub const PACKAGE_PROMOTER_VERSION: &str = "0.2.0";
+pub const PACKAGE_PROMOTION_SCHEMA_VERSION: &str = "0.2";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PackagePromotionRequest {
@@ -42,10 +42,11 @@ pub struct PackagePromotionMetadata {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PromotedFileRecord {
     pub relative_path: PathBuf,
-    pub expected_sha256: String,
+    pub expected_sha256: Option<String>,
     pub observed_sha256: Option<String>,
     pub expected_size: u64,
     pub observed_size: Option<u64>,
+    pub verification_method: String,
     pub file_status: String,
 }
 

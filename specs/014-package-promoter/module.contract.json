@@ -8,7 +8,7 @@
     "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
   },
   "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
-  "required_spec_literals": ["PackagePlan v0.1", "PackagePromotionResult v0.1", "already_promoted_verified", "ready_for_manual_ableton_check"],
+  "required_spec_literals": ["PackagePlan v0.4", "PackagePromotionResult v0.2", "metadata-only", "already_promoted_verified", "ready_for_manual_ableton_check"],
   "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
   "required_checked_obligations": true,
   "required_obligations": [
@@ -21,6 +21,7 @@
     "ENFORCED_BY_TEST: repeated_promotion_verifies_existing_package",
     "ENFORCED_BY_TEST: symlink_inside_staging_blocks_promotion",
     "ENFORCED_BY_TEST: changed_original_source_blocks_promotion",
+    "ENFORCED_BY_TEST: current_path_audio_uses_metadata_only_verification_end_to_end",
     "ENFORCED_BY_TYPE: PackagePromotionRequest",
     "ENFORCED_BY_TYPE: PackagePromotionResult",
     "ENFORCED_BY_TYPE: PackagePromotionMetadata",
@@ -39,7 +40,8 @@
     "failed_validation_state_blocks_promotion",
     "repeated_promotion_verifies_existing_package",
     "symlink_inside_staging_blocks_promotion",
-    "changed_original_source_blocks_promotion"
+    "changed_original_source_blocks_promotion",
+    "current_path_audio_uses_metadata_only_verification_end_to_end"
   ],
   "required_tests_must_not_be_ignored": true,
   "required_tests_must_have_substance": true,
@@ -48,7 +50,7 @@
     "PackagePromotionRequest": ["promotion_id"],
     "PackagePromotionResult": ["metadata", "former_staging_root", "final_target_root", "promoted_files", "promotion_status", "manual_check_status", "errors"],
     "PackagePromotionMetadata": ["promoter_version", "promotion_schema_version", "promotion_id", "plan_id", "execution_id", "rewrite_id", "validation_id", "manifest_id", "verified_file_count", "error_count"],
-    "PromotedFileRecord": ["relative_path", "expected_sha256", "observed_sha256", "expected_size", "observed_size", "file_status"],
+    "PromotedFileRecord": ["relative_path", "expected_sha256", "observed_sha256", "expected_size", "observed_size", "verification_method", "file_status"],
     "PackagePromotionError": ["error_code", "message", "path"]
   },
   "expected_source_files": [
@@ -56,7 +58,8 @@
     "crates/rescue_promotion/src/package_promoter_impl.rs",
     "crates/rescue_promotion/src/package_promoter_inputs.rs",
     "crates/rescue_promotion/src/package_promoter_files.rs",
-    "crates/rescue_promotion/src/package_promoter_result.rs"
+    "crates/rescue_promotion/src/package_promoter_result.rs",
+    "crates/rescue_promotion/src/package_promoter_verification.rs"
   ],
   "quality_source_globs": ["crates/rescue_promotion/src/*.rs"],
   "guarded_source_globs": ["crates/rescue_promotion/src/*.rs"],

@@ -4,7 +4,22 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 pub const ASSET_RESOLUTION_VERSION: &str = "0.1.0";
-pub const RESOLUTION_POLICY_VERSION: &str = "0.2.0";
+pub const RESOLUTION_POLICY_VERSION: &str = "0.3.0";
+pub const USER_SELECTION_SCHEMA_VERSION: &str = "0.1";
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserSelectionSet {
+    pub selection_schema_version: String,
+    pub source_als_sha256: String,
+    pub selections: Vec<UserAssetSelection>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserAssetSelection {
+    pub required_asset_id: String,
+    pub selected_native_path: PathBuf,
+    pub selected_content_sha256: String,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AssetResolutionResult {
@@ -87,5 +102,13 @@ pub fn resolve_assets(
     assessment: &DependencyAssessmentResult,
     inventory: &AssetInventoryResult,
 ) -> AssetResolutionResult {
-    crate::asset_resolution_impl::resolve_assets_impl(assessment, inventory)
+    resolve_assets_with_selections(assessment, inventory, None)
+}
+
+pub fn resolve_assets_with_selections(
+    assessment: &DependencyAssessmentResult,
+    inventory: &AssetInventoryResult,
+    selections: Option<&UserSelectionSet>,
+) -> AssetResolutionResult {
+    crate::asset_resolution_impl::resolve_assets_impl(assessment, inventory, selections)
 }

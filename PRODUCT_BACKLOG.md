@@ -34,7 +34,7 @@ specyfikacji modulu.
 Rzeczy wazne, ale nie na MVP:
 
 ```text
-Tauri desktop UI
+fine-grained desktop progress, cancellation and recovery
 SQLite asset index
 redirect ledger
 multi-project scan
@@ -146,8 +146,8 @@ cargo-deny / dependency policy:
 SQLite index:
   Add only when AssetIndexer needs persistent reuse across runs.
 
-Tauri desktop UI:
-  Add after core pipeline can produce trustworthy preflight/package plans.
+Desktop distribution:
+  Add signing, notarization and release provenance after the manual runtime gate.
 ```
 
 ## 6C. Agent Workflow Readiness

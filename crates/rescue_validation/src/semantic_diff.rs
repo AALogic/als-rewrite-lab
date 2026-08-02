@@ -119,7 +119,12 @@ fn locate_masks(
         .descendants()
         .filter(|node| node.is_element() && node.has_tag_name("SampleRef"))
         .collect();
-    let mut masks = Vec::with_capacity(operations.len() * 3);
+    let mut masks = Vec::with_capacity(
+        operations
+            .iter()
+            .map(|operation| operation.fields_to_change.len())
+            .sum(),
+    );
     for operation in operations {
         let file_ref = sample_refs
             .get(operation.als_ref_id)
@@ -133,26 +138,8 @@ fn locate_masks(
                     None,
                 )
             })?;
-        let values = if use_new_values {
-            [
-                ("Path", Some(operation.new_path.as_str())),
-                ("RelativePath", Some(operation.new_relative_path.as_str())),
-                (
-                    "RelativePathType",
-                    Some(operation.new_relative_path_type.as_str()),
-                ),
-            ]
-        } else {
-            [
-                ("Path", operation.old_path.as_deref()),
-                ("RelativePath", operation.old_relative_path.as_deref()),
-                (
-                    "RelativePathType",
-                    operation.old_relative_path_type.as_deref(),
-                ),
-            ]
-        };
-        for (field, expected) in values {
+        for field in &operation.fields_to_change {
+            let expected = semantic_field_value(operation, field, use_new_values);
             let expected = expected.ok_or_else(|| {
                 error(
                     "SEMANTIC_DIFF_EXPECTATION_MISSING",
@@ -198,6 +185,22 @@ fn locate_masks(
         ));
     }
     Ok(masks)
+}
+
+fn semantic_field_value<'a>(
+    operation: &'a RewriteOperation,
+    field: &str,
+    use_new_value: bool,
+) -> Option<&'a str> {
+    match (field, use_new_value) {
+        ("Path", true) => Some(&operation.new_path),
+        ("Path", false) => operation.old_path.as_deref(),
+        ("RelativePath", true) => Some(&operation.new_relative_path),
+        ("RelativePath", false) => operation.old_relative_path.as_deref(),
+        ("RelativePathType", true) => Some(&operation.new_relative_path_type),
+        ("RelativePathType", false) => operation.old_relative_path_type.as_deref(),
+        _ => None,
+    }
 }
 
 fn apply_masks(xml: &str, masks: Vec<Mask>) -> String {

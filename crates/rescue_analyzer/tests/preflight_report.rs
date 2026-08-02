@@ -58,6 +58,10 @@ fn asset(index: usize, status: &str, path: Option<&str>) -> RequiredAsset {
         extension: Some("wav".to_string()),
         original_file_size: Some("100".to_string()),
         original_crc: None,
+        source_category: "unclassified".to_string(),
+        management_class: "unclassified".to_string(),
+        source_classification_status: "unknown".to_string(),
+        source_classification_basis: "insufficient_source_category_evidence".to_string(),
         candidate_observations,
         availability_status: status.to_string(),
         resolution_status: "unresolved".to_string(),
@@ -87,7 +91,7 @@ fn assessment(statuses: &[(&str, Option<&str>)]) -> DependencyAssessmentResult {
     let unknown = required_assets.len() - regular - missing;
     DependencyAssessmentResult {
         assessment_metadata: DependencyAssessmentMetadata {
-            assessment_version: "0.1.0".to_string(),
+            assessment_version: "0.2.0".to_string(),
             input_dependency_ref_version: "0.1".to_string(),
             input_path_observation_model_version: "0.2".to_string(),
             source_als_path: "/project/Set.als".to_string(),
@@ -118,6 +122,28 @@ fn all_candidates_observed_remain_unresolved() {
     );
     assert_eq!(report.summary.unresolved_count, 1);
     assert_eq!(report.requirements[0].resolution_status, "unresolved");
+}
+
+#[test]
+fn system_dependency_is_exposed_separately_from_missing_assets() {
+    let mut input = assessment(&[(
+        "regular_file_candidate_observed",
+        Some("/Applications/Ableton/Core Library/sample.wav"),
+    )]);
+    let system = &mut input.required_assets[0];
+    system.source_category = "ableton_core_library".to_string();
+    system.management_class = "system_dependency".to_string();
+    system.source_classification_status = "confirmed".to_string();
+    system.source_classification_basis =
+        "macos_core_library_path_relative_type_5_and_regular_file".to_string();
+    system.risk_flags = vec!["portable_risk".to_string()];
+
+    let report = build_preflight_report(&discovery("/project/Set.als"), &input);
+
+    assert_eq!(report.summary.system_dependency_count, 1);
+    assert_eq!(report.summary.needs_search_count, 0);
+    assert_eq!(report.requirements[0].management_class, "system_dependency");
+    assert_eq!(report.requirements[0].portability_status, "portable_risk");
 }
 
 #[test]

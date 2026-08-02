@@ -142,7 +142,7 @@ fn add_audio_file(source_root: &Path, path: PathBuf, result: &mut WalkResult) {
     });
 }
 
-fn recognized_extension(path: &Path) -> Option<String> {
+pub(crate) fn recognized_extension(path: &Path) -> Option<String> {
     let extension = path.extension()?.to_str()?.to_ascii_lowercase();
     AUDIO_EXTENSIONS
         .contains(&extension.as_str())

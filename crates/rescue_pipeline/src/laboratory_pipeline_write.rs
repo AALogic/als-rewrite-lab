@@ -71,7 +71,10 @@ pub(crate) fn execute_package(
         plan,
         staging_ref,
     );
-    let rewrite_ok = rewrite.rewrite_status == "rewrite_complete";
+    let rewrite_ok = matches!(
+        rewrite.rewrite_status.as_str(),
+        "rewrite_complete" | "not_required"
+    );
     progress.rewrite = Some(rewrite);
     if !rewrite_ok {
         return Err(failure(

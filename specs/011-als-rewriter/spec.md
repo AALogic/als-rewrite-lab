@@ -3,23 +3,23 @@
 ## Purpose
 
 ALSRewriter applies an accepted, snapshot-bound `RewriteOperation v0.1` list
-to the ALS copy inside completed staging. It implements only the E-03
-`live11_3_external_to_imported_v0.1-experimental` laboratory profile.
+to the ALS copy inside completed staging. It implements the bounded E-03
+`live11_3_current_paths_v0.2-lab` ruleset.
 
 ## Gate Status
 
-CONFIRMED for the structural rewrite mechanism and EXPERIMENTAL_LAB_ONLY for
-Ableton Live 11.3 external type-1 references. No production or cross-version
-support is claimed.
+CONFIRMED for the structural rewrite mechanism and Live 11.3 project-local
+Type 3 Path-only relocation. EXPERIMENTAL_LAB_ONLY for external Type 1 to
+Imported relocation. No production or cross-version support is claimed.
 
 ## Inputs
 
 - `ALSRewriteRequest` identifying the exact staging root.
-- A complete `PackagePlan v0.1` in laboratory rewrite mode.
-- A successful `StagingExecutionResult v0.1` for the same plan and ALS hash.
+- A complete `PackagePlan v0.4` in a rewrite-capable mode.
+- A successful `StagingExecutionResult v0.3` for the same plan and ALS hash.
 - Rewrite operations containing source hash, `SampleRef[n]/FileRef` locator,
-  approved old values, approved new values, and exactly three fields:
-  `Path`, `RelativePath`, and `RelativePathType`.
+  approved old values, approved new values, and either the exact three-field
+  allowlist for Type 1 or the exact `Path`-only allowlist for Type 3.
 
 ## Outputs
 
@@ -35,9 +35,10 @@ per-operation status, ruleset, warnings, errors, and the staged ALS location.
 4. Enumerate `SampleRef` exactly as ALSReader does.
 5. Resolve only the direct `FileRef` named by the approved locator.
 6. Require every current old value to equal the operation snapshot.
-7. Use roxmltree byte ranges for the three `Value` attributes.
+7. Use roxmltree byte ranges only for fields named by `fields_to_change`.
 8. XML-escape replacements and apply non-overlapping ranges from last to first.
-9. Parse the result and verify all three new values at every locator.
+9. Parse the result, verify changed values and prove all non-selected path
+   values remain equal to the input snapshot.
 10. Encode deterministic gzip bytes to a create-new temporary sibling.
 11. Validate gzip, UTF-8, XML, and Ableton root before replacing only the
     staged ALS.
@@ -68,7 +69,7 @@ Structured errors include `REWRITE_PLAN_NOT_READY`,
 
 ## Acceptance Criteria
 
-Tests prove targeted three-field change, historical/unrelated preservation,
+Tests prove targeted three-field and Path-only change, historical/unrelated preservation,
 snapshot mismatch rejection, old-value mismatch rejection, locator rejection,
 ruleset rejection, duplicate-reference rejection, repeat safety, and XML
 escaping on Unix. Non-Unix tests prove that the unsupported atomic replacement

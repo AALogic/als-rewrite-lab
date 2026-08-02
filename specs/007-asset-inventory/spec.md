@@ -9,6 +9,11 @@ Implementation target: new `rescue_catalog` crate
 AssetInventory scans only explicitly selected local directory roots and creates
 an immutable observation snapshot of recognized audio files.
 
+The module also supports `AssetFileSnapshotRequest v0.1` for a bounded list of
+exact audio paths already observed as existing regular files. This operation
+does not walk parent directories and does not search for alternatives. It
+produces the existing `AssetInventoryResult v0.1` contract.
+
 ```text
 AssetInventoryRequest v0.1 -> AssetInventoryResult v0.1
 ```
@@ -83,6 +88,10 @@ INVENTORY_ROOT_METADATA_FAILED
 ```
 
 Entry-level read/hash failures are warnings and make the scan partial.
+
+An exact-file snapshot fails closed if a requested path is relative, missing,
+a symlink, not a recognized audio file, or changes while hashing. It never
+silently drops one requested file and calls the remaining snapshot complete.
 
 ## Acceptance
 

@@ -68,12 +68,23 @@ fn validate_statuses(
     manifests: &ManifestWriteResult,
     errors: &mut Vec<PackagePromotionError>,
 ) {
-    if plan.plan_status != "ready_for_laboratory_execution"
-        || staging.execution_status != "staging_complete"
-        || rewrite.rewrite_status != "rewrite_complete"
+    if !matches!(
+        plan.plan_status.as_str(),
+        "ready_for_laboratory_execution"
+            | "ready_current_paths_complete"
+            | "ready_current_paths_incomplete"
+    ) || staging.execution_status != "staging_complete"
+        || !matches!(
+            rewrite.rewrite_status.as_str(),
+            "rewrite_complete" | "not_required"
+        )
         || validation.validation_status != "validation_passed"
         || manifests.write_status != "manifests_written"
         || !plan.errors.is_empty()
+        || plan
+            .unresolved_requirements
+            .iter()
+            .any(|item| item.blocks_execution)
         || !staging.errors.is_empty()
         || !rewrite.errors.is_empty()
         || !validation.errors.is_empty()

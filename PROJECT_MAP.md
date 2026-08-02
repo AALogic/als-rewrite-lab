@@ -2,7 +2,7 @@
 
 Status: active responsibility map
 
-Date: 2026-07-27
+Date: 2026-08-03
 
 ## Purpose
 
@@ -34,8 +34,7 @@ discovery/read
 -> observe paths
 -> assess required assets
 -> report
--> inventory selected scopes
--> resolve candidates
+-> create metadata-only bindings for files still present at recorded paths
 -> plan
 -> stage copies
 -> rewrite copied ALS
@@ -79,6 +78,7 @@ Owns:
 conservative Project root discovery
 grouping reference occurrences into RequiredAsset records
 dependency availability assessment
+confirmed source classification for supported dependency categories
 read-only preflight reports
 ```
 
@@ -86,9 +86,9 @@ Does not search globally, select files, or write.
 
 ### `rescue_catalog`
 
-Owns bounded filesystem inventory, stable full-file SHA-256, content records,
-and distinct file occurrences. It does not decide which occurrence satisfies a
-project requirement.
+Owns bounded filesystem inventory, exact-file snapshotting, stable full-file
+SHA-256, content records, and distinct file occurrences. It does not decide
+which occurrence satisfies a project requirement.
 
 ### `rescue_resolution`
 
@@ -97,16 +97,23 @@ It is pure and does not touch files. A partial inventory cannot produce an
 automatic match. Scores rank candidates; without expected content identity or
 an explicit user decision, a candidate remains unselected.
 
+It also owns `CurrentPathBindingResult`, the smaller desktop-MVP contract that
+binds exactly one safe recorded path and observed size without computing or
+claiming content identity.
+
 ### `rescue_packaging`
 
-Owns immutable copy and rewrite plans, target collision checks, ruleset gates,
-exact operation preconditions, and rejection of operation-free laboratory
-plans. It performs no filesystem writes.
+Owns immutable copy and rewrite plans, their canonical semantic fingerprint,
+target collision checks, ruleset gates, exact operation preconditions, and
+rejection of operation-free laboratory plans. It performs no filesystem writes.
 
 ### `rescue_execution`
 
 Owns creation of fresh staging and byte-for-byte execution of approved copy
-operations. It verifies source and target hashes and never promotes staging.
+operations. It enforces each operation's declared verification policy. Hash
+backed files use SHA-256 and size; current-path audio uses stable source
+metadata plus counted size and is read only once for the actual copy. It never
+promotes staging.
 
 ### `rescue_rewriter`
 
@@ -136,32 +143,52 @@ It re-verifies all inputs and files. It does not merge, overwrite, or clean.
 
 ### `rescue_pipeline`
 
-Owns ordering and fail-closed handoff of the modules above for one laboratory
-run. It requires a confirmed source Project root and keeps every output outside
-that root after resolving filesystem aliases and platform case behavior. It
-retains completed discovery evidence when that boundary blocks a run and
-contains no duplicate ALS parsing, matching, planning, or rewrite policy.
+Owns ordering and fail-closed handoff of the modules above. The strict
+laboratory pipeline supports candidate recovery. The current-path pipeline
+uses metadata-only bindings for files observed at recorded ALS paths and
+permits an auditable incomplete copy without searching or hashing audio. Both
+require a confirmed source Project root
+and keep every output outside it after resolving aliases and platform case
+behavior.
+The current-path pipeline compares the rebuilt semantic plan with the accepted
+preview fingerprint before the first write.
 
 ### CLI
 
 Owns argument parsing, explicit laboratory consent, JSON rendering, and exit
 codes. It delegates all domain behavior.
 
-### Future Desktop UI
+### Desktop Application Service
+
+Owns user-workflow orchestration above the domain pipeline: read-only analysis,
+source-bound copy preview, explicit write consent, desktop-facing results and
+safe derivation of private staging paths. It contains no ALS parsing, matching,
+copy, completeness or rewrite policy.
+
+### Desktop UI
 
 May display reports, collect user choices, start plans, show progress, and
 request validation. It must never parse or rewrite ALS directly.
+
+### Tauri Adapter
+
+Owns IPC serialization and scheduling synchronous application services on
+blocking workers so filesystem and parsing work cannot freeze the webview. It
+does not own domain policy. Versioned JSON fixtures verify its Rust/TypeScript
+wire boundary.
 
 ### Future Persistent Index
 
 Will own incremental scan state, project registry, content cache, verification
 timestamps, reachability, and later redirect history. It does not exist yet.
+Persistent audio hashes and reusable `ContentIdentity` are introduced here,
+not retrofitted into the metadata-only current-path flow.
 
 ## One-Way Dependency Rule
 
 ```text
 UI / CLI
--> orchestration
+-> Desktop Application Service / orchestration
 -> domain contracts
 -> narrow filesystem/XML adapters
 ```
@@ -185,11 +212,10 @@ domain safety rules that exist only in chat or prose
 ## Open Boundaries
 
 ```text
-explicit user-confirmed candidate selection contract
 persistent index and cache schema
 progress/cancellation and resumable batch orchestration
 native Windows path and promotion adapters
-plugin, preset, Pack, Core Library, and Max for Live dependencies
+plugin, preset, Factory Pack, cross-platform Core Library, and Max for Live dependencies
 commercial release packaging and signing
 ```
 

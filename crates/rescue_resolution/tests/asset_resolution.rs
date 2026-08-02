@@ -3,8 +3,14 @@ use rescue_analyzer::{
     RequiredAsset, RequiredAssetCandidateObservation,
 };
 use rescue_catalog::{AssetInventoryMetadata, AssetInventoryResult, ContentRecord, FileOccurrence};
-use rescue_resolution::{resolve_assets, AssetResolutionResult};
+use rescue_resolution::{
+    resolve_assets, resolve_assets_with_selections, AssetResolutionResult, UserAssetSelection,
+    UserSelectionSet,
+};
 use std::path::PathBuf;
+
+const DIGEST_A: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const DIGEST_B: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
 fn required_asset(
     filename: Option<&str>,
@@ -26,6 +32,10 @@ fn required_asset(
         }),
         original_file_size: size.map(str::to_string),
         original_crc: crc.map(str::to_string),
+        source_category: "unclassified".to_string(),
+        management_class: "unclassified".to_string(),
+        source_classification_status: "unknown".to_string(),
+        source_classification_basis: "insufficient_source_category_evidence".to_string(),
         candidate_observations: observed_paths
             .iter()
             .enumerate()
@@ -59,7 +69,7 @@ fn required_asset(
 fn assessment(asset: RequiredAsset) -> DependencyAssessmentResult {
     DependencyAssessmentResult {
         assessment_metadata: DependencyAssessmentMetadata {
-            assessment_version: "0.1.0".to_string(),
+            assessment_version: "0.2.0".to_string(),
             input_dependency_ref_version: "0.1".to_string(),
             input_path_observation_model_version: "0.2".to_string(),
             source_als_path: "/project/Set.als".to_string(),
@@ -134,7 +144,7 @@ fn inventory(status: &str, files: &[(&str, &str, u64, &str)]) -> AssetInventoryR
 }
 
 #[test]
-fn exact_path_name_and_size_requires_confirmation_without_expected_hash() {
+fn exact_recorded_path_is_accepted_as_current_binding() {
     let assessment = assessment(required_asset(
         Some("kick.wav"),
         Some("100"),
@@ -145,17 +155,44 @@ fn exact_path_name_and_size_requires_confirmation_without_expected_hash() {
     let result = resolve_assets(&assessment, &inventory);
 
     assert_eq!(result.proposals[0].candidates[0].score, 100);
+    assert_eq!(result.decisions[0].decision_status, "auto_accepted");
     assert_eq!(
-        result.decisions[0].decision_status,
-        "needs_user_confirmation"
+        result.decisions[0].decision_basis,
+        "current_recorded_path_binding"
     );
-    assert_eq!(result.decisions[0].selected_candidate_id, None);
-    assert!(result.decisions[0].requires_user_confirmation);
-    assert_eq!(result.decisions[0].policy_version, "0.2.0");
-    assert!(result
-        .warnings
+    assert_eq!(
+        result.decisions[0].selected_content_id.as_deref(),
+        Some("sha256:aaa")
+    );
+    assert!(!result.decisions[0].requires_user_confirmation);
+    assert_eq!(result.decisions[0].policy_version, "0.3.0");
+}
+
+#[test]
+fn zero_original_file_size_is_unknown_not_conflict() {
+    let assessment = assessment(required_asset(
+        Some("kick.wav"),
+        Some("0"),
+        Some("0"),
+        &["/audio/kick.wav"],
+    ));
+    let inventory = inventory("complete", &[("/audio/kick.wav", "kick.wav", 9_876, "aaa")]);
+    let result = resolve_assets(&assessment, &inventory);
+
+    let candidate = &result.proposals[0].candidates[0];
+    assert!(!candidate
+        .conflicts
         .iter()
-        .any(|warning| warning.warning_code == "RESOLUTION_STRONG_IDENTITY_REQUIRED"));
+        .any(|conflict| conflict == "file_size_differs"));
+    assert!(!candidate
+        .evidence
+        .iter()
+        .any(|evidence| evidence.evidence_code == "exact_expected_file_size"));
+    assert_eq!(result.decisions[0].decision_status, "auto_accepted");
+    assert_eq!(
+        result.decisions[0].decision_basis,
+        "current_recorded_path_binding"
+    );
 }
 
 #[test]
@@ -173,10 +210,7 @@ fn path_observer_status_v0_2_is_consumed_without_translation() {
         .evidence
         .iter()
         .any(|evidence| evidence.evidence_code == "exact_observed_native_path"));
-    assert_eq!(
-        result.decisions[0].decision_status,
-        "needs_user_confirmation"
-    );
+    assert_eq!(result.decisions[0].decision_status, "auto_accepted");
 }
 
 #[test]
@@ -336,16 +370,87 @@ fn fake_package_planner_receives_no_unconfirmed_selection() {
             .collect()
     }
 
-    let assessment = assessment(required_asset(
-        Some("kick.wav"),
-        Some("100"),
-        None,
-        &["/audio/kick.wav"],
-    ));
-    let inventory = inventory("complete", &[("/audio/kick.wav", "kick.wav", 100, "aaa")]);
+    let assessment = assessment(required_asset(Some("kick.wav"), Some("100"), None, &[]));
+    let inventory = inventory(
+        "complete",
+        &[("/elsewhere/kick.wav", "kick.wav", 100, "aaa")],
+    );
     let result = resolve_assets(&assessment, &inventory);
 
     assert!(accepted_sources(&result).is_empty());
     assert_eq!(result.metadata.auto_accepted_count, 0);
     assert_eq!(result.metadata.manual_review_count, 1);
+}
+
+fn selection(source_hash: &str, path: &str, digest: &str) -> UserSelectionSet {
+    UserSelectionSet {
+        selection_schema_version: "0.1".to_string(),
+        source_als_sha256: source_hash.to_string(),
+        selections: vec![UserAssetSelection {
+            required_asset_id: "asset0".to_string(),
+            selected_native_path: PathBuf::from(path),
+            selected_content_sha256: digest.to_string(),
+        }],
+    }
+}
+
+#[test]
+fn explicit_path_and_hash_selection_accepts_moved_candidate() {
+    let assessment = assessment(required_asset(Some("kick.wav"), Some("100"), None, &[]));
+    let inventory = inventory(
+        "complete",
+        &[("/moved/kick.wav", "kick.wav", 100, DIGEST_A)],
+    );
+    let choices = selection("hash", "/moved/kick.wav", DIGEST_A);
+
+    let result = resolve_assets_with_selections(&assessment, &inventory, Some(&choices));
+
+    assert_eq!(result.decisions[0].decision_status, "auto_accepted");
+    assert_eq!(
+        result.decisions[0].decision_basis,
+        "explicit_user_selection"
+    );
+    assert_eq!(
+        result.decisions[0].selected_content_id.as_deref(),
+        Some("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    );
+}
+
+#[test]
+fn changed_file_invalidates_user_selection() {
+    let assessment = assessment(required_asset(Some("kick.wav"), Some("100"), None, &[]));
+    let inventory = inventory(
+        "complete",
+        &[("/moved/kick.wav", "kick.wav", 100, DIGEST_B)],
+    );
+    let choices = selection("hash", "/moved/kick.wav", DIGEST_A);
+
+    let result = resolve_assets_with_selections(&assessment, &inventory, Some(&choices));
+
+    assert_eq!(
+        result.decisions[0].decision_status,
+        "needs_user_confirmation"
+    );
+    assert!(result
+        .warnings
+        .iter()
+        .any(|warning| { warning.warning_code == "RESOLUTION_USER_SELECTION_STALE_OR_CHANGED" }));
+}
+
+#[test]
+fn selection_for_different_als_is_rejected() {
+    let assessment = assessment(required_asset(Some("kick.wav"), Some("100"), None, &[]));
+    let inventory = inventory(
+        "complete",
+        &[("/moved/kick.wav", "kick.wav", 100, DIGEST_A)],
+    );
+    let choices = selection("different-als", "/moved/kick.wav", DIGEST_A);
+
+    let result = resolve_assets_with_selections(&assessment, &inventory, Some(&choices));
+
+    assert!(result.proposals.is_empty());
+    assert_eq!(
+        result.errors[0].error_code,
+        "RESOLUTION_SELECTION_SOURCE_MISMATCH"
+    );
 }

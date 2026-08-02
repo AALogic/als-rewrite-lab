@@ -397,6 +397,33 @@ class PrivatePathGuardTest(unittest.TestCase):
             set(payloads),
         )
 
+    def test_allows_only_required_tauri_application_icons(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_repository:
+            repository = Path(raw_repository)
+            self.initialize_repository(repository)
+            allowed = repository / "apps/rescue-desktop/src-tauri/icons/icon.png"
+            rejected = repository / "docs/icon.png"
+            allowed.parent.mkdir(parents=True)
+            rejected.parent.mkdir(parents=True)
+            allowed.write_bytes(b"\x89PNG\r\n\x1a\n\0fixture")
+            rejected.write_bytes(b"\x89PNG\r\n\x1a\n\0fixture")
+            subprocess.run(
+                ["git", "add", "--", allowed.relative_to(repository), rejected.relative_to(repository)],
+                cwd=repository,
+                check=True,
+            )
+
+            violations = private_path_guard.scan_repository(repository)
+
+        self.assertFalse(any(violation.path == allowed.relative_to(repository) for violation in violations))
+        self.assertTrue(
+            any(
+                violation.path == rejected.relative_to(repository)
+                and violation.category == "unscannable_tracked_binary"
+                for violation in violations
+            )
+        )
+
     def test_rejects_oversized_staged_blob_without_reading_payload(self) -> None:
         with tempfile.TemporaryDirectory() as raw_repository:
             repository = Path(raw_repository)
@@ -444,7 +471,13 @@ class PrivatePathGuardTest(unittest.TestCase):
         repository = TOOLS_DIR.parent
 
         self.assertEqual(private_path_guard.ALLOWED_TRACKED_MEDIA_FIXTURES, frozenset())
-        self.assertEqual(private_path_guard.ALLOWED_TRACKED_BINARY_FILES, frozenset())
+        self.assertTrue(private_path_guard.ALLOWED_TRACKED_BINARY_FILES)
+        self.assertTrue(
+            all(
+                path.startswith("apps/rescue-desktop/src-tauri/icons/")
+                for path in private_path_guard.ALLOWED_TRACKED_BINARY_FILES
+            )
+        )
         self.assertEqual(private_path_guard.scan_repository(repository), [])
 
 
