@@ -135,6 +135,7 @@ fn stale_preview_is_rejected() {
     assert!(!fixture.target_root.exists());
 }
 
+#[cfg(unix)]
 #[test]
 fn desktop_executes_complete_copy() {
     let fixture = fixture(false);
@@ -151,6 +152,7 @@ fn desktop_executes_complete_copy() {
     assert!(fixture.target_root.join("Set.als").is_file());
 }
 
+#[cfg(unix)]
 #[test]
 fn desktop_executes_incomplete_copy() {
     let fixture = fixture(true);
@@ -206,6 +208,7 @@ fn missing_audio_appearance_after_preview_is_rejected_before_write() {
     assert!(!fixture.target_root.exists());
 }
 
+#[cfg(unix)]
 #[test]
 fn same_size_current_path_replacement_remains_allowed() {
     let fixture = fixture(false);
@@ -220,5 +223,31 @@ fn same_size_current_path_replacement_remains_allowed() {
         fs::read(fixture.target_root.join("Samples/Imported/available.wav"))
             .expect("copied replacement"),
         replacement
+    );
+}
+
+#[cfg(not(unix))]
+#[test]
+fn unsupported_atomic_replace_platform_fails_closed() {
+    let fixture = fixture(false);
+    let als_before = fs::read(&fixture.source_als).expect("ALS before");
+    let audio_before = fs::read(&fixture.source_audio).expect("audio before");
+    let preview = prepare_copy(&prepare_request(&fixture));
+
+    let result = execute_copy(&execute_request(preview, true));
+
+    assert_eq!(result.run_status, "write_pipeline_failed");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| error.error_code == "REWRITE_ATOMIC_REPLACE_FAILED"));
+    assert!(!fixture.target_root.exists());
+    assert_eq!(
+        fs::read(&fixture.source_als).expect("ALS after"),
+        als_before
+    );
+    assert_eq!(
+        fs::read(&fixture.source_audio).expect("audio after"),
+        audio_before
     );
 }

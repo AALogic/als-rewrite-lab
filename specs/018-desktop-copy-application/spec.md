@@ -37,6 +37,9 @@ copy or rewrite operation.
   run-specific names and must be absent.
 - Source snapshot drift blocks execution.
 - Package-plan drift blocks execution and requires a fresh preview.
+- A platform without implemented atomic staged-ALS replacement returns
+  `write_pipeline_failed`, preserves every source file and does not publish a
+  final target. This is a safe refusal, not declared write support.
 - UI transports the fingerprint but never computes or interprets it.
 - Private ledger content is not exposed by the desktop result.
 
@@ -46,5 +49,7 @@ copy or rewrite operation.
 - execution refuses missing consent;
 - execution refuses stale source evidence;
 - execution refuses changed copy/rewrite semantics without changing the ALS;
+- an unsupported atomic-replacement platform fails closed without publishing a
+  target;
 - successful execution returns the final target and correct outcome;
 - UI needs no domain-policy implementation.
