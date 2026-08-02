@@ -240,7 +240,7 @@ fn unsupported_atomic_replace_platform_fails_closed() {
     assert!(result
         .errors
         .iter()
-        .any(|error| error.error_code == "REWRITE_ATOMIC_REPLACE_FAILED"));
+        .any(|error| error.error_code == "PIPELINE_REWRITE_FAILED"));
     assert!(!fixture.target_root.exists());
     assert_eq!(
         fs::read(&fixture.source_als).expect("ALS after"),

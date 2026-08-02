@@ -38,8 +38,9 @@ copy or rewrite operation.
 - Source snapshot drift blocks execution.
 - Package-plan drift blocks execution and requires a fresh preview.
 - A platform without implemented atomic staged-ALS replacement returns
-  `write_pipeline_failed`, preserves every source file and does not publish a
-  final target. This is a safe refusal, not declared write support.
+  `write_pipeline_failed` with public error code `PIPELINE_REWRITE_FAILED`,
+  preserves every source file and does not publish a final target. This is a
+  safe refusal, not declared write support.
 - UI transports the fingerprint but never computes or interprets it.
 - Private ledger content is not exposed by the desktop result.
 
