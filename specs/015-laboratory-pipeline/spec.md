@@ -69,6 +69,9 @@ No write-capable module is called before the package plan is ready.
 - A laboratory plan with zero approved rewrite operations blocks before staging.
 - Successful static validation yields `ready_for_manual_ableton_check`; it is
   not proof that Ableton opened the result successfully.
+- A platform without implemented atomic staged-ALS replacement returns
+  `write_pipeline_failed` with `PIPELINE_REWRITE_FAILED`, preserves source
+  files and never promotes staging to the final target.
 
 ## Outputs
 
@@ -94,6 +97,8 @@ unsupported Live versions all block before staging. Completed discovery
 evidence remains in blocked results. Write modules retain their isolated tests,
 but the composed pipeline does not claim a successful package until the missing
 decision and rewrite-support contracts exist.
+The supported-platform test proves the complete write path, while a separate
+unsupported-platform test proves the same request fails closed.
 
 ## Does Not Do
 

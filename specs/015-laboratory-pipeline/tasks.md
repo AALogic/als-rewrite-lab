@@ -25,6 +25,7 @@
 - [x] ENFORCED_BY_TEST: laboratory_command_requires_explicit_write_flag
 - [x] ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs
 - [x] ENFORCED_BY_TEST: selected_missing_sample_completes_narrow_pipeline
+- [x] ENFORCED_BY_TEST: selected_missing_sample_fails_closed_without_atomic_replace
 - [x] ENFORCED_BY_TEST: changed_selected_sample_blocks_before_staging
 - [x] ENFORCED_BY_TEST: selection_for_different_als_blocks_before_staging
 - [x] Add an explicit laboratory CLI command and parser tests.

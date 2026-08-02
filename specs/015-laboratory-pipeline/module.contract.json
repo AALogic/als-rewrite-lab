@@ -8,7 +8,7 @@
     "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
   },
   "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
-  "required_spec_literals": ["LaboratoryPackageRequest v0.2", "UserSelectionSet v0.1", "LaboratoryPackageResult v0.1", "ready_for_manual_ableton_check"],
+  "required_spec_literals": ["LaboratoryPackageRequest v0.2", "UserSelectionSet v0.1", "LaboratoryPackageResult v0.1", "ready_for_manual_ableton_check", "PIPELINE_REWRITE_FAILED"],
   "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
   "required_checked_obligations": true,
   "required_obligations": [
@@ -35,6 +35,7 @@
     "ENFORCED_BY_TEST: laboratory_command_requires_explicit_write_flag",
     "ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs",
     "ENFORCED_BY_TEST: selected_missing_sample_completes_narrow_pipeline",
+    "ENFORCED_BY_TEST: selected_missing_sample_fails_closed_without_atomic_replace",
     "ENFORCED_BY_TEST: changed_selected_sample_blocks_before_staging",
     "ENFORCED_BY_TEST: selection_for_different_als_blocks_before_staging"
   ],
@@ -55,6 +56,7 @@
     "laboratory_command_requires_explicit_write_flag",
     "laboratory_command_accepts_bounded_inputs",
     "selected_missing_sample_completes_narrow_pipeline",
+    "selected_missing_sample_fails_closed_without_atomic_replace",
     "changed_selected_sample_blocks_before_staging",
     "selection_for_different_als_blocks_before_staging"
   ],

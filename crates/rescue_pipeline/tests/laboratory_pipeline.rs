@@ -183,6 +183,7 @@ fn user_selection_for(
     }
 }
 
+#[cfg(unix)]
 #[test]
 fn selected_missing_sample_completes_narrow_pipeline() {
     let fixture = fixture();
@@ -238,6 +239,49 @@ fn selected_missing_sample_completes_narrow_pipeline() {
     assert_eq!(
         fs::read(&fixture.source_als).expect("source after"),
         source_before
+    );
+}
+
+#[cfg(not(unix))]
+#[test]
+fn selected_missing_sample_fails_closed_without_atomic_replace() {
+    let fixture = fixture();
+    let missing = fixture.source_root.join("missing").join("shared.wav");
+    fs::write(
+        &fixture.source_als,
+        gzip(&audio_clip_xml_for(
+            &missing,
+            "11.0_11300",
+            "Ableton Live 11.3.43",
+        )),
+    )
+    .expect("ALS");
+    let candidate_root = fixture._temp.path().join("candidate-library");
+    fs::create_dir(&candidate_root).expect("candidate root");
+    let candidate = candidate_root.join("shared.wav");
+    fs::write(&candidate, b"audio").expect("candidate");
+    let mut request = request(&fixture);
+    request.scan_roots = vec![candidate_root];
+    request.user_selection_set = Some(user_selection_for(&fixture, &candidate, None));
+    let source_before = fs::read(&fixture.source_als).expect("source before");
+    let candidate_before = fs::read(&candidate).expect("candidate before");
+
+    let result = run_laboratory_package(&request);
+
+    assert_eq!(result.run_status, "write_pipeline_failed");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| error.error_code == "PIPELINE_REWRITE_FAILED"));
+    assert!(!fixture.target_root.exists());
+    assert!(!fixture.ledger_path.exists());
+    assert_eq!(
+        fs::read(&fixture.source_als).expect("source after"),
+        source_before
+    );
+    assert_eq!(
+        fs::read(&candidate).expect("candidate after"),
+        candidate_before
     );
 }
 
