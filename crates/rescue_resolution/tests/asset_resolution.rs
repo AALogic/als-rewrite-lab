@@ -394,14 +394,23 @@ fn selection(source_hash: &str, path: &str, digest: &str) -> UserSelectionSet {
     }
 }
 
+fn native_absolute_path(relative: &str) -> String {
+    std::env::current_dir()
+        .expect("current test directory")
+        .join(relative)
+        .to_string_lossy()
+        .into_owned()
+}
+
 #[test]
 fn explicit_path_and_hash_selection_accepts_moved_candidate() {
     let assessment = assessment(required_asset(Some("kick.wav"), Some("100"), None, &[]));
+    let candidate_path = native_absolute_path("moved/kick.wav");
     let inventory = inventory(
         "complete",
-        &[("/moved/kick.wav", "kick.wav", 100, DIGEST_A)],
+        &[(candidate_path.as_str(), "kick.wav", 100, DIGEST_A)],
     );
-    let choices = selection("hash", "/moved/kick.wav", DIGEST_A);
+    let choices = selection("hash", &candidate_path, DIGEST_A);
 
     let result = resolve_assets_with_selections(&assessment, &inventory, Some(&choices));
 
@@ -419,11 +428,12 @@ fn explicit_path_and_hash_selection_accepts_moved_candidate() {
 #[test]
 fn changed_file_invalidates_user_selection() {
     let assessment = assessment(required_asset(Some("kick.wav"), Some("100"), None, &[]));
+    let candidate_path = native_absolute_path("moved/kick.wav");
     let inventory = inventory(
         "complete",
-        &[("/moved/kick.wav", "kick.wav", 100, DIGEST_B)],
+        &[(candidate_path.as_str(), "kick.wav", 100, DIGEST_B)],
     );
-    let choices = selection("hash", "/moved/kick.wav", DIGEST_A);
+    let choices = selection("hash", &candidate_path, DIGEST_A);
 
     let result = resolve_assets_with_selections(&assessment, &inventory, Some(&choices));
 
@@ -440,11 +450,12 @@ fn changed_file_invalidates_user_selection() {
 #[test]
 fn selection_for_different_als_is_rejected() {
     let assessment = assessment(required_asset(Some("kick.wav"), Some("100"), None, &[]));
+    let candidate_path = native_absolute_path("moved/kick.wav");
     let inventory = inventory(
         "complete",
-        &[("/moved/kick.wav", "kick.wav", 100, DIGEST_A)],
+        &[(candidate_path.as_str(), "kick.wav", 100, DIGEST_A)],
     );
-    let choices = selection("different-als", "/moved/kick.wav", DIGEST_A);
+    let choices = selection("different-als", &candidate_path, DIGEST_A);
 
     let result = resolve_assets_with_selections(&assessment, &inventory, Some(&choices));
 
