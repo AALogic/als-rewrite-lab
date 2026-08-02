@@ -16,3 +16,4 @@
 - [x] ENFORCED_BY_TEST: confirmed_core_library_dependency_is_left_system_managed_without_blocking
 - [x] ENFORCED_BY_TEST: changed_plan_fingerprint_blocks_before_write
 - [x] ENFORCED_BY_TEST: matching_plan_fingerprint_allows_execution
+- [x] ENFORCED_BY_TEST: unsupported_atomic_replace_platform_fails_closed_at_pipeline

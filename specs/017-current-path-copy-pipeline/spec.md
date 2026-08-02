@@ -73,6 +73,9 @@ remain linked to an original or missing location.
   explicitly that content identity was not computed.
 - A supplied expected plan fingerprint is compared after read-only planning and
   before staging. Any semantic plan drift requires a new preview.
+- A platform without implemented atomic staged-ALS replacement returns
+  `write_pipeline_failed` with public error code `PIPELINE_REWRITE_FAILED`,
+  preserves all sources and never promotes the staging directory.
 - Same-path, same-size audio replacement remains an accepted current-path MVP
   limit and is not presented as historical content identity.
 
@@ -101,3 +104,5 @@ cleanup, deletion, plugin portability or Ableton launch.
 - appearing, disappearing or resized audio after preview changes the plan
   fingerprint and blocks before every write.
 - equivalent operation ordering produces the same fingerprint.
+- an unsupported atomic-replacement platform fails closed without publishing a
+  target.
