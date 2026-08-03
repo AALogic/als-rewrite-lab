@@ -2,6 +2,9 @@
 
 Status: setup procedure for native Windows compatibility and Ableton evidence
 
+For downloading, installing, and manually checking the private Windows x64
+Alpha installer, see `WINDOWS_ALPHA_INSTALL_AND_TEST.md`.
+
 ## Purpose
 
 Use one Windows laptop to run the same committed Rescue code against copied

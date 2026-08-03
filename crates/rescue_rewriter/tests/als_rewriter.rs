@@ -1,4 +1,4 @@
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -9,10 +9,10 @@ use rescue_packaging::{
 use rescue_rewriter::{rewrite_staged_als, ALSRewriteRequest};
 use sha2::{Digest, Sha256};
 use std::fs;
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 use std::io::Read;
 use std::io::Write;
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 use std::path::Path;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -47,7 +47,7 @@ fn gzip(xml: &str) -> Vec<u8> {
     encoder.finish().expect("gzip finish")
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 fn gunzip(path: &Path) -> String {
     let bytes = fs::read(path).expect("read ALS");
     let mut decoder = GzDecoder::new(bytes.as_slice());
@@ -216,7 +216,7 @@ fn request(fixture: &Fixture) -> ALSRewriteRequest {
     }
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn approved_locator_changes_only_three_active_fields() {
     let fixture = fixture();
@@ -240,7 +240,7 @@ fn approved_locator_changes_only_three_active_fields() {
     assert!(xml.contains(r#"<Path Value="/external/other.wav"/>"#));
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn project_local_operation_changes_only_path() {
     let mut fixture = fixture();
@@ -368,7 +368,7 @@ fn duplicate_reference_operations_are_rejected() {
     assert_eq!(result.errors[0].error_code, "REWRITE_DUPLICATE_REFERENCE");
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn repeated_rewrite_does_not_stack_changes() {
     let fixture = fixture();
@@ -384,7 +384,7 @@ fn repeated_rewrite_does_not_stack_changes() {
     assert_eq!(fs::read(&fixture.staged_als).expect("twice"), once);
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn xml_special_characters_are_escaped_and_round_trip() {
     let fixture = fixture();
@@ -403,7 +403,7 @@ fn xml_special_characters_are_escaped_and_round_trip() {
     roxmltree::Document::parse(&xml).expect("valid rewritten XML");
 }
 
-#[cfg(not(unix))]
+#[cfg(not(any(unix, windows)))]
 #[test]
 fn unsupported_platform_atomic_replace_fails_closed() {
     let fixture = fixture();
@@ -415,6 +415,61 @@ fn unsupported_platform_atomic_replace_fails_closed() {
     assert!(result
         .errors
         .iter()
-        .any(|error| error.error_code == "REWRITE_ATOMIC_REPLACE_FAILED"));
+        .any(|error| error.error_code == "REWRITE_ATOMIC_REPLACE_UNSUPPORTED"));
     assert_eq!(fs::read(&fixture.staged_als).expect("after"), before);
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_atomic_replace_preserves_previous_file_on_lock() {
+    use std::fs::OpenOptions;
+    use std::os::windows::fs::OpenOptionsExt;
+    use windows_sys::Win32::Storage::FileSystem::FILE_SHARE_READ;
+
+    let fixture = fixture();
+    let plan = plan(&fixture);
+    let before = fs::read(&fixture.staged_als).expect("staged ALS before");
+    let lock = OpenOptions::new()
+        .read(true)
+        .share_mode(FILE_SHARE_READ)
+        .open(&fixture.staged_als)
+        .expect("read-only sharing lock");
+
+    let result = rewrite_staged_als(&request(&fixture), &plan, &staging(&fixture, &plan));
+    drop(lock);
+
+    assert_eq!(result.rewrite_status, "rewrite_failed");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| error.error_code == "REWRITE_WINDOWS_REPLACE_FAILED"));
+    assert_eq!(
+        fs::read(&fixture.staged_als).expect("staged ALS after"),
+        before
+    );
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_atomic_replace_supports_unicode_and_cleans_temporary_files() {
+    let mut fixture = fixture();
+    let unicode_staging = fixture._temp.path().join("staging zażółć");
+    fs::rename(&fixture.staging_root, &unicode_staging).expect("unicode staging rename");
+    fixture.staging_root = unicode_staging;
+    fixture.staged_als = fixture.staging_root.join("Set.als");
+    fixture.final_root = fixture._temp.path().join("final").join("Projekt zażółć");
+    let plan = plan(&fixture);
+
+    let result = rewrite_staged_als(&request(&fixture), &plan, &staging(&fixture, &plan));
+
+    assert_eq!(result.rewrite_status, "rewrite_complete");
+    assert!(gunzip(&fixture.staged_als).contains("Projekt zażółć"));
+    assert!(!fixture
+        .staging_root
+        .join(".Set.als.rescue-rewrite.tmp")
+        .exists());
+    assert!(!fixture
+        .staging_root
+        .join(".Set.als.rescue-rewrite.backup")
+        .exists());
 }

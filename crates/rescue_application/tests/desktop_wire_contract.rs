@@ -30,3 +30,19 @@ fn desktop_ipc_wire_contract_is_stable() {
     assert_roundtrip::<rescue_application::DesktopCopyResult>("copy-result.json");
     assert_roundtrip::<rescue_application::DesktopCopyResult>("copy-error-result.json");
 }
+
+#[test]
+fn desktop_copy_error_report_is_available_on_wire() {
+    let value = fixture("copy-error-result.json");
+    let report = &value["diagnostic_report"];
+
+    assert_eq!(report["operation_kind"], "copy_execution");
+    assert_eq!(report["run_status"], "preview_plan_changed");
+    assert!(report["build_commit"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+    assert_eq!(report["errors"].as_array().map(Vec::len), Some(1));
+    assert_eq!(report["errors"][0]["stage"], "plan_binding");
+    assert!(report.get("source_als_path").is_none());
+    assert!(report.get("target_project_root").is_none());
+}

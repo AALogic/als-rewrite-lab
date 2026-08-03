@@ -1,11 +1,15 @@
 mod desktop_analysis;
 mod desktop_copy;
+mod desktop_copy_diagnostic;
 mod desktop_copy_impl;
+mod desktop_copy_result;
 mod desktop_diagnostic;
 
 pub use desktop_copy::{
-    default_target_project_root, execute_copy, prepare_copy, DesktopCopyPreview, DesktopCopyResult,
-    DesktopExecuteCopyRequest, DesktopPrepareCopyRequest, DESKTOP_COPY_SERVICE_VERSION,
+    default_target_project_root, execute_copy, prepare_copy, DesktopCopyDiagnosticReport,
+    DesktopCopyPreview, DesktopCopyResult, DesktopDiagnosticError, DesktopExecuteCopyRequest,
+    DesktopPrepareCopyRequest, DESKTOP_COPY_DIAGNOSTIC_SCHEMA_VERSION,
+    DESKTOP_COPY_SERVICE_VERSION,
 };
 
 use rescue_analyzer::{PreflightReport, PreflightSummary};

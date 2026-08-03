@@ -3,6 +3,8 @@ mod als_rewriter_impl;
 mod als_rewriter_io;
 mod als_rewriter_result;
 mod als_rewriter_validation;
+#[cfg(windows)]
+mod als_rewriter_windows;
 mod als_rewriter_xml;
 
 pub use als_rewriter::{

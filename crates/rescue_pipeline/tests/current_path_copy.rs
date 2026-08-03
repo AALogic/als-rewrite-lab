@@ -1,10 +1,10 @@
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use rescue_pipeline::{prepare_current_path_copy, run_current_path_copy, CurrentPathCopyRequest};
 use std::fs;
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 use std::io::Read;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -14,7 +14,7 @@ struct Fixture {
     _temp: TempDir,
     source_als: PathBuf,
     available_audio: PathBuf,
-    #[cfg(unix)]
+    #[cfg(any(unix, windows))]
     missing_audio: PathBuf,
     staging_root: PathBuf,
     target_root: PathBuf,
@@ -48,7 +48,7 @@ fn fixture(include_missing_reference: bool) -> Fixture {
         _temp: temp,
         source_als,
         available_audio,
-        #[cfg(unix)]
+        #[cfg(any(unix, windows))]
         missing_audio,
         staging_root: output_root.join("Project.staging"),
         target_root: output_root.join("Project"),
@@ -56,7 +56,7 @@ fn fixture(include_missing_reference: bool) -> Fixture {
     }
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 fn project_local_fixture() -> Fixture {
     let temp = tempfile::tempdir().expect("tempdir");
     let source_root = temp.path().join("source Project");
@@ -105,7 +105,7 @@ fn project_local_fixture() -> Fixture {
         _temp: temp,
         source_als,
         available_audio,
-        #[cfg(unix)]
+        #[cfg(any(unix, windows))]
         missing_audio: source_root.join("unused-missing.wav"),
         staging_root: output_root.join("Project.staging"),
         target_root: output_root.join("Project"),
@@ -131,7 +131,7 @@ fn gzip(xml: &str) -> Vec<u8> {
     encoder.finish().expect("gzip finish")
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 fn unzip(path: &Path) -> String {
     let mut decoder = GzDecoder::new(fs::File::open(path).expect("open ALS"));
     let mut xml = String::new();
@@ -173,7 +173,7 @@ fn sample_reference(path: &Path, filename: &str, size: u64, crc: u64) -> String 
     )
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn complete_current_path_copy_is_promoted() {
     let fixture = fixture(false);
@@ -191,7 +191,7 @@ fn complete_current_path_copy_is_promoted() {
         .is_file());
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn current_path_audio_uses_metadata_only_verification_end_to_end() {
     let fixture = fixture(false);
@@ -287,7 +287,7 @@ fn current_path_audio_uses_metadata_only_verification_end_to_end() {
     );
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn project_local_type3_copy_preserves_structure_and_rewrites_path_only() {
     let fixture = project_local_fixture();
@@ -327,7 +327,7 @@ fn project_local_type3_copy_preserves_structure_and_rewrites_path_only() {
     );
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn missing_asset_creates_incomplete_copy() {
     let fixture = fixture(true);
@@ -371,7 +371,7 @@ fn all_missing_assets_create_incomplete_als_copy() {
     assert!(fixture.target_root.join("Samples/Imported").is_dir());
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn missing_reference_remains_unchanged() {
     let fixture = fixture(true);
@@ -384,7 +384,7 @@ fn missing_reference_remains_unchanged() {
     assert!(rewritten_xml.contains("RelativePath Value=\"../missing.wav\""));
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn available_assets_are_relinked_when_another_asset_is_missing() {
     let fixture = fixture(true);
@@ -482,7 +482,7 @@ fn changed_plan_fingerprint_blocks_before_write() {
     assert!(!fixture.ledger_path.exists());
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn matching_plan_fingerprint_allows_execution() {
     let fixture = fixture(false);
@@ -500,7 +500,7 @@ fn matching_plan_fingerprint_allows_execution() {
     assert!(fixture.target_root.join("Set.als").is_file());
 }
 
-#[cfg(not(unix))]
+#[cfg(not(any(unix, windows)))]
 #[test]
 fn unsupported_atomic_replace_platform_fails_closed_at_pipeline() {
     let fixture = fixture(false);
@@ -523,4 +523,30 @@ fn unsupported_atomic_replace_platform_fails_closed_at_pipeline() {
         fs::read(&fixture.available_audio).expect("audio after"),
         audio_before
     );
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_complete_current_path_copy_is_promoted_on_ntfs() {
+    let fixture = fixture(false);
+    let source_als_before = fs::read(&fixture.source_als).expect("source ALS before");
+    let source_audio_before = fs::read(&fixture.available_audio).expect("source audio before");
+
+    let result = run_current_path_copy(&request(&fixture));
+
+    assert_eq!(result.run_status, "complete_copy_ready_for_manual_check");
+    assert!(fixture.target_root.join("Set.als").is_file());
+    assert!(fixture
+        .target_root
+        .join("Samples/Imported/available.wav")
+        .is_file());
+    assert_eq!(
+        fs::read(&fixture.source_als).expect("source ALS after"),
+        source_als_before
+    );
+    assert_eq!(
+        fs::read(&fixture.available_audio).expect("source audio after"),
+        source_audio_before
+    );
+    assert!(!fixture.staging_root.exists());
 }

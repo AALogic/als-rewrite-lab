@@ -53,15 +53,68 @@ pub(crate) fn run(request: &CurrentPathCopyRequest) -> CurrentPathCopyResult {
             false,
             Vec::new(),
         ),
-        Err(failure) => result_from_plan(
-            request,
-            prepared.plan,
-            prepared.fingerprint,
-            failure.progress.promotion,
-            false,
-            vec![failure.error],
-        ),
+        Err(failure) => {
+            let (promotion, errors) = write_failure_details(*failure);
+            result_from_plan(
+                request,
+                prepared.plan,
+                prepared.fingerprint,
+                promotion,
+                false,
+                errors,
+            )
+        }
     }
+}
+
+fn write_failure_details(
+    failure: crate::laboratory_pipeline_write::WriteFailure,
+) -> (
+    Option<rescue_promotion::PackagePromotionResult>,
+    Vec<LaboratoryPackageError>,
+) {
+    let mut errors = vec![failure.error];
+    if let Some(staging) = failure.progress.staging.as_ref() {
+        errors.extend(
+            staging
+                .errors
+                .iter()
+                .map(|item| error(&item.error_code, "staging", &item.message)),
+        );
+    }
+    if let Some(rewrite) = failure.progress.rewrite.as_ref() {
+        errors.extend(
+            rewrite
+                .errors
+                .iter()
+                .map(|item| error(&item.error_code, "als_rewrite", &item.message)),
+        );
+    }
+    if let Some(validation) = failure.progress.validation.as_ref() {
+        errors.extend(
+            validation
+                .errors
+                .iter()
+                .map(|item| error(&item.error_code, "package_validation", &item.message)),
+        );
+    }
+    if let Some(manifests) = failure.progress.manifests.as_ref() {
+        errors.extend(
+            manifests
+                .errors
+                .iter()
+                .map(|item| error(&item.error_code, "manifest", &item.message)),
+        );
+    }
+    if let Some(promotion) = failure.progress.promotion.as_ref() {
+        errors.extend(
+            promotion
+                .errors
+                .iter()
+                .map(|item| error(&item.error_code, "promotion", &item.message)),
+        );
+    }
+    (failure.progress.promotion, errors)
 }
 
 fn plan_bound_failure(

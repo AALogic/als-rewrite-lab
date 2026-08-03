@@ -3,7 +3,35 @@ use rescue_pipeline::PlanFingerprint;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-pub const DESKTOP_COPY_SERVICE_VERSION: &str = "0.4.0";
+pub const DESKTOP_COPY_SERVICE_VERSION: &str = "0.5.0";
+pub const DESKTOP_COPY_DIAGNOSTIC_SCHEMA_VERSION: &str = "0.1";
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopDiagnosticError {
+    pub error_code: String,
+    pub stage: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopCopyDiagnosticReport {
+    pub diagnostic_schema_version: String,
+    pub request_id: String,
+    pub operation_kind: String,
+    pub service_version: String,
+    pub pipeline_version: String,
+    pub build_commit: String,
+    pub host_os: String,
+    pub host_arch: String,
+    pub run_status: String,
+    pub completed_stage: String,
+    pub required_asset_count: usize,
+    pub system_dependency_count: usize,
+    pub copied_asset_count: usize,
+    pub rewritten_reference_count: usize,
+    pub omitted_asset_count: usize,
+    pub errors: Vec<DesktopDiagnosticError>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesktopPrepareCopyRequest {
@@ -27,6 +55,7 @@ pub struct DesktopCopyPreview {
     pub rewrite_reference_count: usize,
     pub omitted_asset_count: usize,
     pub expected_result_status: String,
+    pub diagnostic_report: DesktopCopyDiagnosticReport,
     pub errors: Vec<DesktopApplicationError>,
 }
 
@@ -47,6 +76,7 @@ pub struct DesktopCopyResult {
     pub copied_asset_count: usize,
     pub rewritten_reference_count: usize,
     pub omitted_asset_count: usize,
+    pub diagnostic_report: DesktopCopyDiagnosticReport,
     pub errors: Vec<DesktopApplicationError>,
 }
 

@@ -28,14 +28,18 @@ CONFIRMED for a same-filesystem laboratory promotion to an absent target.
 5. No symlink or unexpected file exists in the package.
 6. Final target parent already exists and is a non-symlink directory.
 7. Final target is absent.
-8. On Unix, staging and target parent are on the same filesystem.
+8. Staging and target parent are on the same filesystem or local NTFS volume.
+9. Windows Alpha roots are drive-letter paths below `MAX_PATH` and no existing
+   path component is a reparse point.
 
 ## Operation
 
-After preflight, rename the entire staging directory to the final target. Then
-re-run exact package verification and sync the target parent. If post-check or
-sync fails, attempt to rename the directory back to staging and report whether
-rollback succeeded.
+After preflight, rename the entire staging directory to the final target. Unix
+uses its native rename; Windows uses `MoveFileExW` without replacement flags so
+an existing target cannot be overwritten. Then re-run exact package
+verification and sync or write-through according to platform capability. If
+post-check fails, attempt the same no-clobber move back to staging and report
+whether rollback succeeded.
 
 ## Idempotency
 
@@ -47,9 +51,9 @@ returns `already_promoted_verified` only when every byte still matches.
 
 An existing final target is never intentionally overwritten, merged, cleaned,
 or deleted. Source files and private ledger are read-only. No recursive delete
-exists. This module does not claim hardened protection against a malicious
-local process racing the final existence check; a platform-specific
-no-replace directory primitive remains required before commercial release.
+exists. The Windows adapter uses a no-replace primitive. Unix still does not
+claim hardened protection against a malicious local process racing the final
+existence check; that pre-release hardening remains separate.
 
 ## Outputs
 
@@ -63,7 +67,9 @@ Successful promotion sets manual-check status to
 Tests prove successful move without source mutation, existing-target
 protection, tamper and unexpected-file rejection, ledger gate, status gate,
 idempotent repeat verification, symlink rejection, and original-source change
-detection.
+detection. Native Windows tests also prove Unicode paths, target collision,
+same-volume local NTFS enforcement, reparse-point rejection, and repeated
+verification.
 
 ## Does Not Do
 

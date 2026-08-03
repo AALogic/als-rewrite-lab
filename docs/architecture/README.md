@@ -98,6 +98,10 @@ adr/ADR-008-core-library-system-dependencies.md
   Confirmed narrow Core Library references are reported as system dependencies
   and left system-managed by the default desktop package policy.
 
+adr/ADR-009-windows-x64-alpha-filesystem-boundary.md
+  Windows Alpha uses bounded native write adapters for local NTFS and rejects
+  unsupported path and filesystem environments.
+
 traceability.md
   Product capability to module, contract, and test evidence.
 ```

@@ -68,6 +68,8 @@ writer makes no domain decisions and does not promote staging.
 Tests prove dual writes, portable redaction, private provenance, idempotent
 repeat, no-clobber conflict behavior, validation gate, traversal rejection,
 planned-file collision rejection, final-target gate, and no temporary residue.
+The same no-clobber and idempotency contract is exercised on native Windows
+NTFS; the writer does not infer support for network or non-NTFS filesystems.
 
 ## Does Not Do
 

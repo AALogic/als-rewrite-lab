@@ -1,7 +1,7 @@
 {
   "request_id": "wire-execution",
   "preview": {
-    "service_version": "0.4.0",
+    "service_version": "0.5.0",
     "request_id": "wire-preview",
     "preview_status": "complete_copy_preview_ready",
     "source_als_path": "/fixture/source/Set.als",
@@ -17,6 +17,24 @@
     "rewrite_reference_count": 1,
     "omitted_asset_count": 0,
     "expected_result_status": "complete_copy_ready_for_manual_check",
+    "diagnostic_report": {
+      "diagnostic_schema_version": "0.1",
+      "request_id": "wire-preview",
+      "operation_kind": "copy_preview",
+      "service_version": "0.5.0",
+      "pipeline_version": "0.5.0",
+      "build_commit": "fixture-commit",
+      "host_os": "windows",
+      "host_arch": "x86_64",
+      "run_status": "complete_copy_preview_ready",
+      "completed_stage": "package_planning",
+      "required_asset_count": 1,
+      "system_dependency_count": 0,
+      "copied_asset_count": 1,
+      "rewritten_reference_count": 1,
+      "omitted_asset_count": 0,
+      "errors": []
+    },
     "errors": []
   },
   "write_consent": true

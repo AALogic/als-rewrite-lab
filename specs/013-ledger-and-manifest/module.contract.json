@@ -38,7 +38,8 @@
     "ENFORCED_BY_TYPE: ManifestWriteRecord",
     "ENFORCED_BY_TYPE: ManifestWriteError",
     "REVIEW_ONLY: portable manifest contains no local absolute paths",
-    "REVIEW_ONLY: existing different files are never overwritten"
+    "REVIEW_ONLY: existing different files are never overwritten",
+    "ENFORCED_BY_TEST: windows_manifest_write_is_noclobber_and_idempotent_on_ntfs"
   ],
   "required_tests": [
     "passed_validation_writes_portable_manifest_and_private_ledger",
@@ -52,7 +53,8 @@
     "existing_final_target_blocks_manifest_write",
     "successful_atomic_writes_leave_no_temporary_files",
     "metadata_only_audio_manifest_marks_content_identity_not_computed",
-    "portable_manifest_records_system_dependency_without_local_path"
+    "portable_manifest_records_system_dependency_without_local_path",
+    "windows_manifest_write_is_noclobber_and_idempotent_on_ntfs"
   ],
   "required_tests_must_not_be_ignored": true,
   "required_tests_must_have_substance": true,

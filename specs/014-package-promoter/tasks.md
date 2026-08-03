@@ -18,4 +18,7 @@
 - [x] ENFORCED_BY_TYPE: PackagePromotionError
 - [x] REVIEW_ONLY: existing final target is never intentionally overwritten
 - [x] REVIEW_ONLY: promoter makes no package content decisions
-- [x] DOCUMENTED_ONLY: hardened no-replace directory rename remains pre-release work
+- [x] DOCUMENTED_ONLY: hardened Unix no-replace directory rename remains pre-release work
+- [x] ENFORCED_BY_TEST: windows_unicode_package_is_promoted_with_no_replace
+- [x] ENFORCED_BY_TEST: windows_reparse_point_root_blocks_promotion
+- [x] REVIEW_ONLY: Windows promotion accepts local same-volume NTFS only

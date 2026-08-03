@@ -75,6 +75,31 @@ export type PlanFingerprint = {
   sha256: string;
 };
 
+export type DesktopDiagnosticError = {
+  error_code: string;
+  stage: string;
+  message: string;
+};
+
+export type DesktopCopyDiagnosticReport = {
+  diagnostic_schema_version: string;
+  request_id: string;
+  operation_kind: string;
+  service_version: string;
+  pipeline_version: string;
+  build_commit: string;
+  host_os: string;
+  host_arch: string;
+  run_status: string;
+  completed_stage: string;
+  required_asset_count: number;
+  system_dependency_count: number;
+  copied_asset_count: number;
+  rewritten_reference_count: number;
+  omitted_asset_count: number;
+  errors: DesktopDiagnosticError[];
+};
+
 export type DesktopCopyPreview = {
   service_version: string;
   request_id: string;
@@ -89,6 +114,7 @@ export type DesktopCopyPreview = {
   rewrite_reference_count: number;
   omitted_asset_count: number;
   expected_result_status: string;
+  diagnostic_report: DesktopCopyDiagnosticReport;
   errors: DesktopApplicationError[];
 };
 
@@ -107,5 +133,6 @@ export type DesktopCopyResult = {
   copied_asset_count: number;
   rewritten_reference_count: number;
   omitted_asset_count: number;
+  diagnostic_report: DesktopCopyDiagnosticReport;
   errors: DesktopApplicationError[];
 };

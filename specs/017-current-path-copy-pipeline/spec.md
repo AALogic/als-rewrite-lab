@@ -73,7 +73,7 @@ remain linked to an original or missing location.
   explicitly that content identity was not computed.
 - A supplied expected plan fingerprint is compared after read-only planning and
   before staging. Any semantic plan drift requires a new preview.
-- A platform without implemented atomic staged-ALS replacement returns
+- A platform outside the Unix or bounded Windows x64 write profiles returns
   `write_pipeline_failed` with public error code `PIPELINE_REWRITE_FAILED`,
   preserves all sources and never promotes the staging directory.
 - Same-path, same-size audio replacement remains an accepted current-path MVP
@@ -106,3 +106,6 @@ cleanup, deletion, plugin portability or Ableton launch.
 - equivalent operation ordering produces the same fingerprint.
 - an unsupported atomic-replacement platform fails closed without publishing a
   target.
+- a native Windows synthetic run proves the complete pipeline on local NTFS,
+  including rewrite, manifests, promotion, repeat verification, and unchanged
+  source files.

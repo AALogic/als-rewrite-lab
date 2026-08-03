@@ -8,6 +8,7 @@ import type {
   DesktopAnalyzeResult,
   DesktopCopyPreview,
   DesktopCopyResult,
+  DesktopCopyDiagnosticReport,
   DesktopDiagnosticReport,
   DesktopExecuteCopyRequest,
   PlanFingerprint,
@@ -47,8 +48,28 @@ const previewKeys = [
   "rewrite_reference_count",
   "omitted_asset_count",
   "expected_result_status",
+  "diagnostic_report",
   "errors",
 ] as const satisfies readonly (keyof DesktopCopyPreview)[];
+
+const copyDiagnosticKeys = [
+  "diagnostic_schema_version",
+  "request_id",
+  "operation_kind",
+  "service_version",
+  "pipeline_version",
+  "build_commit",
+  "host_os",
+  "host_arch",
+  "run_status",
+  "completed_stage",
+  "required_asset_count",
+  "system_dependency_count",
+  "copied_asset_count",
+  "rewritten_reference_count",
+  "omitted_asset_count",
+  "errors",
+] as const satisfies readonly (keyof DesktopCopyDiagnosticReport)[];
 
 const fingerprintKeys = [
   "schema_version",
@@ -70,6 +91,7 @@ const copyResultKeys = [
   "copied_asset_count",
   "rewritten_reference_count",
   "omitted_asset_count",
+  "diagnostic_report",
   "errors",
 ] as const satisfies readonly (keyof DesktopCopyResult)[];
 
@@ -83,6 +105,9 @@ assertAllContractKeysCovered<
 >();
 assertAllContractKeysCovered<
   Exclude<keyof DesktopCopyPreview, (typeof previewKeys)[number]>
+>();
+assertAllContractKeysCovered<
+  Exclude<keyof DesktopCopyDiagnosticReport, (typeof copyDiagnosticKeys)[number]>
 >();
 assertAllContractKeysCovered<
   Exclude<keyof PlanFingerprint, (typeof fingerprintKeys)[number]>
@@ -108,6 +133,9 @@ describe("desktop IPC wire contract", () => {
     expect(sorted(Object.keys(previewFixture.plan_fingerprint))).toEqual(
       sorted(fingerprintKeys),
     );
+    expect(sorted(Object.keys(previewFixture.diagnostic_report))).toEqual(
+      sorted(copyDiagnosticKeys),
+    );
     expect(sorted(Object.keys(executeRequestFixture))).toEqual(
       sorted(executeRequestKeys),
     );
@@ -117,6 +145,9 @@ describe("desktop IPC wire contract", () => {
     expect(sorted(Object.keys(copyResultFixture))).toEqual(sorted(copyResultKeys));
     expect(sorted(Object.keys(copyErrorResultFixture))).toEqual(
       sorted(copyResultKeys),
+    );
+    expect(sorted(Object.keys(copyResultFixture.diagnostic_report))).toEqual(
+      sorted(copyDiagnosticKeys),
     );
   });
 
@@ -130,6 +161,15 @@ describe("desktop IPC wire contract", () => {
     expect(copyErrorResultFixture.run_status).toBe("preview_plan_changed");
     expect(copyErrorResultFixture.final_target_root).toBeNull();
     expect(copyErrorResultFixture.errors[0]?.error_code).toBe(
+      "CURRENT_PATH_PREVIEW_PLAN_CHANGED",
+    );
+  });
+
+  it("desktop_copy_error_report_is_available_on_wire", () => {
+    expect(copyErrorResultFixture.diagnostic_report.operation_kind).toBe(
+      "copy_execution",
+    );
+    expect(copyErrorResultFixture.diagnostic_report.errors[0]?.error_code).toBe(
       "CURRENT_PATH_PREVIEW_PLAN_CHANGED",
     );
   });

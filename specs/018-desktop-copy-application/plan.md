@@ -8,3 +8,5 @@
 6. Transport a backend-computed PlanFingerprint through preview and verify it
    before any execute write.
 7. Lock representative Rust/TypeScript wire payloads with shared fixtures.
+8. Produce one redacted diagnostic for preview and execution and let the UI
+   copy it without interpreting domain errors.

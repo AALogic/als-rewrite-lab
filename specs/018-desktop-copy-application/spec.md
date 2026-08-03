@@ -1,6 +1,6 @@
 # Module Specification: 018 DesktopCopyApplicationService
 
-Status: implementation update approved, output v0.3
+Status: implementation update approved, output v0.4
 Date: 2026-08-03
 
 ## Purpose
@@ -14,7 +14,7 @@ explicitly confirmed current-path copy request.
 `DesktopPrepareCopyRequest v0.1` contains request ID, source ALS path and an
 absolute absent target Project root.
 
-`DesktopCopyPreview v0.3` contains the source snapshot hash, target root,
+`DesktopCopyPreview v0.4` contains the source snapshot hash, target root,
 available copy count, system dependency count, rewrite count, omitted count,
 expected complete/incomplete status, `PlanFingerprint v0.1` and structured
 blockers. Preparing a preview writes nothing.
@@ -23,10 +23,16 @@ blockers. Preparing a preview writes nothing.
 write consent. Execution verifies the source and exact reviewed plan; stale or
 changed previews fail closed before staging.
 
-`DesktopCopyResult v0.2` contains complete/incomplete/failure status, final
+`DesktopCopyResult v0.3` contains complete/incomplete/failure status, final
 target path, copied/system-dependency/rewrite/omitted counts and structured
 errors. A confirmed system dependency is visible in both outputs but is not a
 copy or rewrite operation.
+
+Both outputs contain `DesktopCopyDiagnosticReport v0.1`. The redacted report
+records operation kind, service/pipeline version, build commit, host OS and
+architecture, run status, completed stage, counters, and every error code,
+stage, and safe message. It contains no source/target paths, project or sample
+names, username, machine name, or private-ledger path.
 
 ## Safety
 
@@ -37,7 +43,7 @@ copy or rewrite operation.
   run-specific names and must be absent.
 - Source snapshot drift blocks execution.
 - Package-plan drift blocks execution and requires a fresh preview.
-- A platform without implemented atomic staged-ALS replacement returns
+- A platform outside the Unix or bounded Windows x64 write profiles returns
   `write_pipeline_failed` with public error code `PIPELINE_REWRITE_FAILED`,
   preserves every source file and does not publish a final target. This is a
   safe refusal, not declared write support.
@@ -54,3 +60,6 @@ copy or rewrite operation.
   target;
 - successful execution returns the final target and correct outcome;
 - UI needs no domain-policy implementation.
+- failed preview and execution expose a copyable redacted diagnostic;
+- diagnostic privacy tests reject source/target paths, user-home values,
+  project names, sample names, and private-ledger paths.

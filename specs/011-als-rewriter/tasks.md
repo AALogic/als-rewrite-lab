@@ -20,4 +20,7 @@
 - [x] ENFORCED_BY_TYPE: ALSRewriteError
 - [x] REVIEW_ONLY: no global XML search and replace
 - [x] REVIEW_ONLY: original ALS is never writable
-- [x] DOCUMENTED_ONLY: non-Unix atomic replacement remains unsupported
+- [x] DOCUMENTED_ONLY: platforms outside Unix and Windows remain unsupported
+- [x] ENFORCED_BY_TEST: windows_atomic_replace_preserves_previous_file_on_lock
+- [x] ENFORCED_BY_TEST: windows_atomic_replace_supports_unicode_and_cleans_temporary_files
+- [x] REVIEW_ONLY: Windows replacement remains inside the rewriter I/O adapter

@@ -42,6 +42,9 @@ per-operation status, ruleset, warnings, errors, and the staged ALS location.
 10. Encode deterministic gzip bytes to a create-new temporary sibling.
 11. Validate gzip, UTF-8, XML, and Ableton root before replacing only the
     staged ALS.
+12. On Windows x64 local NTFS, reject unsupported path environments and use
+    `ReplaceFileW` with a same-directory backup. Preserve or restore the prior
+    staged ALS when replacement fails and expose the raw Windows error number.
 
 ## Safety Boundary
 
@@ -69,16 +72,16 @@ Structured errors include `REWRITE_PLAN_NOT_READY`,
 
 ## Acceptance Criteria
 
-Tests prove targeted three-field and Path-only change, historical/unrelated preservation,
-snapshot mismatch rejection, old-value mismatch rejection, locator rejection,
-ruleset rejection, duplicate-reference rejection, repeat safety, and XML
-escaping on Unix. Non-Unix tests prove that the unsupported atomic replacement
-adapter fails closed and preserves the staged ALS.
+Tests prove targeted three-field and Path-only change, historical/unrelated
+preservation, snapshot mismatch rejection, old-value mismatch rejection,
+locator rejection, ruleset rejection, duplicate-reference rejection, repeat
+safety, and XML escaping on Unix and Windows. Native Windows tests prove
+successful Unicode replacement, locked-target failure with prior bytes
+preserved, and temporary-file cleanup.
 
 ## Known Limits
 
-Atomic replacement of the staged ALS is currently enabled only on Unix. Other
-platforms fail closed at the isolated I/O adapter until an equivalent
-replace-existing primitive is implemented and tested. Live 9/10/12, type 5,
-same-name collisions, Windows path semantics, and unknown XML contexts remain
-unsupported.
+Atomic replacement is enabled on Unix and on the bounded Windows x64 local-NTFS
+Alpha profile. Other platforms fail closed at the isolated I/O adapter. Windows
+UNC, reparse-point and long-path environments remain unsupported. Live 9/10/12,
+type 5, same-name collisions, and unknown XML contexts remain unsupported.

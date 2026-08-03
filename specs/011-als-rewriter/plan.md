@@ -6,3 +6,5 @@
    intentionally unchanged path fields in memory.
 4. Encode and validate a temporary ALS before replacing the staged copy.
 5. Cover fail-closed behavior and semantic preservation with fixtures.
+6. Keep platform replacement behind the I/O adapter and prove native Windows
+   success, locked-file preservation, Unicode, and cleanup behavior.

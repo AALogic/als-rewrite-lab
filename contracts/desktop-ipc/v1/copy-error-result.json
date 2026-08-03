@@ -1,5 +1,5 @@
 {
-  "service_version": "0.4.0",
+  "service_version": "0.5.0",
   "request_id": "wire-execution",
   "run_status": "preview_plan_changed",
   "final_target_root": null,
@@ -7,6 +7,30 @@
   "copied_asset_count": 0,
   "rewritten_reference_count": 0,
   "omitted_asset_count": 0,
+  "diagnostic_report": {
+    "diagnostic_schema_version": "0.1",
+    "request_id": "wire-execution",
+    "operation_kind": "copy_execution",
+    "service_version": "0.5.0",
+    "pipeline_version": "0.5.0",
+    "build_commit": "fixture-commit",
+    "host_os": "windows",
+    "host_arch": "x86_64",
+    "run_status": "preview_plan_changed",
+    "completed_stage": "plan_binding",
+    "required_asset_count": 1,
+    "system_dependency_count": 0,
+    "copied_asset_count": 0,
+    "rewritten_reference_count": 0,
+    "omitted_asset_count": 0,
+    "errors": [
+      {
+        "error_code": "CURRENT_PATH_PREVIEW_PLAN_CHANGED",
+        "stage": "plan_binding",
+        "message": "Fixture error"
+      }
+    ]
+  },
   "errors": [
     {
       "error_code": "CURRENT_PATH_PREVIEW_PLAN_CHANGED",

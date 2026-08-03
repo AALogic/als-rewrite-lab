@@ -18,6 +18,11 @@ pub(crate) struct RewriteIoFailure {
     pub path: Option<PathBuf>,
 }
 
+pub(crate) struct ReplacementFailure {
+    pub code: &'static str,
+    pub message: String,
+}
+
 pub(crate) fn read_staged_als(path: &Path) -> Result<DecodedStagedAls, RewriteIoFailure> {
     let metadata = fs::symlink_metadata(path).map_err(|error| {
         failure(
@@ -131,11 +136,7 @@ pub(crate) fn replace_staged_als(target: &Path, compressed: &[u8]) -> Result<(),
     }
     promote_replacement(&temp, target).map_err(|error| {
         remove_own_temp(&temp);
-        failure(
-            "REWRITE_ATOMIC_REPLACE_FAILED",
-            error,
-            Some(target.to_path_buf()),
-        )
+        failure(error.code, error.message, Some(target.to_path_buf()))
     })
 }
 
@@ -167,13 +168,24 @@ fn decompress_limited(compressed: &[u8], path: &Path) -> Result<Vec<u8>, Rewrite
 }
 
 #[cfg(unix)]
-fn promote_replacement(temp: &Path, target: &Path) -> Result<(), String> {
-    fs::rename(temp, target).map_err(|error| error.to_string())
+fn promote_replacement(temp: &Path, target: &Path) -> Result<(), ReplacementFailure> {
+    fs::rename(temp, target).map_err(|error| ReplacementFailure {
+        code: "REWRITE_ATOMIC_REPLACE_FAILED",
+        message: error.to_string(),
+    })
 }
 
-#[cfg(not(unix))]
-fn promote_replacement(_temp: &Path, _target: &Path) -> Result<(), String> {
-    Err("Atomic replacement of an existing staged ALS is not implemented on this platform".into())
+#[cfg(windows)]
+fn promote_replacement(temp: &Path, target: &Path) -> Result<(), ReplacementFailure> {
+    crate::als_rewriter_windows::replace_staged_file(temp, target)
+}
+
+#[cfg(not(any(unix, windows)))]
+fn promote_replacement(_temp: &Path, _target: &Path) -> Result<(), ReplacementFailure> {
+    Err(ReplacementFailure {
+        code: "REWRITE_ATOMIC_REPLACE_UNSUPPORTED",
+        message: "Atomic replacement is not implemented on this platform".to_string(),
+    })
 }
 
 fn temporary_path(target: &Path) -> PathBuf {

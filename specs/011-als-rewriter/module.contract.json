@@ -31,7 +31,10 @@
     "ENFORCED_BY_TYPE: ALSRewriteError",
     "REVIEW_ONLY: no global XML search and replace",
     "REVIEW_ONLY: original ALS is never writable",
-    "DOCUMENTED_ONLY: non-Unix atomic replacement remains unsupported"
+    "DOCUMENTED_ONLY: platforms outside Unix and Windows remain unsupported",
+    "ENFORCED_BY_TEST: windows_atomic_replace_preserves_previous_file_on_lock",
+    "ENFORCED_BY_TEST: windows_atomic_replace_supports_unicode_and_cleans_temporary_files",
+    "REVIEW_ONLY: Windows replacement remains inside the rewriter I/O adapter"
   ],
   "required_tests": [
     "approved_locator_changes_only_three_active_fields",
@@ -44,7 +47,9 @@
     "duplicate_reference_operations_are_rejected",
     "repeated_rewrite_does_not_stack_changes",
     "xml_special_characters_are_escaped_and_round_trip",
-    "unsupported_platform_atomic_replace_fails_closed"
+    "unsupported_platform_atomic_replace_fails_closed",
+    "windows_atomic_replace_preserves_previous_file_on_lock",
+    "windows_atomic_replace_supports_unicode_and_cleans_temporary_files"
   ],
   "required_tests_must_not_be_ignored": true,
   "required_tests_must_have_substance": true,
@@ -61,6 +66,7 @@
     "crates/rescue_rewriter/src/als_rewriter.rs",
     "crates/rescue_rewriter/src/als_rewriter_impl.rs",
     "crates/rescue_rewriter/src/als_rewriter_io.rs",
+    "crates/rescue_rewriter/src/als_rewriter_windows.rs",
     "crates/rescue_rewriter/src/als_rewriter_result.rs",
     "crates/rescue_rewriter/src/als_rewriter_validation.rs",
     "crates/rescue_rewriter/src/als_rewriter_xml.rs"
@@ -73,6 +79,6 @@
     {"literal": "remove_dir_all", "label": "recursive deletion"},
     {"literal": ".replace(OLD", "label": "global XML replacement"}
   ],
-  "allowed_dependency_names": ["flate2", "rescue_core", "rescue_execution", "rescue_packaging", "roxmltree", "serde", "sha2", "tempfile"],
+  "allowed_dependency_names": ["flate2", "rescue_core", "rescue_execution", "rescue_packaging", "roxmltree", "serde", "sha2", "tempfile", "windows-sys"],
   "quality_limits": {"max_source_file_lines": 360, "max_function_lines": 105}
 }

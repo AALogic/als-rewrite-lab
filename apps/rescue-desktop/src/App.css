@@ -90,6 +90,12 @@ button { font: inherit; }
 .error-banner div { display: flex; flex-direction: column; min-width: 0; }
 .error-banner strong { font-size: 13px; }
 .error-banner span { margin-top: 2px; font-size: 12px; overflow-wrap: anywhere; }
+.error-banner small { margin-top: 5px; color: #8c4a45; font-size: 11px; overflow-wrap: anywhere; }
+.error-report-button {
+  align-self: flex-start; min-height: 30px; margin-top: 9px; padding: 0 9px;
+  color: #7a2e29; border-color: #dca6a1; background: #fff;
+  font-size: 12px; font-weight: 650;
+}
 
 .summary-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

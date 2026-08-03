@@ -68,11 +68,18 @@ function App() {
   const [busyStage, setBusyStage] = useState<"analysis" | "preview" | "copy" | null>(null);
   const [uiError, setUiError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copyReportCopied, setCopyReportCopied] = useState(false);
   const [copyPreview, setCopyPreview] = useState<DesktopCopyPreview | null>(null);
   const [copyResult, setCopyResult] = useState<DesktopCopyResult | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const report = result?.preflight_report ?? null;
   const busy = busyStage !== null;
+  const operationError = copyResult?.errors[0] ?? copyPreview?.errors[0] ?? null;
+  const operationDiagnostic = copyResult?.errors.length
+    ? copyResult.diagnostic_report
+    : copyPreview?.errors.length
+      ? copyPreview.diagnostic_report
+      : null;
 
   useEffect(() => {
     if (!busyStage) {
@@ -114,6 +121,7 @@ function App() {
         setSelectedPath(path);
         setResult(null);
         setCopied(false);
+        setCopyReportCopied(false);
         setCopyPreview(null);
         setCopyResult(null);
       }
@@ -127,6 +135,7 @@ function App() {
     setBusyStage("analysis");
     setUiError(null);
     setCopied(false);
+    setCopyReportCopied(false);
     setCopyPreview(null);
     setCopyResult(null);
     try {
@@ -145,6 +154,7 @@ function App() {
   async function prepareProjectCopy() {
     if (!selectedPath || !report) return;
     setUiError(null);
+    setCopyReportCopied(false);
     setCopyResult(null);
     try {
       const destinationParent = await open({ multiple: false, directory: true });
@@ -175,6 +185,7 @@ function App() {
     if (!copyPreview) return;
     setBusyStage("copy");
     setUiError(null);
+    setCopyReportCopied(false);
     try {
       const requestId = globalThis.crypto?.randomUUID?.() ?? `execute-${Date.now()}`;
       const next = await invoke<DesktopCopyResult>("execute_copy", {
@@ -197,6 +208,16 @@ function App() {
       setCopied(true);
     } catch {
       setUiError("Nie udało się skopiować raportu diagnostycznego.");
+    }
+  }
+
+  async function copyOperationDiagnostic() {
+    if (!operationDiagnostic) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(operationDiagnostic, null, 2));
+      setCopyReportCopied(true);
+    } catch {
+      setUiError("Nie udało się skopiować raportu błędu.");
     }
   }
 
@@ -255,6 +276,15 @@ function App() {
           <div>
             <strong>Operacja nie może być zakończona</strong>
             <span>{uiError ?? result?.errors[0]?.message}</span>
+            {operationError ? (
+              <small>Kod: {operationError.error_code} · Etap: {operationError.stage}</small>
+            ) : null}
+            {operationDiagnostic ? (
+              <button className="error-report-button" onClick={copyOperationDiagnostic}>
+                {copyReportCopied ? <Check size={15} /> : <Clipboard size={15} />}
+                {copyReportCopied ? "Raport skopiowany" : "Kopiuj raport błędu"}
+              </button>
+            ) : null}
           </div>
         </section>
       ) : null}

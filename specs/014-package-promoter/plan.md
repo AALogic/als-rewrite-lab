@@ -5,3 +5,5 @@
 3. Require absent final target and same-filesystem move.
 4. Rename staging once, revalidate, and sync the parent.
 5. Verify an already-promoted package idempotently on repeat.
+6. On Windows, validate local NTFS and reparse-point boundaries, then use a
+   no-replace `MoveFileExW` adapter and verify the moved tree.

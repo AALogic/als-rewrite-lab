@@ -525,6 +525,26 @@ fn repeated_identical_write_is_idempotent() {
         .all(|record| record.write_status == "already_present_verified"));
 }
 
+#[cfg(windows)]
+#[test]
+fn windows_manifest_write_is_noclobber_and_idempotent_on_ntfs() {
+    let fixture = fixture();
+
+    let first = write(&fixture);
+    let second = write(&fixture);
+
+    assert_eq!(first.write_status, "manifests_written");
+    assert_eq!(second.write_status, "manifests_written");
+    assert!(second
+        .write_records
+        .iter()
+        .all(|record| record.write_status == "already_present_verified"));
+    assert!(!has_temp_file(&fixture.staging_root));
+    assert!(!has_temp_file(
+        fixture.private_ledger.parent().expect("ledger parent")
+    ));
+}
+
 #[test]
 fn conflicting_existing_manifest_is_not_overwritten() {
     let fixture = fixture();

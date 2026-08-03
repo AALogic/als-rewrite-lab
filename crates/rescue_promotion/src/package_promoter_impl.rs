@@ -4,7 +4,13 @@ use rescue_manifest::ManifestWriteResult;
 use rescue_packaging::PackagePlan;
 use rescue_rewriter::ALSRewriteResult;
 use rescue_validation::PackageValidationResult;
+#[cfg(unix)]
 use std::fs;
+
+pub(crate) struct DirectoryMoveFailure {
+    pub code: &'static str,
+    pub message: String,
+}
 
 pub(crate) fn promote_validated_package_impl(
     request: &PackagePromotionRequest,
@@ -86,7 +92,7 @@ fn promote_directory(
             ),
         );
     }
-    if let Err(rename_error) = fs::rename(
+    if let Err(rename_error) = move_directory(
         &context.staging.staging_root,
         &context.plan.target_project_root,
     ) {
@@ -94,8 +100,8 @@ fn promote_directory(
             context,
             preflight_records,
             crate::package_promoter_result::error(
-                "PROMOTION_RENAME_FAILED",
-                format!("Cannot promote staging directory: {rename_error}"),
+                rename_error.code,
+                rename_error.message,
                 Some(&context.plan.target_project_root),
             ),
         );
@@ -134,7 +140,7 @@ fn rollback_after_failure(
     records: Vec<crate::PromotedFileRecord>,
     original_error: crate::PackagePromotionError,
 ) -> PackagePromotionResult {
-    let rollback = fs::rename(
+    let rollback = move_directory(
         &context.plan.target_project_root,
         &context.staging.staging_root,
     );
@@ -142,7 +148,10 @@ fn rollback_after_failure(
     let status = if let Err(rollback_error) = rollback {
         errors.push(crate::package_promoter_result::error(
             "PROMOTION_ROLLBACK_FAILED",
-            format!("Cannot restore staging after failed promotion: {rollback_error}"),
+            format!(
+                "Cannot restore staging after failed promotion: {}",
+                rollback_error.message
+            ),
             Some(&context.staging.staging_root),
         ));
         "promotion_failed_rollback_failed"
@@ -150,6 +159,36 @@ fn rollback_after_failure(
         "promotion_failed_rolled_back"
     };
     crate::package_promoter_result::result(context, records, status, errors)
+}
+
+#[cfg(unix)]
+fn move_directory(
+    source: &std::path::Path,
+    target: &std::path::Path,
+) -> Result<(), DirectoryMoveFailure> {
+    fs::rename(source, target).map_err(|error| DirectoryMoveFailure {
+        code: "PROMOTION_RENAME_FAILED",
+        message: format!("Cannot promote staging directory: {error}"),
+    })
+}
+
+#[cfg(windows)]
+fn move_directory(
+    source: &std::path::Path,
+    target: &std::path::Path,
+) -> Result<(), DirectoryMoveFailure> {
+    crate::package_promoter_windows::move_directory_no_replace(source, target)
+}
+
+#[cfg(not(any(unix, windows)))]
+fn move_directory(
+    _source: &std::path::Path,
+    _target: &std::path::Path,
+) -> Result<(), DirectoryMoveFailure> {
+    Err(DirectoryMoveFailure {
+        code: "PROMOTION_PLATFORM_UNSUPPORTED",
+        message: "Package promotion is not implemented on this platform".to_string(),
+    })
 }
 
 fn failed(
@@ -180,7 +219,12 @@ fn sync_target_parent(target: &std::path::Path) -> Result<(), crate::PackageProm
         })
 }
 
-#[cfg(not(unix))]
+#[cfg(not(any(unix, windows)))]
+fn sync_target_parent(_target: &std::path::Path) -> Result<(), crate::PackagePromotionError> {
+    Ok(())
+}
+
+#[cfg(windows)]
 fn sync_target_parent(_target: &std::path::Path) -> Result<(), crate::PackagePromotionError> {
     Ok(())
 }

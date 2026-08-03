@@ -229,9 +229,18 @@ fn same_filesystem(staging: &Path, target: &Path) -> Result<(), PackagePromotion
     Ok(())
 }
 
-#[cfg(not(unix))]
-fn same_filesystem(_staging: &Path, _target: &Path) -> Result<(), PackagePromotionError> {
-    Ok(())
+#[cfg(windows)]
+fn same_filesystem(staging: &Path, target: &Path) -> Result<(), PackagePromotionError> {
+    crate::package_promoter_windows::validate_environment(staging, target)
+}
+
+#[cfg(not(any(unix, windows)))]
+fn same_filesystem(_staging: &Path, target: &Path) -> Result<(), PackagePromotionError> {
+    Err(error(
+        "PROMOTION_PLATFORM_UNSUPPORTED",
+        "Package promotion is not implemented on this platform",
+        Some(target),
+    ))
 }
 
 fn safe_absolute(path: &Path) -> bool {

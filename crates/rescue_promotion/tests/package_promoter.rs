@@ -31,12 +31,12 @@ fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
-fn fixture() -> Fixture {
+fn fixture_with_final_name(final_name: &str) -> Fixture {
     let temp = tempfile::tempdir().expect("tempdir");
     let source_root = temp.path().join("source");
     let staging_root = temp.path().join("staging");
     let final_parent = temp.path().join("final");
-    let final_root = final_parent.join("Project");
+    let final_root = final_parent.join(final_name);
     let evidence = temp.path().join("evidence");
     fs::create_dir(&source_root).expect("source root");
     fs::create_dir(&staging_root).expect("staging");
@@ -96,6 +96,10 @@ fn fixture() -> Fixture {
         validation,
         manifests,
     }
+}
+
+fn fixture() -> Fixture {
+    fixture_with_final_name("Project")
 }
 
 fn copy_operations(
@@ -468,6 +472,60 @@ fn repeated_promotion_verifies_existing_package() {
 
     assert_eq!(first.promotion_status, "promoted_ready_for_manual_check");
     assert_eq!(second.promotion_status, "already_promoted_verified");
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_unicode_package_is_promoted_with_no_replace() {
+    let fixture = fixture_with_final_name("Projekt zażółć");
+
+    let first = promote(&fixture);
+    let second = promote(&fixture);
+
+    assert_eq!(first.promotion_status, "promoted_ready_for_manual_check");
+    assert_eq!(second.promotion_status, "already_promoted_verified");
+    assert!(fixture.final_root.join("Set.als").is_file());
+    assert!(!fixture.staging_root.exists());
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_reparse_point_root_blocks_promotion() {
+    use std::process::Command;
+
+    let mut fixture = fixture();
+    let actual_parent = fixture
+        .final_root
+        .parent()
+        .expect("final parent")
+        .to_path_buf();
+    let junction_parent = fixture._temp.path().join("junction-output");
+    let status = Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
+        .arg(&junction_parent)
+        .arg(&actual_parent)
+        .status()
+        .expect("create junction");
+    assert!(status.success(), "junction fixture must be created");
+
+    let junction_target = junction_parent.join("Project through junction");
+    fixture.final_root = junction_target.clone();
+    fixture.plan.target_project_root = junction_target.clone();
+    fixture.validation.final_target_root = junction_target.clone();
+    fixture.plan.rewrite_operations[0].new_path = junction_target
+        .join("Samples/Imported/shared.wav")
+        .to_string_lossy()
+        .to_string();
+
+    let result = promote(&fixture);
+
+    assert_eq!(result.promotion_status, "promotion_rejected");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| { error.error_code == "PROMOTION_WINDOWS_REPARSE_POINT_UNSUPPORTED" }));
+    assert!(fixture.staging_root.exists());
+    assert!(!junction_target.exists());
 }
 
 #[cfg(unix)]

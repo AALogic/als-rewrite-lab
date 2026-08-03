@@ -121,6 +121,36 @@ fn missing_write_consent_is_rejected() {
 }
 
 #[test]
+fn copy_diagnostic_contains_stage_build_and_all_errors() {
+    let fixture = fixture(false);
+    let preview = prepare_copy(&prepare_request(&fixture));
+    let result = execute_copy(&execute_request(preview, false));
+
+    assert_eq!(result.diagnostic_report.operation_kind, "copy_execution");
+    assert_eq!(result.diagnostic_report.pipeline_version, "0.5.0");
+    assert!(!result.diagnostic_report.build_commit.is_empty());
+    assert_eq!(result.diagnostic_report.completed_stage, "write_consent");
+    assert_eq!(result.diagnostic_report.errors.len(), result.errors.len());
+    assert_eq!(
+        result.diagnostic_report.errors[0].error_code,
+        "DESKTOP_COPY_CONSENT_REQUIRED"
+    );
+}
+
+#[test]
+fn copy_diagnostic_omits_private_paths_and_names() {
+    let fixture = fixture(false);
+    let preview = prepare_copy(&prepare_request(&fixture));
+    let json = serde_json::to_string(&preview.diagnostic_report).expect("diagnostic JSON");
+
+    assert!(!json.contains(&fixture.source_als.to_string_lossy().to_string()));
+    assert!(!json.contains(&fixture.target_root.to_string_lossy().to_string()));
+    assert!(!json.contains("Set.als"));
+    assert!(!json.contains("available.wav"));
+    assert!(!json.contains("ledger.json"));
+}
+
+#[test]
 fn stale_preview_is_rejected() {
     let fixture = fixture(false);
     let preview = prepare_copy(&prepare_request(&fixture));
@@ -135,7 +165,7 @@ fn stale_preview_is_rejected() {
     assert!(!fixture.target_root.exists());
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn desktop_executes_complete_copy() {
     let fixture = fixture(false);
@@ -152,7 +182,7 @@ fn desktop_executes_complete_copy() {
     assert!(fixture.target_root.join("Set.als").is_file());
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn desktop_executes_incomplete_copy() {
     let fixture = fixture(true);
@@ -208,7 +238,7 @@ fn missing_audio_appearance_after_preview_is_rejected_before_write() {
     assert!(!fixture.target_root.exists());
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn same_size_current_path_replacement_remains_allowed() {
     let fixture = fixture(false);
@@ -226,7 +256,7 @@ fn same_size_current_path_replacement_remains_allowed() {
     );
 }
 
-#[cfg(not(unix))]
+#[cfg(not(any(unix, windows)))]
 #[test]
 fn unsupported_atomic_replace_platform_fails_closed() {
     let fixture = fixture(false);

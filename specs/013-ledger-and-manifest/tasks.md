@@ -28,3 +28,4 @@
 - [x] ENFORCED_BY_TYPE: ManifestWriteError
 - [x] REVIEW_ONLY: portable manifest contains no local absolute paths
 - [x] REVIEW_ONLY: existing different files are never overwritten
+- [x] ENFORCED_BY_TEST: windows_manifest_write_is_noclobber_and_idempotent_on_ntfs
