@@ -139,6 +139,19 @@ fn unzip(path: &Path) -> String {
     xml
 }
 
+#[cfg(any(unix, windows))]
+fn path_value_count(xml: &str, expected: &Path) -> usize {
+    let expected = fs::canonicalize(expected).expect("canonical expected path");
+    let document = roxmltree::Document::parse(xml).expect("parsed rewritten XML");
+    document
+        .descendants()
+        .filter(|node| node.has_tag_name("Path"))
+        .filter_map(|node| node.attribute("Value"))
+        .filter_map(|value| fs::canonicalize(Path::new(value)).ok())
+        .filter(|value| value == &expected)
+        .count()
+}
+
 fn project_xml(available: &Path, missing: Option<&Path>) -> String {
     let mut references = sample_reference(available, "available.wav", 15, 101);
     if let Some(missing) = missing {
@@ -297,10 +310,14 @@ fn project_local_type3_copy_preserves_structure_and_rewrites_path_only() {
     let fixture = project_local_fixture();
     let original_path = fixture.available_audio.to_string_lossy().to_string();
     let result = run_current_path_copy(&request(&fixture));
-    let rewritten_xml = unzip(&fixture.target_root.join("Set.als"));
     let target_audio = fixture.target_root.join("Samples/Recorded/shared.wav");
 
-    assert_eq!(result.run_status, "complete_copy_ready_for_manual_check");
+    assert_eq!(
+        result.run_status, "complete_copy_ready_for_manual_check",
+        "pipeline errors: {:#?}",
+        result.errors
+    );
+    let rewritten_xml = unzip(&fixture.target_root.join("Set.als"));
     assert_eq!(result.required_asset_count, 1);
     assert_eq!(result.copied_asset_count, 1);
     assert_eq!(result.rewritten_reference_count, 2);
@@ -311,12 +328,7 @@ fn project_local_type3_copy_preserves_structure_and_rewrites_path_only() {
         .join("Samples/Imported/shared.wav")
         .exists());
     assert_eq!(rewritten_xml.matches(&original_path).count(), 0);
-    assert_eq!(
-        rewritten_xml
-            .matches(&target_audio.to_string_lossy().to_string())
-            .count(),
-        2
-    );
+    assert_eq!(path_value_count(&rewritten_xml, &target_audio), 2);
     assert_eq!(
         rewritten_xml
             .matches("RelativePath Value=\"Samples/Recorded/shared.wav\"")
@@ -398,13 +410,13 @@ fn available_assets_are_relinked_when_another_asset_is_missing() {
 
     assert_eq!(result.run_status, "incomplete_copy_ready_for_manual_check");
     assert!(!rewritten_xml.contains(&format!("Path Value=\"{original_available_path}\"")));
-    assert!(rewritten_xml.contains(&format!(
-        "Path Value=\"{}\"",
-        fixture
-            .target_root
-            .join("Samples/Imported/available.wav")
-            .to_string_lossy()
-    )));
+    assert_eq!(
+        path_value_count(
+            &rewritten_xml,
+            &fixture.target_root.join("Samples/Imported/available.wav")
+        ),
+        1
+    );
     assert!(rewritten_xml.contains("RelativePath Value=\"Samples/Imported/available.wav\""));
     assert!(rewritten_xml.contains("RelativePathType Value=\"3\""));
 }
