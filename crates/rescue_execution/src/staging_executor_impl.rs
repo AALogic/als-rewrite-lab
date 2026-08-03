@@ -31,6 +31,7 @@ pub(crate) fn execute_staging_impl(
     ) {
         Ok(records) => records,
         Err(failure) => {
+            let failure = *failure;
             errors.push(failure.error);
             return result(
                 request,

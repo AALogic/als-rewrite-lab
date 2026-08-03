@@ -12,13 +12,13 @@ pub(crate) struct DirectoryCreationFailure {
 pub(crate) fn create_directories(
     staging_root: &Path,
     operations: &[CreateDirectoryOperation],
-) -> Result<Vec<DirectoryExecutionRecord>, DirectoryCreationFailure> {
+) -> Result<Vec<DirectoryExecutionRecord>, Box<DirectoryCreationFailure>> {
     let mut records = Vec::new();
     for operation in operations {
         let path = staging_root.join(&operation.target_relative_path);
         if let Err(error) = fs::create_dir(&path) {
             records.push(record(operation, "failed"));
-            return Err(DirectoryCreationFailure {
+            return Err(Box::new(DirectoryCreationFailure {
                 records,
                 error: staging_error(
                     "STAGING_DIRECTORY_CREATE_FAILED",
@@ -26,7 +26,7 @@ pub(crate) fn create_directories(
                     Some(operation.operation_id.clone()),
                     Some(path),
                 ),
-            });
+            }));
         }
         records.push(record(operation, "created"));
     }
