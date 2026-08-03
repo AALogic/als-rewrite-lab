@@ -123,7 +123,11 @@ fn desktop_analysis_is_read_only() {
 fn desktop_analysis_is_deterministic() {
     let fixture = fixture();
     let request = request(&fixture);
-    assert_eq!(analyze_project(&request), analyze_project(&request));
+    let mut first = analyze_project(&request);
+    let mut second = analyze_project(&request);
+    first.diagnostic_report.elapsed_ms = 0;
+    second.diagnostic_report.elapsed_ms = 0;
+    assert_eq!(first, second);
 }
 
 fn tree_hash(root: &Path) -> String {

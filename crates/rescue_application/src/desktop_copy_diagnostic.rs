@@ -11,7 +11,19 @@ pub(crate) fn from_pipeline(
     result: &CurrentPathCopyResult,
     errors: &[DesktopApplicationError],
     sensitive_paths: &[&Path],
+    elapsed_ms: u64,
 ) -> DesktopCopyDiagnosticReport {
+    let source = result.package_plan.as_ref().map(|plan| &plan.source_als);
+    let compatibility_status =
+        if result.rewrite_policy == rescue_pipeline::COMPATIBILITY_LAB_REWRITE_POLICY {
+            if errors.is_empty() {
+                "experimental_candidate"
+            } else {
+                "experimental_blocked"
+            }
+        } else {
+            "confirmed_profile"
+        };
     report(
         request_id,
         operation_kind,
@@ -27,17 +39,37 @@ pub(crate) fn from_pipeline(
         },
         errors,
         sensitive_paths,
+        &result.rewrite_policy,
+        source.and_then(|item| item.ableton_document_version.as_deref()),
+        source.and_then(|item| item.ableton_creator_version.as_deref()),
+        source.and_then(|item| item.ableton_minor_version.as_deref()),
+        compatibility_status,
+        elapsed_ms,
     )
 }
 
-pub(crate) fn before_pipeline(
-    request_id: &str,
-    operation_kind: &str,
-    run_status: &str,
-    completed_stage: &str,
-    errors: &[DesktopApplicationError],
-    sensitive_paths: &[&Path],
-) -> DesktopCopyDiagnosticReport {
+pub(crate) struct BeforePipelineDiagnostic<'a> {
+    pub request_id: &'a str,
+    pub operation_kind: &'a str,
+    pub run_status: &'a str,
+    pub completed_stage: &'a str,
+    pub errors: &'a [DesktopApplicationError],
+    pub sensitive_paths: &'a [&'a Path],
+    pub rewrite_policy: &'a str,
+    pub elapsed_ms: u64,
+}
+
+pub(crate) fn before_pipeline(input: BeforePipelineDiagnostic<'_>) -> DesktopCopyDiagnosticReport {
+    let BeforePipelineDiagnostic {
+        request_id,
+        operation_kind,
+        run_status,
+        completed_stage,
+        errors,
+        sensitive_paths,
+        rewrite_policy,
+        elapsed_ms,
+    } = input;
     report(
         request_id,
         operation_kind,
@@ -47,6 +79,12 @@ pub(crate) fn before_pipeline(
         Counts::default(),
         errors,
         sensitive_paths,
+        rewrite_policy,
+        None,
+        None,
+        None,
+        "not_evaluated",
+        elapsed_ms,
     )
 }
 
@@ -69,6 +107,12 @@ fn report(
     counts: Counts,
     errors: &[DesktopApplicationError],
     sensitive_paths: &[&Path],
+    rewrite_policy: &str,
+    ableton_document_version: Option<&str>,
+    ableton_creator_version: Option<&str>,
+    ableton_minor_version: Option<&str>,
+    compatibility_status: &str,
+    elapsed_ms: u64,
 ) -> DesktopCopyDiagnosticReport {
     DesktopCopyDiagnosticReport {
         diagnostic_schema_version: DESKTOP_COPY_DIAGNOSTIC_SCHEMA_VERSION.to_string(),
@@ -81,8 +125,14 @@ fn report(
             .to_string(),
         host_os: std::env::consts::OS.to_string(),
         host_arch: std::env::consts::ARCH.to_string(),
+        rewrite_policy: rewrite_policy.to_string(),
+        ableton_document_version: safe_metadata_value(ableton_document_version),
+        ableton_creator_version: safe_metadata_value(ableton_creator_version),
+        ableton_minor_version: safe_metadata_value(ableton_minor_version),
+        compatibility_status: compatibility_status.to_string(),
         run_status: run_status.to_string(),
         completed_stage: completed_stage.to_string(),
+        elapsed_ms,
         required_asset_count: counts.required,
         system_dependency_count: counts.system,
         copied_asset_count: counts.copied,
@@ -97,6 +147,12 @@ fn report(
             })
             .collect(),
     }
+}
+
+fn safe_metadata_value(value: Option<&str>) -> Option<String> {
+    value
+        .filter(|item| item.len() <= 120 && !contains_local_file_detail(item))
+        .map(ToString::to_string)
 }
 
 fn redact_message(message: &str, sensitive_paths: &[&Path]) -> String {

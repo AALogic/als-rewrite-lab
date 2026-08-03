@@ -81,7 +81,10 @@ fn validate_inputs(
     let mut errors = Vec::new();
     if !matches!(
         request.planning_mode.as_str(),
-        "copy_only" | "laboratory_rescue_rewrite" | "current_paths_copy"
+        "copy_only"
+            | "laboratory_rescue_rewrite"
+            | "current_paths_copy"
+            | "compatibility_lab_current_paths_copy"
     ) {
         errors.push(package_error(
             "PACKAGE_MODE_UNSUPPORTED",
@@ -127,11 +130,11 @@ fn validate_inputs(
             None,
         ));
     }
-    if matches!(
+    let strict_rewrite_mode = matches!(
         request.planning_mode.as_str(),
         "laboratory_rescue_rewrite" | "current_paths_copy"
-    ) && !supported_lab_document(model)
-    {
+    );
+    if strict_rewrite_mode && !supported_lab_document(model) {
         errors.push(package_error(
             "PACKAGE_REWRITE_DOCUMENT_UNSUPPORTED",
             "ALS document is outside the E-03 laboratory support profile",
@@ -182,13 +185,7 @@ pub(crate) fn validate_paths(
 }
 
 pub(crate) fn supported_lab_document(model: &ALSReadModel) -> bool {
-    model.set_metadata.ableton_document_version.as_deref() == Some("5")
-        && model.set_metadata.ableton_minor_version.as_deref() == Some("11.0_11300")
-        && model
-            .set_metadata
-            .ableton_creator_version
-            .as_deref()
-            .is_some_and(|value| value.starts_with("Ableton Live 11.3."))
+    rescue_core::is_confirmed_live_11_3_document(model)
 }
 
 fn validate_decision_ids(

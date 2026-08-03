@@ -41,7 +41,7 @@ pub(crate) fn selected_assets<'a>(
                     "resolution_not_auto_accepted"
                 }
                 .to_string(),
-                blocks_execution: planning_mode != "current_paths_copy"
+                blocks_execution: !crate::is_current_paths_mode(planning_mode)
                     || decision.decision_status != "unresolved",
             });
         }

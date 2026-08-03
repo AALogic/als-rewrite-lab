@@ -105,7 +105,7 @@ fn validate_inputs(
     source_als: &crate::PlannedSourceAls,
 ) -> Vec<PackagePlanError> {
     let mut errors = Vec::new();
-    if request.planning_mode != "current_paths_copy" {
+    if !crate::is_current_paths_mode(&request.planning_mode) {
         errors.push(package_error(
             "PACKAGE_MODE_UNSUPPORTED",
             "Metadata-only current-path planning requires current_paths_copy mode",
@@ -136,7 +136,9 @@ fn validate_inputs(
             None,
         ));
     }
-    if !crate::package_planner_impl::supported_lab_document(model) {
+    if !crate::is_compatibility_lab_mode(&request.planning_mode)
+        && !crate::package_planner_impl::supported_lab_document(model)
+    {
         errors.push(package_error(
             "PACKAGE_REWRITE_DOCUMENT_UNSUPPORTED",
             "ALS document is outside the E-03 laboratory support profile",

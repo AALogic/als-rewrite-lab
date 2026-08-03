@@ -4,7 +4,7 @@ use crate::laboratory_pipeline_read::ReadStage;
 use crate::LaboratoryPackageError;
 use rescue_packaging::{
     fingerprint_package_plan, plan_current_path_package, PackagePlan, PackagePlanningRequest,
-    PlanFingerprint,
+    PlanFingerprint, COMPATIBILITY_LAB_CURRENT_PATHS_MODE, STRICT_CURRENT_PATHS_MODE,
 };
 use rescue_resolution::bind_current_paths;
 
@@ -16,6 +16,24 @@ pub(crate) struct PreparedCopy {
 pub(crate) fn prepare_stage(
     request: &CurrentPathCopyRequest,
 ) -> Result<PreparedCopy, Box<CurrentPathCopyResult>> {
+    let planning_mode = match request.rewrite_policy.as_str() {
+        crate::STRICT_REWRITE_POLICY => STRICT_CURRENT_PATHS_MODE,
+        crate::COMPATIBILITY_LAB_REWRITE_POLICY => COMPATIBILITY_LAB_CURRENT_PATHS_MODE,
+        _ => {
+            return Err(Box::new(failure_result(
+                request,
+                "rejected_before_read",
+                "request_validation",
+                None,
+                None,
+                vec![error(
+                    "CURRENT_PATH_REWRITE_POLICY_UNSUPPORTED",
+                    "request_validation",
+                    "Current-path rewrite policy is unsupported",
+                )],
+            )))
+        }
+    };
     let lab_request = laboratory_request(request);
     let input_errors = crate::laboratory_pipeline_inputs::validate_request(&lab_request);
     if !input_errors.is_empty() {
@@ -58,12 +76,13 @@ pub(crate) fn prepare_stage(
             )],
         )));
     }
-    plan_current_paths(request, read)
+    plan_current_paths(request, read, planning_mode)
 }
 
 fn plan_current_paths(
     request: &CurrentPathCopyRequest,
     read: ReadStage,
+    planning_mode: &str,
 ) -> Result<PreparedCopy, Box<CurrentPathCopyResult>> {
     let bindings = bind_current_paths(&read.assessment);
     if !bindings.errors.is_empty() {
@@ -84,7 +103,7 @@ fn plan_current_paths(
         &PackagePlanningRequest {
             plan_id: format!("{}:plan", request.run_id),
             target_project_root: request.target_project_root.clone(),
-            planning_mode: "current_paths_copy".to_string(),
+            planning_mode: planning_mode.to_string(),
         },
         &read.als_read_model,
         &read.assessment,

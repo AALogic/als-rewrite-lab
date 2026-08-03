@@ -7,6 +7,19 @@ async fn analyze_project(
         .map_err(|failure| background_task_error("analysis", &failure.to_string()))
 }
 
+#[tauri::command]
+fn get_application_profile() -> rescue_application::DesktopApplicationProfile {
+    rescue_application::application_profile()
+}
+
+#[tauri::command]
+fn finalize_compatibility_report(
+    request: rescue_application::CompatibilityTestReportRequest,
+) -> Result<rescue_application::CompatibilityTestReport, rescue_application::DesktopApplicationError>
+{
+    rescue_application::finalize_compatibility_test_report(&request)
+}
+
 #[tauri::command(rename_all = "snake_case")]
 fn suggest_target_project_root(
     source_als_path: std::path::PathBuf,
@@ -50,6 +63,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            get_application_profile,
+            finalize_compatibility_report,
             analyze_project,
             suggest_target_project_root,
             prepare_copy,

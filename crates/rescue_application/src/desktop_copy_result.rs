@@ -7,6 +7,7 @@ use rescue_pipeline::{CurrentPathCopyResult, LaboratoryPackageError};
 pub(crate) fn preview_from_pipeline(
     request: &DesktopPrepareCopyRequest,
     result: CurrentPathCopyResult,
+    elapsed_ms: u64,
 ) -> DesktopCopyPreview {
     let errors = map_errors(&result.errors);
     let diagnostic_report = crate::desktop_copy_diagnostic::from_pipeline(
@@ -15,6 +16,7 @@ pub(crate) fn preview_from_pipeline(
         &result,
         &errors,
         &[&request.source_als_path, &request.target_project_root],
+        elapsed_ms,
     );
     let source_hash = result
         .package_plan
@@ -30,6 +32,7 @@ pub(crate) fn preview_from_pipeline(
         service_version: DESKTOP_COPY_SERVICE_VERSION.to_string(),
         request_id: request.request_id.clone(),
         preview_status: result.run_status,
+        rewrite_policy: result.rewrite_policy,
         source_als_path: request.source_als_path.clone(),
         source_als_sha256: source_hash,
         plan_fingerprint: result.plan_fingerprint,
@@ -48,6 +51,7 @@ pub(crate) fn preview_from_pipeline(
 pub(crate) fn result_from_pipeline(
     request: &DesktopExecuteCopyRequest,
     result: CurrentPathCopyResult,
+    elapsed_ms: u64,
 ) -> DesktopCopyResult {
     let errors = map_errors(&result.errors);
     let diagnostic_report = crate::desktop_copy_diagnostic::from_pipeline(
@@ -59,6 +63,7 @@ pub(crate) fn result_from_pipeline(
             &request.preview.source_als_path,
             &request.preview.target_project_root,
         ],
+        elapsed_ms,
     );
     let successful = matches!(
         result.run_status.as_str(),
@@ -81,20 +86,39 @@ pub(crate) fn result_from_pipeline(
 pub(crate) fn failed_preview(
     request: &DesktopPrepareCopyRequest,
     error: DesktopApplicationError,
+    elapsed_ms: u64,
 ) -> DesktopCopyPreview {
     let errors = vec![error];
+    let sensitive_paths = [
+        request.source_als_path.as_path(),
+        request.target_project_root.as_path(),
+    ];
     let diagnostic_report = crate::desktop_copy_diagnostic::before_pipeline(
-        &request.request_id,
-        "copy_preview",
-        "copy_preview_failed",
-        "request_validation",
-        &errors,
-        &[&request.source_als_path, &request.target_project_root],
+        crate::desktop_copy_diagnostic::BeforePipelineDiagnostic {
+            request_id: &request.request_id,
+            operation_kind: "copy_preview",
+            run_status: "copy_preview_failed",
+            completed_stage: "request_validation",
+            errors: &errors,
+            sensitive_paths: &sensitive_paths,
+            rewrite_policy: if request.experimental_compatibility_consent {
+                rescue_pipeline::COMPATIBILITY_LAB_REWRITE_POLICY
+            } else {
+                rescue_pipeline::STRICT_REWRITE_POLICY
+            },
+            elapsed_ms,
+        },
     );
     DesktopCopyPreview {
         service_version: DESKTOP_COPY_SERVICE_VERSION.to_string(),
         request_id: request.request_id.clone(),
         preview_status: "copy_preview_failed".to_string(),
+        rewrite_policy: if request.experimental_compatibility_consent {
+            rescue_pipeline::COMPATIBILITY_LAB_REWRITE_POLICY
+        } else {
+            rescue_pipeline::STRICT_REWRITE_POLICY
+        }
+        .to_string(),
         source_als_path: request.source_als_path.clone(),
         source_als_sha256: String::new(),
         plan_fingerprint: None,
@@ -113,21 +137,27 @@ pub(crate) fn failed_preview(
 pub(crate) fn failed_result(
     request: &DesktopExecuteCopyRequest,
     errors: Vec<DesktopApplicationError>,
+    elapsed_ms: u64,
 ) -> DesktopCopyResult {
     let completed_stage = errors
         .first()
         .map(|error| error.stage.as_str())
         .unwrap_or("request_validation");
+    let sensitive_paths = [
+        request.preview.source_als_path.as_path(),
+        request.preview.target_project_root.as_path(),
+    ];
     let diagnostic_report = crate::desktop_copy_diagnostic::before_pipeline(
-        &request.request_id,
-        "copy_execution",
-        "copy_execution_failed",
-        completed_stage,
-        &errors,
-        &[
-            &request.preview.source_als_path,
-            &request.preview.target_project_root,
-        ],
+        crate::desktop_copy_diagnostic::BeforePipelineDiagnostic {
+            request_id: &request.request_id,
+            operation_kind: "copy_execution",
+            run_status: "copy_execution_failed",
+            completed_stage,
+            errors: &errors,
+            sensitive_paths: &sensitive_paths,
+            rewrite_policy: &request.preview.rewrite_policy,
+            elapsed_ms,
+        },
     );
     DesktopCopyResult {
         service_version: DESKTOP_COPY_SERVICE_VERSION.to_string(),

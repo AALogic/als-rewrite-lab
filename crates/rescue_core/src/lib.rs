@@ -11,6 +11,7 @@ mod path_observation_impl;
 mod path_observation_path;
 mod path_parser;
 mod path_text;
+mod rewrite_compatibility;
 
 pub use als_reader::{
     analyze_als, ALS_READER_VERSION, ALS_READ_MODEL_VERSION, MAX_COMPRESSED_ALS_BYTES,
@@ -31,3 +32,8 @@ pub use path_observation::{
     PathObservationWarning, PATH_OBSERVATION_MODEL_VERSION, PATH_OBSERVER_VERSION,
 };
 pub use path_parser::{parse_als_path, AlsPathKind, ParsedAlsPath, RawAlsPath};
+pub use rewrite_compatibility::{
+    assess_rewrite_compatibility, is_confirmed_live_11_3_document, reference_is_lab_compatible,
+    RewriteCompatibilityAssessment, RewriteReferenceCompatibility,
+    REWRITE_COMPATIBILITY_SCHEMA_VERSION,
+};

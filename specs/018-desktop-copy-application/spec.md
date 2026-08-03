@@ -1,6 +1,6 @@
 # Module Specification: 018 DesktopCopyApplicationService
 
-Status: implementation update approved, output v0.4
+Status: implementation update approved, output v0.5
 Date: 2026-08-03
 
 ## Purpose
@@ -11,10 +11,11 @@ explicitly confirmed current-path copy request.
 
 ## Contracts
 
-`DesktopPrepareCopyRequest v0.1` contains request ID, source ALS path and an
-absolute absent target Project root.
+`DesktopPrepareCopyRequest v0.2` contains request ID, source ALS path, an
+absolute absent target Project root and explicit experimental compatibility
+consent. A strict binary rejects that consent.
 
-`DesktopCopyPreview v0.4` contains the source snapshot hash, target root,
+`DesktopCopyPreview v0.5` contains the source snapshot hash, rewrite policy, target root,
 available copy count, system dependency count, rewrite count, omitted count,
 expected complete/incomplete status, `PlanFingerprint v0.1` and structured
 blockers. Preparing a preview writes nothing.
@@ -28,9 +29,10 @@ target path, copied/system-dependency/rewrite/omitted counts and structured
 errors. A confirmed system dependency is visible in both outputs but is not a
 copy or rewrite operation.
 
-Both outputs contain `DesktopCopyDiagnosticReport v0.1`. The redacted report
+Both outputs contain `DesktopCopyDiagnosticReport v0.2`. The redacted report
 records operation kind, service/pipeline version, build commit, host OS and
-architecture, run status, completed stage, counters, and every error code,
+architecture, rewrite policy, safe Ableton version metadata, compatibility
+status, elapsed time, run status, completed stage, counters, and every error code,
 stage, and safe message. It contains no source/target paths, project or sample
 names, username, machine name, or private-ledger path.
 

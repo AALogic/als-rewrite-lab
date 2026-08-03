@@ -1,4 +1,4 @@
-use crate::package_planner_operations::LAB_RULE_ID;
+use crate::package_planner_operations::{COMPATIBILITY_LAB_RULE_ID, LAB_RULE_ID};
 use crate::{
     CopyOperation, CreateDirectoryOperation, PackagePlan, PackagePlanError, PackagePlanMetadata,
     PackagePlanningRequest, PlannedSourceAls, RewriteOperation, SystemDependencyRequirement,
@@ -34,9 +34,9 @@ pub(crate) fn build_plan(
         "blocked"
     } else if request.planning_mode == "copy_only" {
         "ready_copy_only"
-    } else if request.planning_mode == "current_paths_copy" && unresolved.is_empty() {
+    } else if crate::is_current_paths_mode(&request.planning_mode) && unresolved.is_empty() {
         "ready_current_paths_complete"
-    } else if request.planning_mode == "current_paths_copy" {
+    } else if crate::is_current_paths_mode(&request.planning_mode) {
         "ready_current_paths_incomplete"
     } else {
         "ready_for_laboratory_execution"
@@ -124,7 +124,9 @@ fn metadata(
         planning_mode: request.planning_mode.clone(),
         source_als_hash: model.set_metadata.source_file_hash.clone(),
         resolution_policy_version: policy_version.to_string(),
-        rewrite_ruleset_version: if matches!(
+        rewrite_ruleset_version: if crate::is_compatibility_lab_mode(&request.planning_mode) {
+            COMPATIBILITY_LAB_RULE_ID.to_string()
+        } else if matches!(
             request.planning_mode.as_str(),
             "laboratory_rescue_rewrite" | "current_paths_copy"
         ) {

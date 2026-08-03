@@ -1,3 +1,4 @@
+mod compatibility_report;
 mod desktop_analysis;
 mod desktop_copy;
 mod desktop_copy_diagnostic;
@@ -5,6 +6,11 @@ mod desktop_copy_impl;
 mod desktop_copy_result;
 mod desktop_diagnostic;
 
+pub use compatibility_report::{
+    application_profile, finalize_compatibility_test_report, CompatibilityTestReport,
+    CompatibilityTestReportRequest, DesktopApplicationProfile,
+    COMPATIBILITY_TEST_REPORT_SCHEMA_VERSION, DESKTOP_APPLICATION_PROFILE_SCHEMA_VERSION,
+};
 pub use desktop_copy::{
     default_target_project_root, execute_copy, prepare_copy, DesktopCopyDiagnosticReport,
     DesktopCopyPreview, DesktopCopyResult, DesktopDiagnosticError, DesktopExecuteCopyRequest,
@@ -16,8 +22,8 @@ use rescue_analyzer::{PreflightReport, PreflightSummary};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-pub const DESKTOP_APPLICATION_SERVICE_VERSION: &str = "0.2.0";
-pub const DESKTOP_DIAGNOSTIC_SCHEMA_VERSION: &str = "0.2";
+pub const DESKTOP_APPLICATION_SERVICE_VERSION: &str = "0.3.0";
+pub const DESKTOP_DIAGNOSTIC_SCHEMA_VERSION: &str = "0.3";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesktopAnalyzeRequest {
@@ -40,10 +46,15 @@ pub struct DesktopDiagnosticReport {
     pub diagnostic_schema_version: String,
     pub request_id: String,
     pub service_version: String,
+    pub build_commit: String,
+    pub host_os: String,
+    pub host_arch: String,
     pub run_status: String,
+    pub elapsed_ms: u64,
     pub source_als_sha256: Option<String>,
     pub summary: Option<PreflightSummary>,
     pub requirements: Vec<DiagnosticRequirement>,
+    pub rewrite_compatibility: Option<rescue_core::RewriteCompatibilityAssessment>,
     pub error_codes: Vec<String>,
 }
 

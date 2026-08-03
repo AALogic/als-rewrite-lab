@@ -10,6 +10,19 @@ pub const PACKAGE_PLAN_SCHEMA_VERSION: &str = "0.5";
 
 pub const VERIFY_SHA256_AND_SIZE: &str = "sha256_and_size";
 pub const VERIFY_STABLE_SOURCE_AND_SIZE: &str = "stable_source_and_size";
+pub const STRICT_CURRENT_PATHS_MODE: &str = "current_paths_copy";
+pub const COMPATIBILITY_LAB_CURRENT_PATHS_MODE: &str = "compatibility_lab_current_paths_copy";
+
+pub(crate) fn is_current_paths_mode(mode: &str) -> bool {
+    matches!(
+        mode,
+        STRICT_CURRENT_PATHS_MODE | COMPATIBILITY_LAB_CURRENT_PATHS_MODE
+    )
+}
+
+pub(crate) fn is_compatibility_lab_mode(mode: &str) -> bool {
+    mode == COMPATIBILITY_LAB_CURRENT_PATHS_MODE
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PackagePlanningRequest {

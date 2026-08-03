@@ -3,6 +3,10 @@ name = "rescue_application"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+compatibility-lab = []
+
 [dependencies]
 rescue_analyzer = { path = "../rescue_analyzer" }
 rescue_core = { path = "../rescue_core" }

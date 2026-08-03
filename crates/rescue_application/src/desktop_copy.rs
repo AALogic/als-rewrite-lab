@@ -3,8 +3,8 @@ use rescue_pipeline::PlanFingerprint;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-pub const DESKTOP_COPY_SERVICE_VERSION: &str = "0.5.0";
-pub const DESKTOP_COPY_DIAGNOSTIC_SCHEMA_VERSION: &str = "0.1";
+pub const DESKTOP_COPY_SERVICE_VERSION: &str = "0.6.0";
+pub const DESKTOP_COPY_DIAGNOSTIC_SCHEMA_VERSION: &str = "0.2";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesktopDiagnosticError {
@@ -23,8 +23,14 @@ pub struct DesktopCopyDiagnosticReport {
     pub build_commit: String,
     pub host_os: String,
     pub host_arch: String,
+    pub rewrite_policy: String,
+    pub ableton_document_version: Option<String>,
+    pub ableton_creator_version: Option<String>,
+    pub ableton_minor_version: Option<String>,
+    pub compatibility_status: String,
     pub run_status: String,
     pub completed_stage: String,
+    pub elapsed_ms: u64,
     pub required_asset_count: usize,
     pub system_dependency_count: usize,
     pub copied_asset_count: usize,
@@ -38,6 +44,7 @@ pub struct DesktopPrepareCopyRequest {
     pub request_id: String,
     pub source_als_path: PathBuf,
     pub target_project_root: PathBuf,
+    pub experimental_compatibility_consent: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -45,6 +52,7 @@ pub struct DesktopCopyPreview {
     pub service_version: String,
     pub request_id: String,
     pub preview_status: String,
+    pub rewrite_policy: String,
     pub source_als_path: PathBuf,
     pub source_als_sha256: String,
     pub plan_fingerprint: Option<PlanFingerprint>,

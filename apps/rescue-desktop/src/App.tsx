@@ -18,7 +18,10 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type {
+  CompatibilityTestReport,
+  CompatibilityTestReportRequest,
   DesktopAnalyzeResult,
+  DesktopApplicationProfile,
   DesktopApplicationError,
   DesktopCopyPreview,
   DesktopCopyResult,
@@ -63,6 +66,11 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 function App() {
+  const [applicationProfile, setApplicationProfile] = useState<DesktopApplicationProfile>({
+    schema_version: "0.1",
+    application_profile: "strict_alpha",
+    experimental_compatibility_available: false,
+  });
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [result, setResult] = useState<DesktopAnalyzeResult | null>(null);
   const [busyStage, setBusyStage] = useState<"analysis" | "preview" | "copy" | null>(null);
@@ -71,6 +79,10 @@ function App() {
   const [copyReportCopied, setCopyReportCopied] = useState(false);
   const [copyPreview, setCopyPreview] = useState<DesktopCopyPreview | null>(null);
   const [copyResult, setCopyResult] = useState<DesktopCopyResult | null>(null);
+  const [experimentalConsent, setExperimentalConsent] = useState(false);
+  const [manualOutcome, setManualOutcome] = useState<CompatibilityTestReportRequest["manual_verification_outcome"]>("not_checked");
+  const [testedAbletonVersion, setTestedAbletonVersion] = useState("");
+  const [compatibilityReportCopied, setCompatibilityReportCopied] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const report = result?.preflight_report ?? null;
   const busy = busyStage !== null;
@@ -80,6 +92,15 @@ function App() {
     : copyPreview?.errors.length
       ? copyPreview.diagnostic_report
       : null;
+  const compatibility = result?.diagnostic_report.rewrite_compatibility ?? null;
+  const unconfirmedDocument = compatibility?.document_profile === "unconfirmed_ableton_version";
+  const latestCopyDiagnostic = copyResult?.diagnostic_report ?? copyPreview?.diagnostic_report ?? null;
+
+  useEffect(() => {
+    invoke<DesktopApplicationProfile>("get_application_profile")
+      .then(setApplicationProfile)
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!busyStage) {
@@ -124,6 +145,10 @@ function App() {
         setCopyReportCopied(false);
         setCopyPreview(null);
         setCopyResult(null);
+        setExperimentalConsent(false);
+        setManualOutcome("not_checked");
+        setTestedAbletonVersion("");
+        setCompatibilityReportCopied(false);
       }
     } catch {
       setUiError("Nie udało się otworzyć wyboru pliku.");
@@ -138,6 +163,10 @@ function App() {
     setCopyReportCopied(false);
     setCopyPreview(null);
     setCopyResult(null);
+    setExperimentalConsent(false);
+    setManualOutcome("not_checked");
+    setTestedAbletonVersion("");
+    setCompatibilityReportCopied(false);
     try {
       const requestId = globalThis.crypto?.randomUUID?.() ?? `desktop-${Date.now()}`;
       const next = await invoke<DesktopAnalyzeResult>("analyze_project", {
@@ -170,6 +199,10 @@ function App() {
           request_id: requestId,
           source_als_path: selectedPath,
           target_project_root: targetProjectRoot,
+          experimental_compatibility_consent:
+            applicationProfile.experimental_compatibility_available
+            && unconfirmedDocument
+            && experimentalConsent,
         },
       });
       setCopyPreview(preview);
@@ -221,12 +254,33 @@ function App() {
     }
   }
 
+  async function copyCompatibilityReport() {
+    if (!result) return;
+    try {
+      const report = await invoke<CompatibilityTestReport>("finalize_compatibility_report", {
+        request: {
+          analysis_report: result.diagnostic_report,
+          copy_report: latestCopyDiagnostic,
+          manual_verification_outcome: manualOutcome,
+          tested_ableton_version: testedAbletonVersion.trim() || null,
+        } satisfies CompatibilityTestReportRequest,
+      });
+      await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+      setCompatibilityReportCopied(true);
+    } catch (error) {
+      setUiError(errorMessage(error, "Nie udało się przygotować raportu zgodności."));
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
         <div className="brand-block">
           <div className="brand-mark" aria-hidden="true">AR</div>
-          <div><h1>ALS Rescue</h1><p>Desktop Alpha</p></div>
+          <div>
+            <h1>ALS Rescue</h1>
+            <p>{applicationProfile.application_profile === "compatibility_lab" ? "Compatibility Lab" : "Desktop Alpha"}</p>
+          </div>
         </div>
         <div className={`app-status ${status.tone}`}>
           <span aria-hidden="true" />{status.label}
@@ -291,6 +345,32 @@ function App() {
 
       {report ? (
         <>
+          {compatibility ? (
+            <section className={`compatibility-panel ${unconfirmedDocument ? "experimental" : "confirmed"}`}>
+              <div>
+                <strong>
+                  {unconfirmedDocument ? "Niepotwierdzona wersja Abletona" : "Potwierdzony profil Live 11.3"}
+                </strong>
+                <span>
+                  {compatibility.ableton_creator_version ?? "Wersja nieznana"} · {compatibility.lab_compatible_count} znanych struktur · {compatibility.unsupported_shape_count} nieznanych
+                </span>
+              </div>
+              {applicationProfile.experimental_compatibility_available && unconfirmedDocument ? (
+                <label className="experimental-consent">
+                  <input
+                    type="checkbox"
+                    checked={experimentalConsent}
+                    onChange={(event) => {
+                      setExperimentalConsent(event.target.checked);
+                      setCompatibilityReportCopied(false);
+                    }}
+                  />
+                  <span>Zezwalam na eksperymentalną kopię do ręcznego sprawdzenia</span>
+                </label>
+              ) : null}
+            </section>
+          ) : null}
+
           <section className="summary-grid" aria-label="Podsumowanie analizy">
             <Metric label="Referencje w ALS" value={report.summary.reference_occurrence_count} icon={<FileAudio size={18} />} />
             <Metric label="Wymagane pliki" value={report.summary.required_asset_count} icon={<ShieldCheck size={18} />} />
@@ -338,7 +418,15 @@ function App() {
               <h2>Bezpieczna kopia projektu</h2>
               <p>Dostępne pliki zostaną zebrane, a brakujące pozostaną oznaczone w projekcie.</p>
             </div>
-            <button className="button primary" onClick={prepareProjectCopy} disabled={busy}>
+            <button
+              className="button primary"
+              onClick={prepareProjectCopy}
+              disabled={busy || Boolean(
+                applicationProfile.experimental_compatibility_available
+                && unconfirmedDocument
+                && !experimentalConsent
+              )}
+            >
               {busyStage === "preview" ? <LoaderCircle className="spin" size={17} /> : <FolderOutput size={17} />}
               Wybierz miejsce kopii
             </button>
@@ -381,6 +469,48 @@ function App() {
               <button className="icon-text-button" onClick={() => openPath(copyResult.final_target_root!)}>
                 <ExternalLink size={16} />Otwórz folder
               </button>
+            </section>
+          ) : null}
+
+          {applicationProfile.experimental_compatibility_available ? (
+            <section className="compatibility-report-section" aria-label="Raport testu zgodności">
+              <div>
+                <h2>Raport testu zgodności</h2>
+                <p>Po sprawdzeniu kopii w Abletonie wybierz wynik i skopiuj raport.</p>
+              </div>
+              <div className="compatibility-report-controls">
+                <label>
+                  <span>Wynik ręcznego sprawdzenia</span>
+                  <select
+                    value={manualOutcome}
+                    onChange={(event) => {
+                      setManualOutcome(event.target.value as CompatibilityTestReportRequest["manual_verification_outcome"]);
+                      setCompatibilityReportCopied(false);
+                    }}
+                  >
+                    <option value="not_checked">Jeszcze nie sprawdzono</option>
+                    <option value="opened_without_missing_files">Otwiera się bez missing files</option>
+                    <option value="opened_with_missing_files">Otwiera się z missing files</option>
+                    <option value="failed_to_open">Nie otwiera się</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Wersja Abletona użyta do testu</span>
+                  <input
+                    value={testedAbletonVersion}
+                    maxLength={80}
+                    placeholder="np. Live 10.1.43"
+                    onChange={(event) => {
+                      setTestedAbletonVersion(event.target.value);
+                      setCompatibilityReportCopied(false);
+                    }}
+                  />
+                </label>
+                <button className="button secondary" onClick={copyCompatibilityReport}>
+                  {compatibilityReportCopied ? <Check size={16} /> : <Clipboard size={16} />}
+                  {compatibilityReportCopied ? "Raport skopiowany" : "Kopiuj raport dla Codexa"}
+                </button>
+              </div>
             </section>
           ) : null}
         </>

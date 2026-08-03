@@ -1,16 +1,21 @@
 {
-  "service_version": "0.2.0",
+  "service_version": "0.3.0",
   "request_id": "wire-analysis",
   "run_status": "analysis_failed",
   "preflight_report": null,
   "diagnostic_report": {
-    "diagnostic_schema_version": "0.2",
+    "diagnostic_schema_version": "0.3",
     "request_id": "wire-analysis",
-    "service_version": "0.2.0",
+    "service_version": "0.3.0",
+    "build_commit": "fixture-commit",
+    "host_os": "windows",
+    "host_arch": "x86_64",
     "run_status": "analysis_failed",
+    "elapsed_ms": 4,
     "source_als_sha256": null,
     "summary": null,
     "requirements": [],
+    "rewrite_compatibility": null,
     "error_codes": ["ALS_NOT_FOUND"]
   },
   "errors": [

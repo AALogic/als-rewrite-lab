@@ -101,6 +101,23 @@ button { font: inherit; }
   display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 10px; padding: 22px 0;
 }
+
+.compatibility-panel {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  margin-top: 22px; padding: 14px 15px; border: 1px solid #a9cdbd;
+  border-radius: 7px; background: #f1f8f4;
+}
+.compatibility-panel.experimental { border-color: #dfc188; background: #fff8e8; }
+.compatibility-panel > div { display: flex; flex-direction: column; min-width: 0; }
+.compatibility-panel strong { color: #244b3d; font-size: 13px; }
+.compatibility-panel.experimental strong { color: #74500f; }
+.compatibility-panel span { margin-top: 3px; color: #65706b; font-size: 11px; overflow-wrap: anywhere; }
+.experimental-consent {
+  display: flex; align-items: center; gap: 8px; max-width: 390px;
+  color: #5e450f; font-size: 12px; font-weight: 650; cursor: pointer;
+}
+.experimental-consent input { width: 16px; height: 16px; margin: 0; accent-color: #80611c; flex: none; }
+.experimental-consent span { margin: 0; color: inherit; font-size: inherit; }
 .metric {
   position: relative; min-height: 104px; padding: 16px;
   background: #fff; border: 1px solid #d8ddda; border-radius: 7px;
@@ -196,6 +213,29 @@ tbody tr:last-child td { border-bottom: 0; }
 .copy-result strong { font-size: 13px; }
 .copy-result span { margin-top: 2px; font-size: 11px; }
 
+.compatibility-report-section {
+  display: grid; grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  gap: 24px; margin-bottom: 22px; padding: 17px;
+  border: 1px solid #cfd6d2; border-radius: 7px; background: #fff;
+}
+.compatibility-report-section h2 { margin: 0; font-size: 15px; }
+.compatibility-report-section p { margin: 4px 0 0; color: #6d7772; font-size: 12px; }
+.compatibility-report-controls {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+  min-width: 0;
+}
+.compatibility-report-controls label { display: flex; flex-direction: column; min-width: 0; }
+.compatibility-report-controls label span {
+  margin-bottom: 5px; color: #626d68; font-size: 11px; font-weight: 650;
+}
+.compatibility-report-controls select,
+.compatibility-report-controls input {
+  width: 100%; min-width: 0; min-height: 38px; padding: 0 10px;
+  color: #26302c; background: #fff; border: 1px solid #c8d0cc; border-radius: 6px;
+  font: inherit; font-size: 12px;
+}
+.compatibility-report-controls .button { grid-column: 1 / -1; justify-self: end; }
+
 .empty-state {
   flex: 1; min-height: 280px; display: flex; flex-direction: column;
   align-items: center; justify-content: center; color: #6f7975;
@@ -220,6 +260,8 @@ footer {
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .section-heading { align-items: flex-start; flex-direction: column; }
   .copy-confirmation { grid-template-columns: 1fr; }
+  .compatibility-panel { align-items: flex-start; flex-direction: column; }
+  .compatibility-report-section { grid-template-columns: 1fr; }
   .copy-confirmation-actions { justify-content: flex-start; }
   .table-wrap { overflow-x: auto; }
   table { min-width: 760px; }
@@ -231,6 +273,8 @@ footer {
   .brand-block p { display: none; }
   .project-actions { flex-direction: column; }
   .copy-section, .copy-result { align-items: stretch; flex-direction: column; }
+  .compatibility-report-controls { grid-template-columns: 1fr; }
+  .compatibility-report-controls .button { grid-column: auto; justify-self: stretch; }
   .summary-grid { grid-template-columns: 1fr; }
   footer { gap: 8px; flex-direction: column; }
 }

@@ -11,7 +11,8 @@ computer and never substitutes a moved candidate.
 
 ## Input
 
-`CurrentPathCopyRequest v0.2` contains a non-empty run ID, one absolute regular
+`CurrentPathCopyRequest v0.3` contains a non-empty run ID, an explicit rewrite
+policy, one absolute regular
 non-symlink source ALS, and fresh isolated staging, final target and private
 ledger paths. Optional expected source ALS SHA-256 and expected
 `PlanFingerprint v0.1` values bind execution to a previous read-only preview.
@@ -39,7 +40,8 @@ artifacts retain their hash checks.
 
 ## Output
 
-`CurrentPathCopyResult v0.5` returns stage evidence, including the exact
+`CurrentPathCopyResult v0.6` returns stage evidence, including the applied
+rewrite policy and exact
 system dependency count and current `PlanFingerprint v0.1`, and one of:
 
 ```text

@@ -9,7 +9,8 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:compatibility-lab": "tauri dev --features compatibility-lab --config src-tauri/tauri.compatibility-lab.conf.json"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

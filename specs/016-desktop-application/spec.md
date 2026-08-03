@@ -1,6 +1,6 @@
 # Module Specification: 016 DesktopApplicationService
 
-Status: implementation update approved, diagnostic v0.2
+Status: implementation update approved, diagnostic v0.3
 Date: 2026-08-03
 
 ## Purpose
@@ -24,12 +24,13 @@ user file.
 - service and request identity;
 - `analysis_complete` or `analysis_failed`;
 - the existing local `PreflightReport v0.2` when available;
-- `DesktopDiagnosticReport v0.2`;
+- `DesktopDiagnosticReport v0.3`;
 - structured application errors.
 
 The local preflight may contain filenames and paths because it remains inside
 the local UI. The diagnostic report is safe to share by default: it contains
-counts, statuses, risk flags, hashes and error codes, but no ALS bytes, audio
+build/host facts, elapsed time, counts, statuses, risk flags, hashes, structural
+rewrite compatibility and error codes, but no ALS bytes, audio
 bytes, filenames, candidate paths, source paths or confirmed project roots.
 Each diagnostic requirement also preserves its source category, management class
 and portability status so the UI can distinguish user-managed audio from confirmed
@@ -61,7 +62,8 @@ TypeScript frontend so field or status drift fails in CI.
 - No report is uploaded or written automatically.
 - Diagnostic export remains user-initiated in the desktop adapter.
 - Unknown or invalid project input produces structured failure.
-- The same request and unchanged filesystem snapshot produce the same result.
+- The same request and unchanged filesystem snapshot produce the same semantic
+  result; elapsed diagnostic time is an operational observation.
 
 ## Does Not Do
 

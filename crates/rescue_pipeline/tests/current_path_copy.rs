@@ -116,6 +116,7 @@ fn project_local_fixture() -> Fixture {
 fn request(fixture: &Fixture) -> CurrentPathCopyRequest {
     CurrentPathCopyRequest {
         run_id: "current-path-run".to_string(),
+        rewrite_policy: rescue_pipeline::STRICT_REWRITE_POLICY.to_string(),
         source_als_path: fixture.source_als.clone(),
         expected_source_als_sha256: None,
         expected_plan_fingerprint: None,
@@ -451,6 +452,79 @@ fn blocked_plan_exposes_specific_planner_error() {
         .errors
         .iter()
         .any(|error| error.error_code == "PACKAGE_REWRITE_DOCUMENT_UNSUPPORTED"));
+}
+
+#[test]
+fn strict_profile_still_blocks_unconfirmed_document() {
+    let fixture = fixture(false);
+    let unconfirmed_xml = project_xml(&fixture.available_audio, None)
+        .replace("11.0_11300", "10.0_10000")
+        .replace("Ableton Live 11.3.43", "Ableton Live 10.1.43");
+    fs::write(&fixture.source_als, gzip(&unconfirmed_xml)).expect("unconfirmed ALS");
+
+    let result = prepare_current_path_copy(&request(&fixture));
+
+    assert_eq!(result.run_status, "snapshot_or_plan_blocked");
+    assert!(result
+        .errors
+        .iter()
+        .any(|error| error.error_code == "PACKAGE_REWRITE_DOCUMENT_UNSUPPORTED"));
+    assert!(!fixture.staging_root.exists());
+    assert!(!fixture.target_root.exists());
+}
+
+#[test]
+fn compatibility_lab_blocks_unknown_reference_shape() {
+    let fixture = fixture(false);
+    let unknown_xml = project_xml(&fixture.available_audio, None)
+        .replace("11.0_11300", "10.0_10000")
+        .replace("Ableton Live 11.3.43", "Ableton Live 10.1.43")
+        .replace("<AudioClip>", "<UnknownClip>")
+        .replace("</AudioClip>", "</UnknownClip>");
+    fs::write(&fixture.source_als, gzip(&unknown_xml)).expect("unknown-shape ALS");
+    let mut lab_request = request(&fixture);
+    lab_request.rewrite_policy = rescue_pipeline::COMPATIBILITY_LAB_REWRITE_POLICY.to_string();
+
+    let result = prepare_current_path_copy(&lab_request);
+
+    assert_eq!(result.run_status, "snapshot_or_plan_blocked");
+    assert!(result.errors.iter().any(|error| {
+        error.error_code == "CURRENT_PATH_UNRESOLVED_BLOCKER"
+            && error.message.contains("rewrite_reference_not_supported")
+    }));
+    assert!(!fixture.staging_root.exists());
+    assert!(!fixture.target_root.exists());
+}
+
+#[cfg(any(unix, windows))]
+#[test]
+fn compatibility_lab_keeps_sources_read_only() {
+    let fixture = fixture(false);
+    let unconfirmed_xml = project_xml(&fixture.available_audio, None)
+        .replace("11.0_11300", "10.0_10000")
+        .replace("Ableton Live 11.3.43", "Ableton Live 10.1.43");
+    fs::write(&fixture.source_als, gzip(&unconfirmed_xml)).expect("unconfirmed ALS");
+    let als_before = fs::read(&fixture.source_als).expect("ALS before");
+    let audio_before = fs::read(&fixture.available_audio).expect("audio before");
+    let mut lab_request = request(&fixture);
+    lab_request.rewrite_policy = rescue_pipeline::COMPATIBILITY_LAB_REWRITE_POLICY.to_string();
+
+    let result = run_current_path_copy(&lab_request);
+
+    assert_eq!(
+        result.run_status, "complete_copy_ready_for_manual_check",
+        "copy errors: {:#?}",
+        result.errors
+    );
+    assert_eq!(result.rewritten_reference_count, 1);
+    assert_eq!(
+        fs::read(&fixture.source_als).expect("ALS after"),
+        als_before
+    );
+    assert_eq!(
+        fs::read(&fixture.available_audio).expect("audio after"),
+        audio_before
+    );
 }
 
 #[test]

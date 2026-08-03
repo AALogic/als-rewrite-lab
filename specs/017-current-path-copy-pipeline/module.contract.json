@@ -4,7 +4,7 @@
   "guard_version": "0.2",
   "engineering_rules": {"document": "ENGINEERING_RULES.md", "version": "0.1", "required_sections": ["Purpose", "Modularity", "Testability", "Data Safety", "Project Hard Rules"]},
   "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
-  "required_spec_literals": ["CurrentPathCopyRequest v0.2", "CurrentPathCopyResult v0.5", "PlanFingerprint v0.1", "CurrentPathBindingResult v0.1", "stable_source_and_size", "system dependency count", "portable_risk", "complete_copy_ready_for_manual_check", "incomplete_copy_ready_for_manual_check", "preview_plan_changed", "PIPELINE_REWRITE_FAILED"],
+  "required_spec_literals": ["CurrentPathCopyRequest v0.3", "CurrentPathCopyResult v0.6", "PlanFingerprint v0.1", "CurrentPathBindingResult v0.1", "stable_source_and_size", "system dependency count", "portable_risk", "complete_copy_ready_for_manual_check", "incomplete_copy_ready_for_manual_check", "preview_plan_changed", "PIPELINE_REWRITE_FAILED"],
   "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
   "required_checked_obligations": true,
   "required_obligations": ["DOCUMENTED_ONLY: missing files are reported and never searched in this flow", "REVIEW_ONLY: the pipeline delegates domain behavior to existing modules", "REVIEW_ONLY: current-path audio does not invoke content-addressed inventory", "ENFORCED_BY_TEST: complete_current_path_copy_is_promoted", "ENFORCED_BY_TEST: current_path_audio_uses_metadata_only_verification_end_to_end", "ENFORCED_BY_TEST: missing_asset_creates_incomplete_copy", "ENFORCED_BY_TEST: missing_reference_remains_unchanged", "ENFORCED_BY_TEST: available_assets_are_relinked_when_another_asset_is_missing", "ENFORCED_BY_TEST: unsafe_output_still_blocks_before_write", "ENFORCED_BY_TEST: current_path_copy_keeps_sources_read_only", "ENFORCED_BY_TEST: project_local_type3_copy_preserves_structure_and_rewrites_path_only", "ENFORCED_BY_TEST: confirmed_core_library_dependency_is_left_system_managed_without_blocking", "ENFORCED_BY_TEST: changed_plan_fingerprint_blocks_before_write", "ENFORCED_BY_TEST: matching_plan_fingerprint_allows_execution", "ENFORCED_BY_TEST: unsupported_atomic_replace_platform_fails_closed_at_pipeline", "ENFORCED_BY_TEST: windows_complete_current_path_copy_is_promoted_on_ntfs", "ENFORCED_BY_TYPE: CurrentPathCopyRequest", "ENFORCED_BY_TYPE: CurrentPathCopyResult"],
@@ -13,8 +13,8 @@
   "required_tests_must_have_substance": true,
   "public_contract_mode": "exact",
   "public_contract": {
-    "CurrentPathCopyRequest": ["run_id", "source_als_path", "expected_source_als_sha256", "expected_plan_fingerprint", "staging_root", "target_project_root", "private_ledger_path"],
-    "CurrentPathCopyResult": ["pipeline_version", "run_id", "run_status", "completed_stage", "plan_fingerprint", "required_asset_count", "system_dependency_count", "copied_asset_count", "rewritten_reference_count", "omitted_asset_count", "package_plan", "promotion", "errors"]
+    "CurrentPathCopyRequest": ["run_id", "rewrite_policy", "source_als_path", "expected_source_als_sha256", "expected_plan_fingerprint", "staging_root", "target_project_root", "private_ledger_path"],
+    "CurrentPathCopyResult": ["pipeline_version", "run_id", "rewrite_policy", "run_status", "completed_stage", "plan_fingerprint", "required_asset_count", "system_dependency_count", "copied_asset_count", "rewritten_reference_count", "omitted_asset_count", "package_plan", "promotion", "errors"]
   },
   "expected_source_files": ["crates/rescue_pipeline/src/current_path_copy.rs", "crates/rescue_pipeline/src/current_path_copy_impl.rs"],
   "quality_source_globs": ["crates/rescue_pipeline/src/current_path_copy*.rs"],

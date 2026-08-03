@@ -6,27 +6,22 @@ use rescue_analyzer::{
     assess_dependencies, build_preflight_report, discover_project, ProjectDiscoveryRequest,
 };
 use rescue_core::{
-    analyze_als, extract_dependencies, observe_dependency_paths, PathObservationContext,
+    analyze_als, assess_rewrite_compatibility, extract_dependencies, observe_dependency_paths,
+    PathObservationContext, RewriteCompatibilityAssessment,
 };
+use std::time::Instant;
 
 pub(crate) fn analyze_project_impl(request: &DesktopAnalyzeRequest) -> DesktopAnalyzeResult {
+    let started = Instant::now();
     if let Some(error) = validate_request(request) {
-        return failed_result(request, vec![error]);
+        return failed_result(request, vec![error], elapsed_ms(started));
     }
     let discovery = discover_project(&ProjectDiscoveryRequest {
         source_als_path: request.source_als_path.clone(),
     });
     if !discovery.errors.is_empty() {
-        let errors = discovery
-            .errors
-            .iter()
-            .map(|error| DesktopApplicationError {
-                error_code: error.error_code.clone(),
-                stage: "project_discovery".to_string(),
-                message: error.message.clone(),
-            })
-            .collect();
-        return failed_result(request, errors);
+        let errors = discovery_errors(&discovery.errors);
+        return failed_result(request, errors, elapsed_ms(started));
     }
     let analysis = match analyze_als(&request.source_als_path) {
         Ok(analysis) => analysis,
@@ -39,9 +34,11 @@ pub(crate) fn analyze_project_impl(request: &DesktopAnalyzeRequest) -> DesktopAn
                     stage: "als_reader".to_string(),
                     message: info.message,
                 }],
+                elapsed_ms(started),
             );
         }
     };
+    let compatibility = assess_rewrite_compatibility(&analysis);
     let extraction = extract_dependencies(&analysis);
     let observations = observe_dependency_paths(
         &extraction,
@@ -57,18 +54,50 @@ pub(crate) fn analyze_project_impl(request: &DesktopAnalyzeRequest) -> DesktopAn
     let assessment = assess_dependencies(&extraction, &observations);
     let report = build_preflight_report(&discovery, &assessment);
     if !report.errors.is_empty() {
-        let errors = report
-            .errors
-            .iter()
-            .map(|error| DesktopApplicationError {
-                error_code: error.error_code.clone(),
-                stage: "preflight_report".to_string(),
-                message: error.message.clone(),
-            })
-            .collect();
-        return result_with_report(request, "analysis_failed", report, errors);
+        let errors = preflight_errors(&report.errors);
+        return result_with_report(
+            request,
+            "analysis_failed",
+            report,
+            compatibility,
+            errors,
+            elapsed_ms(started),
+        );
     }
-    result_with_report(request, "analysis_complete", report, Vec::new())
+    result_with_report(
+        request,
+        "analysis_complete",
+        report,
+        compatibility,
+        Vec::new(),
+        elapsed_ms(started),
+    )
+}
+
+fn discovery_errors(
+    errors: &[rescue_analyzer::ProjectDiscoveryError],
+) -> Vec<DesktopApplicationError> {
+    errors
+        .iter()
+        .map(|error| DesktopApplicationError {
+            error_code: error.error_code.clone(),
+            stage: "project_discovery".to_string(),
+            message: error.message.clone(),
+        })
+        .collect()
+}
+
+fn preflight_errors(
+    errors: &[rescue_analyzer::PreflightReportError],
+) -> Vec<DesktopApplicationError> {
+    errors
+        .iter()
+        .map(|error| DesktopApplicationError {
+            error_code: error.error_code.clone(),
+            stage: "preflight_report".to_string(),
+            message: error.message.clone(),
+        })
+        .collect()
 }
 
 fn validate_request(request: &DesktopAnalyzeRequest) -> Option<DesktopApplicationError> {
@@ -93,9 +122,18 @@ fn result_with_report(
     request: &DesktopAnalyzeRequest,
     status: &str,
     report: rescue_analyzer::PreflightReport,
+    compatibility: RewriteCompatibilityAssessment,
     errors: Vec<DesktopApplicationError>,
+    elapsed_ms: u64,
 ) -> DesktopAnalyzeResult {
-    let diagnostic = desktop_diagnostic::from_preflight(request, status, &report, &errors);
+    let diagnostic = desktop_diagnostic::from_preflight(
+        request,
+        status,
+        &report,
+        compatibility,
+        &errors,
+        elapsed_ms,
+    );
     DesktopAnalyzeResult {
         service_version: DESKTOP_APPLICATION_SERVICE_VERSION.to_string(),
         request_id: request.request_id.clone(),
@@ -109,15 +147,20 @@ fn result_with_report(
 fn failed_result(
     request: &DesktopAnalyzeRequest,
     errors: Vec<DesktopApplicationError>,
+    elapsed_ms: u64,
 ) -> DesktopAnalyzeResult {
     DesktopAnalyzeResult {
         service_version: DESKTOP_APPLICATION_SERVICE_VERSION.to_string(),
         request_id: request.request_id.clone(),
         run_status: "analysis_failed".to_string(),
         preflight_report: None,
-        diagnostic_report: desktop_diagnostic::from_errors(request, &errors),
+        diagnostic_report: desktop_diagnostic::from_errors(request, &errors, elapsed_ms),
         errors,
     }
+}
+
+fn elapsed_ms(started: Instant) -> u64 {
+    u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX)
 }
 
 fn error(code: &str, stage: &str, message: &str) -> DesktopApplicationError {

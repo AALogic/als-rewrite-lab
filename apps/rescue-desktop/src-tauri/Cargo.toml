@@ -5,6 +5,10 @@ description = "Local Ableton project dependency analysis"
 authors = ["ALS Rescue"]
 edition = "2021"
 
+[features]
+default = []
+compatibility-lab = ["rescue_application/compatibility-lab"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]

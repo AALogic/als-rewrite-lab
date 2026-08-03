@@ -25,8 +25,9 @@ pub(crate) fn imported_target(filename: &str) -> Option<PathBuf> {
 pub(crate) fn relocation_for(
     reference: &ActiveAudioReference,
     filename: &str,
+    allow_compatibility_lab: bool,
 ) -> Result<ReferenceRelocation, &'static str> {
-    if !supported_reference_base(reference) {
+    if !supported_reference_base(reference, allow_compatibility_lab) {
         return Err("rewrite_reference_not_supported");
     }
     match reference.relative_path_type.as_deref() {
@@ -90,9 +91,14 @@ fn project_local_target(raw_relative_path: &str) -> Option<PathBuf> {
     Some(target)
 }
 
-fn supported_reference_base(reference: &ActiveAudioReference) -> bool {
-    reference.is_rewrite_candidate
-        && reference.rewrite_support_status == "supported"
+fn supported_reference_base(
+    reference: &ActiveAudioReference,
+    allow_compatibility_lab: bool,
+) -> bool {
+    let profile_supported = (reference.is_rewrite_candidate
+        && reference.rewrite_support_status == "supported")
+        || (allow_compatibility_lab && rescue_core::reference_is_lab_compatible(reference));
+    profile_supported
         && matches!(
             reference.usage_context.as_str(),
             "audio_clip" | "simpler_multisample"

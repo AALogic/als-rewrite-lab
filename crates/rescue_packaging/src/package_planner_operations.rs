@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 pub(crate) const LAB_RULE_ID: &str = "live11_3_current_paths_v0.2-lab";
+pub(crate) const COMPATIBILITY_LAB_RULE_ID: &str = "known_shape_compatibility_v0.1-lab";
 
 pub(crate) struct OperationBuild {
     pub directories: Vec<CreateDirectoryOperation>,
@@ -62,6 +63,7 @@ pub(crate) fn build_operations(
             add_rewrite_operations(
                 &mut build,
                 &mut audio_targets,
+                mode,
                 target_root,
                 als_model,
                 selected_asset.asset,
@@ -162,6 +164,7 @@ fn register_audio_target<'a>(
 fn add_rewrite_operations<'a>(
     build: &mut OperationBuild,
     audio_targets: &mut BTreeMap<PathBuf, SelectedAsset<'a>>,
+    mode: &str,
     target_root: &Path,
     model: &ALSReadModel,
     asset: &RequiredAsset,
@@ -181,7 +184,11 @@ fn add_rewrite_operations<'a>(
             push_unresolved(build, asset, "active_reference_not_unique", true);
             continue;
         };
-        let relocation = match relocation_for(reference, &selected.filename) {
+        let relocation = match relocation_for(
+            reference,
+            &selected.filename,
+            crate::is_compatibility_lab_mode(mode),
+        ) {
             Ok(relocation) => relocation,
             Err(reason) => {
                 push_unresolved(build, asset, reason, true);
@@ -204,40 +211,53 @@ fn add_rewrite_operations<'a>(
         let operation_id = format!("rewrite_active_{:06}", build.rewrites.len());
         build.rewrites.push(rewrite_operation(
             operation_id,
-            model,
-            asset,
-            dependency_id,
-            reference,
-            new_path,
+            RewriteOperationContext {
+                mode,
+                model,
+                asset,
+                dependency_id,
+                reference,
+                new_path,
+            },
             relocation,
         ));
     }
 }
 
+struct RewriteOperationContext<'a> {
+    mode: &'a str,
+    model: &'a ALSReadModel,
+    asset: &'a RequiredAsset,
+    dependency_id: &'a str,
+    reference: &'a ActiveAudioReference,
+    new_path: &'a str,
+}
+
 fn rewrite_operation(
     operation_id: String,
-    model: &ALSReadModel,
-    asset: &RequiredAsset,
-    dependency_id: &str,
-    reference: &ActiveAudioReference,
-    new_path: &str,
+    context: RewriteOperationContext<'_>,
     relocation: ReferenceRelocation,
 ) -> RewriteOperation {
     RewriteOperation {
         operation_id,
-        required_asset_id: asset.required_asset_id.clone(),
-        dependency_id: dependency_id.to_string(),
-        als_ref_id: reference.ref_id,
-        xml_locator: reference.xml_locator.clone(),
-        source_als_hash: model.set_metadata.source_file_hash.clone(),
-        old_path: reference.raw_path.clone(),
-        old_relative_path: reference.raw_relative_path.clone(),
-        old_relative_path_type: reference.relative_path_type.clone(),
-        new_path: new_path.to_string(),
+        required_asset_id: context.asset.required_asset_id.clone(),
+        dependency_id: context.dependency_id.to_string(),
+        als_ref_id: context.reference.ref_id,
+        xml_locator: context.reference.xml_locator.clone(),
+        source_als_hash: context.model.set_metadata.source_file_hash.clone(),
+        old_path: context.reference.raw_path.clone(),
+        old_relative_path: context.reference.raw_relative_path.clone(),
+        old_relative_path_type: context.reference.relative_path_type.clone(),
+        new_path: context.new_path.to_string(),
         new_relative_path: relocation.new_relative_path,
         new_relative_path_type: relocation.new_relative_path_type,
         fields_to_change: relocation.fields_to_change,
-        rule_id: LAB_RULE_ID.to_string(),
+        rule_id: if crate::is_compatibility_lab_mode(context.mode) {
+            COMPATIBILITY_LAB_RULE_ID
+        } else {
+            LAB_RULE_ID
+        }
+        .to_string(),
         support_status: relocation.support_status.to_string(),
     }
 }

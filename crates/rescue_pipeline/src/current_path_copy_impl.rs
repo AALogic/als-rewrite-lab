@@ -188,6 +188,7 @@ fn result_from_plan(
     CurrentPathCopyResult {
         pipeline_version: CURRENT_PATH_COPY_PIPELINE_VERSION.to_string(),
         run_id: request.run_id.clone(),
+        rewrite_policy: request.rewrite_policy.clone(),
         run_status: status.to_string(),
         completed_stage: if preview {
             "package_planning"
@@ -220,6 +221,7 @@ pub(crate) fn failure_result(
     CurrentPathCopyResult {
         pipeline_version: CURRENT_PATH_COPY_PIPELINE_VERSION.to_string(),
         run_id: request.run_id.clone(),
+        rewrite_policy: request.rewrite_policy.clone(),
         run_status: status.to_string(),
         completed_stage: stage.to_string(),
         required_asset_count: plan

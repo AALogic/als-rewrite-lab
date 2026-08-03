@@ -8,7 +8,7 @@
     "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
   },
   "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
-  "required_spec_literals": ["DesktopAnalyzeRequest v0.1", "DesktopAnalyzeResult v0.1", "DesktopDiagnosticReport v0.2", "PreflightReport v0.2", "source category", "management class", "portability status", "analysis_complete", "analysis_failed"],
+  "required_spec_literals": ["DesktopAnalyzeRequest v0.1", "DesktopAnalyzeResult v0.1", "DesktopDiagnosticReport v0.3", "PreflightReport v0.2", "source category", "management class", "portability status", "analysis_complete", "analysis_failed"],
   "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
   "required_checked_obligations": true,
   "required_obligations": [
@@ -35,7 +35,7 @@
   "public_contract": {
     "DesktopAnalyzeRequest": ["request_id", "source_als_path"],
     "DesktopAnalyzeResult": ["service_version", "request_id", "run_status", "preflight_report", "diagnostic_report", "errors"],
-    "DesktopDiagnosticReport": ["diagnostic_schema_version", "request_id", "service_version", "run_status", "source_als_sha256", "summary", "requirements", "error_codes"],
+    "DesktopDiagnosticReport": ["diagnostic_schema_version", "request_id", "service_version", "build_commit", "host_os", "host_arch", "run_status", "elapsed_ms", "source_als_sha256", "summary", "requirements", "rewrite_compatibility", "error_codes"],
     "DiagnosticRequirement": ["required_asset_id", "occurrence_count", "source_category", "management_class", "portability_status", "availability_status", "resolution_status", "risk_flags"],
     "DesktopApplicationError": ["error_code", "stage", "message"]
   },

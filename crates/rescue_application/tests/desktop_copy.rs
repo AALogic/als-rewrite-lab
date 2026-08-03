@@ -47,6 +47,7 @@ fn prepare_request(fixture: &Fixture) -> DesktopPrepareCopyRequest {
         request_id: "desktop-preview".to_string(),
         source_als_path: fixture.source_als.clone(),
         target_project_root: fixture.target_root.clone(),
+        experimental_compatibility_consent: false,
     }
 }
 
@@ -62,14 +63,35 @@ fn execute_request(
 }
 
 fn write_als(path: &Path, available: &Path, missing: Option<&Path>, schema_change_count: &str) {
+    write_als_for_version(
+        path,
+        available,
+        missing,
+        schema_change_count,
+        "11.0_11300",
+        "Ableton Live 11.3.43",
+        "AudioClip",
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+fn write_als_for_version(
+    path: &Path,
+    available: &Path,
+    missing: Option<&Path>,
+    schema_change_count: &str,
+    minor_version: &str,
+    creator: &str,
+    context: &str,
+) {
     let mut references = sample_reference(available, "available.wav", 15, 101);
     if let Some(missing) = missing {
         references.push_str(&sample_reference(missing, "missing.wav", 13, 202));
     }
     let xml = format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
-<Ableton MajorVersion="5" MinorVersion="11.0_11300" Creator="Ableton Live 11.3.43" SchemaChangeCount="{schema_change_count}">
-  <LiveSet>{references}</LiveSet>
+<Ableton MajorVersion="5" MinorVersion="{minor_version}" Creator="{creator}" SchemaChangeCount="{schema_change_count}">
+  <LiveSet><{context}>{references}</{context}></LiveSet>
 </Ableton>"#
     );
     let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
@@ -80,13 +102,66 @@ fn write_als(path: &Path, available: &Path, missing: Option<&Path>, schema_chang
 fn sample_reference(path: &Path, filename: &str, size: u64, crc: u64) -> String {
     format!(
         r#"
-    <AudioClip><SampleRef><FileRef>
+    <SampleRef><FileRef>
       <Path Value="{}"/><RelativePath Value="../{filename}"/>
       <RelativePathType Value="1"/><Type Value="1"/>
       <OriginalFileSize Value="{size}"/><OriginalCrc Value="{crc}"/>
-    </FileRef><DefaultDuration Value="10"/><DefaultSampleRate Value="44100"/></SampleRef></AudioClip>"#,
+    </FileRef><DefaultDuration Value="10"/><DefaultSampleRate Value="44100"/></SampleRef>"#,
         path.to_string_lossy()
     )
+}
+
+#[cfg(not(feature = "compatibility-lab"))]
+#[test]
+fn strict_binary_rejects_experimental_consent() {
+    let fixture = fixture(false);
+    let mut request = prepare_request(&fixture);
+    request.experimental_compatibility_consent = true;
+
+    let preview = prepare_copy(&request);
+
+    assert_eq!(preview.preview_status, "copy_preview_failed");
+    assert_eq!(
+        preview.errors[0].error_code,
+        "DESKTOP_COMPATIBILITY_LAB_UNAVAILABLE"
+    );
+    assert!(!fixture.target_root.exists());
+}
+
+#[cfg(feature = "compatibility-lab")]
+#[test]
+fn compatibility_lab_allows_known_shape_with_explicit_consent() {
+    let fixture = fixture(false);
+    write_als_for_version(
+        &fixture.source_als,
+        &fixture.source_audio,
+        None,
+        "3",
+        "10.0_10000",
+        "Ableton Live 10.1.43",
+        "AudioClip",
+    );
+    let source_before = fs::read(&fixture.source_als).expect("source before");
+    let mut request = prepare_request(&fixture);
+    request.experimental_compatibility_consent = true;
+
+    let preview = prepare_copy(&request);
+    assert_eq!(preview.preview_status, "complete_copy_preview_ready");
+    assert_eq!(
+        preview.rewrite_policy,
+        rescue_pipeline::COMPATIBILITY_LAB_REWRITE_POLICY
+    );
+    let result = execute_copy(&execute_request(preview, true));
+
+    assert_eq!(
+        result.run_status, "complete_copy_ready_for_manual_check",
+        "copy errors: {:#?}",
+        result.errors
+    );
+    assert_eq!(
+        fs::read(&fixture.source_als).expect("source after"),
+        source_before
+    );
 }
 
 #[test]
@@ -127,7 +202,7 @@ fn copy_diagnostic_contains_stage_build_and_all_errors() {
     let result = execute_copy(&execute_request(preview, false));
 
     assert_eq!(result.diagnostic_report.operation_kind, "copy_execution");
-    assert_eq!(result.diagnostic_report.pipeline_version, "0.5.0");
+    assert_eq!(result.diagnostic_report.pipeline_version, "0.6.0");
     assert!(!result.diagnostic_report.build_commit.is_empty());
     assert_eq!(result.diagnostic_report.completed_stage, "write_consent");
     assert_eq!(result.diagnostic_report.errors.len(), result.errors.len());

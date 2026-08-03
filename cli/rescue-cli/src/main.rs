@@ -110,6 +110,7 @@ fn run_copy_preview(path: PathBuf, target_root: PathBuf) -> ExitCode {
         request_id: "cli-copy-preview".to_string(),
         source_als_path: path,
         target_project_root: target_root,
+        experimental_compatibility_consent: false,
     });
     print_json_with_domain_status(&preview, preview.errors.is_empty())
 }

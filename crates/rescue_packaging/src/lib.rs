@@ -9,12 +9,13 @@ mod package_planner_result;
 mod package_planner_selection;
 mod package_planner_system_dependencies;
 
+pub(crate) use package_planner::{is_compatibility_lab_mode, is_current_paths_mode};
 pub use package_planner::{
     plan_current_path_package, plan_package, CopyOperation, CreateDirectoryOperation, PackagePlan,
     PackagePlanError, PackagePlanMetadata, PackagePlanWarning, PackagePlanningRequest,
     PlannedSourceAls, RewriteOperation, SystemDependencyRequirement, UnresolvedPackageRequirement,
-    PACKAGE_PLANNER_VERSION, PACKAGE_PLAN_SCHEMA_VERSION, VERIFY_SHA256_AND_SIZE,
-    VERIFY_STABLE_SOURCE_AND_SIZE,
+    COMPATIBILITY_LAB_CURRENT_PATHS_MODE, PACKAGE_PLANNER_VERSION, PACKAGE_PLAN_SCHEMA_VERSION,
+    STRICT_CURRENT_PATHS_MODE, VERIFY_SHA256_AND_SIZE, VERIFY_STABLE_SOURCE_AND_SIZE,
 };
 pub use package_planner_fingerprint::{
     fingerprint_package_plan, PlanFingerprint, PACKAGE_PLAN_FINGERPRINT_SCHEMA_VERSION,

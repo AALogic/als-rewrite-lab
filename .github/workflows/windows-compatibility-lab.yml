@@ -1,0 +1,74 @@
+name: Windows Compatibility Lab installer
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility-lab:
+    name: Windows x64 Compatibility Lab
+    runs-on: windows-latest
+    timeout-minutes: 50
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      ALS_RESCUE_BUILD_COMMIT: ${{ github.sha }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/rescue-desktop/package-lock.json
+
+      - name: Install locked frontend dependencies
+        working-directory: apps/rescue-desktop
+        run: npm ci
+
+      - name: Test Compatibility Lab Rust profile
+        run: cargo test --workspace --all-features --locked
+
+      - name: Test desktop contracts
+        working-directory: apps/rescue-desktop
+        run: npm test
+
+      - name: Check TypeScript
+        working-directory: apps/rescue-desktop
+        run: npm run check
+
+      - name: Build unsigned offline NSIS Compatibility Lab installer
+        working-directory: apps/rescue-desktop
+        run: npm run tauri build -- --target x86_64-pc-windows-msvc --features compatibility-lab --config src-tauri/tauri.compatibility-lab.conf.json --bundles nsis
+
+      - name: Collect installer and SHA-256
+        id: installer
+        run: |
+          $bundleRoot = Join-Path $env:GITHUB_WORKSPACE "target\x86_64-pc-windows-msvc\release\bundle\nsis"
+          $installers = @(Get-ChildItem -Path $bundleRoot -Filter "*.exe" -File)
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one NSIS installer in $bundleRoot, found $($installers.Count)"
+          }
+          $artifactRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts\windows-compatibility-lab"
+          New-Item -ItemType Directory -Path $artifactRoot -Force | Out-Null
+          $artifactName = "ALS-Rescue-Compatibility-Lab-Windows-x64-$env:GITHUB_SHA-setup.exe"
+          $artifactPath = Join-Path $artifactRoot $artifactName
+          Copy-Item $installers[0].FullName $artifactPath
+          $digest = (Get-FileHash -Algorithm SHA256 $artifactPath).Hash.ToLowerInvariant()
+          "$digest  $artifactName" | Set-Content -Encoding ascii "$artifactPath.sha256"
+
+      - name: Upload private Compatibility Lab artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: als-rescue-compatibility-lab-windows-x64-${{ github.sha }}
+          path: artifacts/windows-compatibility-lab/
+          if-no-files-found: error
+          retention-days: 14
