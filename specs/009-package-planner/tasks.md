@@ -31,6 +31,7 @@ Date: 2026-07-27
 - [x] ENFORCED_BY_TEST: package_planner_is_pure
 - [x] ENFORCED_BY_TEST: project_local_type3_preserves_target_and_changes_path_only
 - [x] ENFORCED_BY_TEST: mixed_type1_and_type3_plan_has_no_orphan_audio_copy
+- [x] ENFORCED_BY_TEST: external_relocation_uses_portable_als_path_separator
 - [x] ENFORCED_BY_TEST: unsupported_existing_reference_blocks_without_audio_copy
 - [x] ENFORCED_BY_TEST: unsafe_type3_relative_path_blocks_without_audio_copy
 - [x] ENFORCED_BY_TEST: metadata_only_current_path_plan_has_no_audio_hash_or_content_id

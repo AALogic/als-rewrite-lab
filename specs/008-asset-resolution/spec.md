@@ -29,6 +29,9 @@ path, filename and observed size. It contains no SHA-256 and no content ID.
 This is a current location binding, not `ContentIdentity` and not a historical
 match claim. Missing paths become non-blocking omissions. Size conflicts,
 multiple distinct current paths and unsafe evidence block execution.
+Equivalent spellings of one local Windows drive path, including slash style
+and the extended-length `\\?\` prefix, form one binding. This is lexical path
+normalization only; it does not merge different paths or claim content identity.
 
 The content-addressed `AssetResolutionResult` path below remains available for
 laboratory matching, explicit selections and the future persistent index.

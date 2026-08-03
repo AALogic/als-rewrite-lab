@@ -33,6 +33,7 @@ Date: 2026-08-02
 - [x] ENFORCED_BY_TEST: missing_current_path_is_a_non_blocking_omission
 - [x] ENFORCED_BY_TEST: conflicting_size_blocks_metadata_binding
 - [x] ENFORCED_BY_TEST: multiple_current_paths_block_without_content_identity
+- [x] ENFORCED_BY_TEST: equivalent_windows_path_spellings_form_one_current_binding
 - [x] ENFORCED_BY_TEST: untrusted_assessment_fails_closed
 - [x] ENFORCED_BY_TYPE: UserSelectionSet
 - [x] ENFORCED_BY_TYPE: UserAssetSelection

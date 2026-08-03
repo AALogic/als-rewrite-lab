@@ -579,10 +579,33 @@ fn mixed_type1_and_type3_plan_has_no_orphan_audio_copy() {
     assert_eq!(audio_targets.len(), 2);
     assert!(audio_targets.contains(&PathBuf::from("Samples/Imported/sample.wav")));
     assert!(audio_targets.contains(&PathBuf::from("Samples/Recorded/project-local.wav")));
+    assert!(plan
+        .rewrite_operations
+        .iter()
+        .any(|rewrite| rewrite.new_relative_path == "Samples/Imported/sample.wav"));
     assert!(audio_targets.iter().all(|target| plan
         .rewrite_operations
         .iter()
         .any(|rewrite| Path::new(&rewrite.new_relative_path) == target.as_path())));
+}
+
+#[test]
+fn external_relocation_uses_portable_als_path_separator() {
+    let (model, assessment, inventory, resolution) = valid_inputs(1);
+    let plan = plan_package(
+        &request("current_paths_copy"),
+        &model,
+        &assessment,
+        &inventory,
+        &resolution,
+    );
+
+    assert_eq!(plan.rewrite_operations.len(), 1);
+    assert_eq!(
+        plan.rewrite_operations[0].new_relative_path,
+        "Samples/Imported/sample.wav"
+    );
+    assert!(!plan.rewrite_operations[0].new_relative_path.contains('\\'));
 }
 
 #[test]

@@ -54,6 +54,7 @@ active direct SampleRef/FileRef
 external rule:
   old RelativePathType: 1
   destination: Samples/Imported/<safe filename>
+  ALS RelativePath serialization: portable forward-slash form on every host
   changed fields: Path, RelativePath, RelativePathType
   new RelativePathType: 3
 
@@ -97,6 +98,8 @@ The first operation copies the source ALS to the target Project root. External
 Type 1 audio is planned under `Samples/Imported`. Safe project-local Type 3
 audio preserves its existing `Samples/...` location. Every required parent
 directory is an explicit deterministic directory operation.
+Filesystem targets use native paths, but ALS `RelativePath` values are always
+serialized with `/`; Windows path rendering must never leak into ALS XML.
 
 Copy operations are deduplicated by target relative path and content ID. Two
 different content IDs targeting the same relative path are a blocking

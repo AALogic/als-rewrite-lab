@@ -37,6 +37,7 @@
     "ENFORCED_BY_TEST: missing_current_path_is_a_non_blocking_omission",
     "ENFORCED_BY_TEST: conflicting_size_blocks_metadata_binding",
     "ENFORCED_BY_TEST: multiple_current_paths_block_without_content_identity",
+    "ENFORCED_BY_TEST: equivalent_windows_path_spellings_form_one_current_binding",
     "ENFORCED_BY_TEST: untrusted_assessment_fails_closed",
     "ENFORCED_BY_TYPE: UserSelectionSet",
     "ENFORCED_BY_TYPE: UserAssetSelection",
@@ -54,7 +55,7 @@
     ,"ENFORCED_BY_TYPE: CurrentPathBindingOmission"
     ,"ENFORCED_BY_TYPE: CurrentPathBindingError"
   ],
-  "required_tests": ["exact_recorded_path_is_accepted_as_current_binding", "zero_original_file_size_is_unknown_not_conflict", "path_observer_status_v0_2_is_consumed_without_translation", "name_and_size_only_requires_confirmation", "same_name_different_content_remains_distinct", "high_score_tie_blocks_automatic_resolution", "no_candidate_remains_unresolved", "original_crc_alone_does_not_create_candidate", "partial_inventory_blocks_auto_acceptance", "untrusted_upstream_fails_closed", "resolution_output_is_deterministic", "fake_package_planner_receives_no_unconfirmed_selection", "explicit_path_and_hash_selection_accepts_moved_candidate", "changed_file_invalidates_user_selection", "selection_for_different_als_is_rejected", "exact_current_path_becomes_metadata_binding_without_content_identity", "missing_current_path_is_a_non_blocking_omission", "conflicting_size_blocks_metadata_binding", "multiple_current_paths_block_without_content_identity", "untrusted_assessment_fails_closed"],
+  "required_tests": ["exact_recorded_path_is_accepted_as_current_binding", "zero_original_file_size_is_unknown_not_conflict", "path_observer_status_v0_2_is_consumed_without_translation", "name_and_size_only_requires_confirmation", "same_name_different_content_remains_distinct", "high_score_tie_blocks_automatic_resolution", "no_candidate_remains_unresolved", "original_crc_alone_does_not_create_candidate", "partial_inventory_blocks_auto_acceptance", "untrusted_upstream_fails_closed", "resolution_output_is_deterministic", "fake_package_planner_receives_no_unconfirmed_selection", "explicit_path_and_hash_selection_accepts_moved_candidate", "changed_file_invalidates_user_selection", "selection_for_different_als_is_rejected", "exact_current_path_becomes_metadata_binding_without_content_identity", "missing_current_path_is_a_non_blocking_omission", "conflicting_size_blocks_metadata_binding", "multiple_current_paths_block_without_content_identity", "equivalent_windows_path_spellings_form_one_current_binding", "untrusted_assessment_fails_closed"],
   "required_tests_must_not_be_ignored": true,
   "required_tests_must_have_substance": true,
   "public_contract_mode": "exact",

@@ -38,10 +38,9 @@ pub(crate) fn relocation_for(
 
 fn external_relocation(filename: &str) -> Result<ReferenceRelocation, &'static str> {
     let target = imported_target(filename).ok_or("unsafe_or_empty_target_filename")?;
-    let new_relative_path = target
-        .to_str()
-        .ok_or("target_relative_path_is_not_unicode")?
-        .to_string();
+    // ALS stores this value as a portable project-relative path, not as a
+    // host-native filesystem rendering.
+    let new_relative_path = format!("Samples/Imported/{filename}");
     Ok(ReferenceRelocation {
         target_relative: target,
         new_relative_path,

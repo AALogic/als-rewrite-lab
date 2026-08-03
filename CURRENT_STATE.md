@@ -1,10 +1,10 @@
 # Current State
 
-Status: Desktop current-path copy is plan-bound, responsive, and ready for the next manual Ableton gate
+Status: Windows x64 Alpha implementation is ready for final native CI and installer packaging
 
 Date: 2026-08-03
 
-Branch: `codex/overnight-safe-vertical-slice`
+Branch: `codex/windows-x64-alpha`
 
 Purpose: short source of truth for what exists, what was proved, and what remains
 
@@ -268,6 +268,24 @@ The `.app` bundle and an unsigned local DMG exist for owner-only testing. They
 are not distribution-ready release artifacts: signing, notarization and release
 provenance remain incomplete.
 
+The same repository and shared domain pipeline now contain a bounded Windows
+x64 Alpha profile. Its target is Windows 11 x64 on a local NTFS volume; Windows
+10 x64 remains a private legacy test host. The profile uses `ReplaceFileW` for
+validated staged ALS replacement and no-clobber `MoveFileExW` promotion. It
+rejects unsupported volume, reparse-point, UNC, cloud-folder and long-path
+conditions instead of guessing. Windows path aliases are normalized only for
+current-location binding, while ALS project-relative paths retain portable `/`
+separators.
+
+The desktop error view exposes a public error code and failing stage plus a
+`Kopiuj raport błędu` action. The copied diagnostic includes application,
+pipeline, commit, OS/architecture, status, stage, counters and all structured
+errors, while tests require local project paths and media names to be redacted.
+The GitHub workflow builds an unsigned, current-user, offline NSIS x64 installer
+and a matching SHA-256 file. Final Alpha completion still requires a green
+native Windows workflow at the latest branch commit and verification of the
+downloaded private artifact.
+
 ADR-007 and the current contracts now remove all audio SHA-256 passes from the
 normal desktop current-path flow. Static inspection confirms that
 `current_path_copy` no longer calls `snapshot_asset_files`, `resolve_assets`, a
@@ -397,7 +415,9 @@ no promotion before independent validation and manifests
 The branch is not a shippable desktop product. Missing or intentionally blocked:
 
 ```text
-native Windows build and filesystem tests
+manual installation and GUI run on the owner's Windows 11/10 machines
+manual Ableton verification of a package created on physical NTFS
+Windows code signing and SmartScreen reputation
 full-disk discovery UX, cancellation, progress and persistent incremental index
 fine-grained stage progress, cancellation and recovery after interruption
 desktop user-selection UI for future moved-sample recovery
@@ -455,8 +475,9 @@ Before merging this branch or widening rewrite support:
 1. use the updated desktop bundle to generate a fresh Type 3 project copy and
    open it manually in Ableton Live 11.3 with no missing media;
 2. review generated manifests and diagnostic reports from those manual runs;
-3. execute the bounded Windows Live 9/10 read-only handoff described in
-   `docs/setup/WINDOWS_CODEX_HANDOFF.md`;
+3. install the private Windows x64 Alpha artifact using
+   `docs/setup/WINDOWS_ALPHA_INSTALL_AND_TEST.md`, run its diagnostic checklist,
+   and keep Live 9/10 rewrite disabled;
 4. add persistent incremental indexing only after the one-project desktop copy
    flow is accepted end to end.
 

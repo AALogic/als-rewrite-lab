@@ -158,6 +158,36 @@ fn multiple_current_paths_block_without_content_identity() {
     assert!(result.omissions[0].blocks_execution);
 }
 
+#[cfg(windows)]
+#[test]
+fn equivalent_windows_path_spellings_form_one_current_binding() {
+    let input = assessment(vec![
+        candidate(
+            "candidate0",
+            r"C:\Project\Samples\Recorded\sample.wav",
+            "existing_regular_file",
+            "matches_expected_size",
+        ),
+        candidate(
+            "candidate1",
+            r"C:/Project/Samples/Recorded/sample.wav",
+            "existing_regular_file",
+            "matches_expected_size",
+        ),
+        candidate(
+            "candidate2",
+            r"\\?\C:\Project\Samples\Recorded\sample.wav",
+            "existing_regular_file",
+            "matches_expected_size",
+        ),
+    ]);
+    let result = bind_current_paths(&input);
+
+    assert_eq!(result.bindings.len(), 1);
+    assert!(result.omissions.is_empty());
+    assert!(result.errors.is_empty());
+}
+
 #[test]
 fn untrusted_assessment_fails_closed() {
     let mut input = assessment(Vec::new());

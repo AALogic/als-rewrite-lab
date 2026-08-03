@@ -94,7 +94,7 @@ fn bind_asset(
         .candidate_observations
         .iter()
         .filter(|candidate| is_existing_regular(candidate))
-        .map(|candidate| (candidate.candidate_path.as_str(), candidate))
+        .map(|candidate| (candidate_path_key(&candidate.candidate_path), candidate))
         .collect();
 
     if candidates.is_empty() {
@@ -162,4 +162,21 @@ fn is_existing_regular(candidate: &RequiredAssetCandidateObservation) -> bool {
         && candidate.safety_status == "safe_for_metadata_read"
         && candidate.availability_status == "existing_regular_file"
         && candidate.entry_kind == "regular_file"
+}
+
+#[cfg(windows)]
+fn candidate_path_key(path: &str) -> String {
+    let without_verbatim_prefix = path.strip_prefix(r"\\?\").unwrap_or(path);
+    let mut normalized = without_verbatim_prefix.replace('/', r"\");
+    if normalized.as_bytes().get(1) == Some(&b':') {
+        if let Some(drive_letter) = normalized.get_mut(..1) {
+            drive_letter.make_ascii_uppercase();
+        }
+    }
+    normalized
+}
+
+#[cfg(not(windows))]
+fn candidate_path_key(path: &str) -> String {
+    path.to_string()
 }
