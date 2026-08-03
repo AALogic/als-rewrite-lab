@@ -1,9 +1,12 @@
+#[cfg(unix)]
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use rescue_pipeline::{prepare_current_path_copy, run_current_path_copy, CurrentPathCopyRequest};
 use std::fs;
-use std::io::{Read, Write};
+#[cfg(unix)]
+use std::io::Read;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
@@ -11,6 +14,7 @@ struct Fixture {
     _temp: TempDir,
     source_als: PathBuf,
     available_audio: PathBuf,
+    #[cfg(unix)]
     missing_audio: PathBuf,
     staging_root: PathBuf,
     target_root: PathBuf,
@@ -44,6 +48,7 @@ fn fixture(include_missing_reference: bool) -> Fixture {
         _temp: temp,
         source_als,
         available_audio,
+        #[cfg(unix)]
         missing_audio,
         staging_root: output_root.join("Project.staging"),
         target_root: output_root.join("Project"),
@@ -51,6 +56,7 @@ fn fixture(include_missing_reference: bool) -> Fixture {
     }
 }
 
+#[cfg(unix)]
 fn project_local_fixture() -> Fixture {
     let temp = tempfile::tempdir().expect("tempdir");
     let source_root = temp.path().join("source Project");
@@ -99,6 +105,7 @@ fn project_local_fixture() -> Fixture {
         _temp: temp,
         source_als,
         available_audio,
+        #[cfg(unix)]
         missing_audio: source_root.join("unused-missing.wav"),
         staging_root: output_root.join("Project.staging"),
         target_root: output_root.join("Project"),
@@ -124,6 +131,7 @@ fn gzip(xml: &str) -> Vec<u8> {
     encoder.finish().expect("gzip finish")
 }
 
+#[cfg(unix)]
 fn unzip(path: &Path) -> String {
     let mut decoder = GzDecoder::new(fs::File::open(path).expect("open ALS"));
     let mut xml = String::new();
