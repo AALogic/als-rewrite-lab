@@ -57,6 +57,84 @@ ALSReader may need two layers: raw/internal dependency model and diagnostic JSON
 ALSReader may need to preserve xml_context / usage_context for downstream modules.
 ```
 
+## 5A. Local Project And File Dependency Catalog
+
+Classification:
+
+```text
+Later product capability
+Build after multi-project discovery and the persistent local asset index
+Not part of the current one-project MVP
+```
+
+Product idea:
+
+```text
+Give the user a local CMDB-like view of Ableton projects, Live Set versions,
+audio files and the relationships between them.
+
+The user should be able to start from either side:
+
+project -> all files and system dependencies used by that project
+file -> every project and Set snapshot that references that file
+```
+
+Questions the capability should answer:
+
+```text
+Which projects use this sample?
+How many Set versions depend on it?
+Where are all known occurrences of the same content?
+What projects are at risk if this path disappears or the file is moved?
+Is a relationship current, historical, missing, ambiguous or only inferred?
+Which files appear unreferenced within the latest complete scan evidence?
+```
+
+Expected views:
+
+```text
+searchable project list
+searchable file/content list
+project detail with dependency table
+file detail with reverse project references
+interactive relationship graph for exploration
+impact preview before a future move, cleanup or library reorganization
+```
+
+The graph is a presentation and query capability, not a reason to introduce a
+graph database now. SQLite join tables should be sufficient for the expected
+many-to-many relationships. The domain model should distinguish at least:
+
+```text
+ProjectWork
+LiveSet
+SetSnapshot
+ReferenceOccurrence
+RequiredAsset
+FileOccurrence
+ContentRecord
+Volume
+ScanRun
+```
+
+Every relationship must retain evidence and freshness, including the source
+ALS snapshot, observation time, scan coverage and current/historical status.
+Partial or stale scans must be visible to the user and must never authorize a
+destructive cleanup. This catalog remains local-only and read-only until a
+separate planned operation explicitly requests a move, relink or cleanup.
+
+Likely implementation order:
+
+```text
+multi-project discovery
+-> versioned Set snapshots
+-> persistent incremental file index
+-> relationship builder and reverse-reference queries
+-> table/search UI
+-> graph visualization
+-> impact analysis for future move/cleanup workflows
+```
+
 ## 6. Ryzyka
 
 ```text

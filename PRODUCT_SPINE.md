@@ -210,6 +210,12 @@ User asks:
 Help me organize samples and know what can be moved, copied, kept or cleaned.
 ```
 
+The product should also let the user browse a local CMDB-like catalog from both
+directions: project to all referenced files, and file/content to every project
+and Set snapshot that depends on it. A graph is one visualization of this
+catalog; searchable tables, reverse references, evidence freshness and impact
+preview are equally important.
+
 Required flow:
 
 ```text
