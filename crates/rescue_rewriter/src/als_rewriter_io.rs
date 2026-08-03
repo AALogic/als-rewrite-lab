@@ -134,6 +134,7 @@ pub(crate) fn replace_staged_als(target: &Path, compressed: &[u8]) -> Result<(),
             Some(temp),
         ));
     }
+    drop(file);
     promote_replacement(&temp, target).map_err(|error| {
         remove_own_temp(&temp);
         failure(error.code, error.message, Some(target.to_path_buf()))

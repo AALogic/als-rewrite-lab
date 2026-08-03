@@ -179,7 +179,11 @@ fn complete_current_path_copy_is_promoted() {
     let fixture = fixture(false);
     let result = run_current_path_copy(&request(&fixture));
 
-    assert_eq!(result.run_status, "complete_copy_ready_for_manual_check");
+    assert_eq!(
+        result.run_status, "complete_copy_ready_for_manual_check",
+        "pipeline errors: {:#?}",
+        result.errors
+    );
     assert_eq!(result.required_asset_count, 1);
     assert_eq!(result.copied_asset_count, 1);
     assert_eq!(result.rewritten_reference_count, 1);

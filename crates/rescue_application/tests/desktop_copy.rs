@@ -172,7 +172,11 @@ fn desktop_executes_complete_copy() {
     let preview = prepare_copy(&prepare_request(&fixture));
     let result = execute_copy(&execute_request(preview, true));
 
-    assert_eq!(result.run_status, "complete_copy_ready_for_manual_check");
+    assert_eq!(
+        result.run_status, "complete_copy_ready_for_manual_check",
+        "copy errors: {:#?}",
+        result.errors
+    );
     assert_eq!(
         result.final_target_root.as_ref(),
         Some(&fixture.target_root)
@@ -190,7 +194,11 @@ fn desktop_executes_incomplete_copy() {
     let preview = prepare_copy(&prepare_request(&fixture));
     let result = execute_copy(&execute_request(preview, true));
 
-    assert_eq!(result.run_status, "incomplete_copy_ready_for_manual_check");
+    assert_eq!(
+        result.run_status, "incomplete_copy_ready_for_manual_check",
+        "copy errors: {:#?}",
+        result.errors
+    );
     assert_eq!(result.copied_asset_count, 1);
     assert_eq!(result.rewritten_reference_count, 1);
     assert_eq!(result.omitted_asset_count, 1);
@@ -248,7 +256,11 @@ fn same_size_current_path_replacement_remains_allowed() {
 
     let result = execute_copy(&execute_request(preview, true));
 
-    assert_eq!(result.run_status, "complete_copy_ready_for_manual_check");
+    assert_eq!(
+        result.run_status, "complete_copy_ready_for_manual_check",
+        "copy errors: {:#?}",
+        result.errors
+    );
     assert_eq!(
         fs::read(fixture.target_root.join("Samples/Imported/available.wav"))
             .expect("copied replacement"),
