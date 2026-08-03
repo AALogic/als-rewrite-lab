@@ -1,6 +1,6 @@
 # Current State
 
-Status: Windows x64 Alpha implementation is ready for final native CI and installer packaging
+Status: Windows x64 Compatibility Lab installer is built and ready for private Ableton testing
 
 Date: 2026-08-03
 
@@ -47,6 +47,7 @@ The implemented one-project audio path is:
 016 DesktopApplicationService
 017 CurrentPathCopyPipeline
 018 DesktopCopyApplicationService
+019 CompatibilityLab
 ```
 
 The CLI now supports:
@@ -86,6 +87,17 @@ Validation and promotion check exact tree, regular-file type and size without
 reading audio bytes again. ALS, portable manifest and private ledger retain
 their small-artifact hash checks. Persistent audio hashes remain deferred to
 the future SQLite index.
+
+A separate compile-time `compatibility-lab` profile now exists for private
+Windows evidence gathering. It does not change the strict Alpha policy. The
+Lab can admit an unconfirmed Ableton document version only when every selected
+active audio reference matches one of the already implemented structural
+profiles, the user gives explicit experimental consent, and the ordinary
+plan/stage/rewrite/validate/manifest/promote safety chain passes. Unknown usage
+contexts, XML locators, path types and project-relative shapes still block
+before staging. A manual Ableton outcome is required for any provisional
+success/failure conclusion; the application never promotes a version to
+supported automatically.
 
 ## 3. What The Vertical Slice Can Do
 
@@ -286,6 +298,30 @@ and a matching SHA-256 file. Final Alpha completion still requires a green
 native Windows workflow at the latest branch commit and verification of the
 downloaded private artifact.
 
+The separate Compatibility Lab workflow passed natively on Windows at commit
+`71b9fabe159a47e22ac81e3021e128c4296ca8ac` (GitHub Actions run
+`30789593459`). It passed the all-features Rust workspace, frontend contract
+tests and TypeScript check, then built and uploaded the unsigned offline NSIS
+installer. The downloaded installer is stored outside Git at:
+
+```text
+../windows-installers/compatibility-lab-71b9fab/
+  als-rescue-compatibility-lab-windows-x64-71b9fabe159a47e22ac81e3021e128c4296ca8ac/
+```
+
+The downloaded executable is 205 MB and its independently recomputed SHA-256
+matches the CI sidecar:
+
+```text
+d1ffb5c0c3af19f3646a1a407a90b12df4c14ffbb315d4e30a6d0b7dbbc5b179
+```
+
+A local macOS bundle with the same compile-time profile was also rendered and
+smoke-tested. It used the distinct name and identifier `ALS Rescue
+Compatibility Lab` / `com.alsrescue.compatibility-lab`, showed the correct
+profile label and opened/cancelled the native ALS picker. This is UI evidence,
+not evidence that an older Live document rewrites correctly.
+
 ADR-007 and the current contracts now remove all audio SHA-256 passes from the
 normal desktop current-path flow. Static inspection confirms that
 `current_path_copy` no longer calls `snapshot_asset_files`, `resolve_assets`, a
@@ -477,8 +513,12 @@ Before merging this branch or widening rewrite support:
 2. review generated manifests and diagnostic reports from those manual runs;
 3. install the private Windows x64 Alpha artifact using
    `docs/setup/WINDOWS_ALPHA_INSTALL_AND_TEST.md`, run its diagnostic checklist,
-   and keep Live 9/10 rewrite disabled;
-4. add persistent incremental indexing only after the one-project desktop copy
+   and keep Live 9/10 rewrite disabled in the strict build;
+4. install the separate Compatibility Lab artifact on the private Windows test
+   host, test copied Live 10 and 11.2 projects one at a time, manually open only
+   the generated copies in the matching Ableton versions, and return the
+   redacted `Kopiuj raport dla Codexa` JSON for review;
+5. add persistent incremental indexing only after the one-project desktop copy
    flow is accepted end to end.
 
 Read next:
