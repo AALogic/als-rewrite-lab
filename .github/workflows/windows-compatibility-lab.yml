@@ -2,6 +2,15 @@ name: Windows Compatibility Lab installer
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - codex/windows-x64-alpha
+    paths:
+      - .github/workflows/windows-compatibility-lab.yml
+      - apps/rescue-desktop/**
+      - crates/**
+      - Cargo.toml
+      - Cargo.lock
 
 permissions:
   contents: read
