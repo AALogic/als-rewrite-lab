@@ -183,7 +183,7 @@ fn user_selection_for(
     }
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn selected_missing_sample_completes_narrow_pipeline() {
     let fixture = fixture();
@@ -242,7 +242,7 @@ fn selected_missing_sample_completes_narrow_pipeline() {
     );
 }
 
-#[cfg(not(unix))]
+#[cfg(not(any(unix, windows)))]
 #[test]
 fn selected_missing_sample_fails_closed_without_atomic_replace() {
     let fixture = fixture();

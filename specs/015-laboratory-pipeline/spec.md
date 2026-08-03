@@ -69,7 +69,9 @@ No write-capable module is called before the package plan is ready.
 - A laboratory plan with zero approved rewrite operations blocks before staging.
 - Successful static validation yields `ready_for_manual_ableton_check`; it is
   not proof that Ableton opened the result successfully.
-- A platform without implemented atomic staged-ALS replacement returns
+- Unix and the bounded Windows x64 Alpha profile have implemented atomic
+  staged-ALS replacement and run the supported write-path test.
+- Any other platform without implemented atomic staged-ALS replacement returns
   `write_pipeline_failed` with `PIPELINE_REWRITE_FAILED`, preserves source
   files and never promotes staging to the final target.
 
