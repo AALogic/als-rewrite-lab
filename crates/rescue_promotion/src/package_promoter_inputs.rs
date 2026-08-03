@@ -181,13 +181,23 @@ fn validate_paths(
         return;
     };
     match fs::symlink_metadata(parent) {
-        Ok(metadata) if metadata.file_type().is_dir() && !metadata.file_type().is_symlink() => {}
+        Ok(metadata) if target_parent_can_reach_platform_validation(&metadata) => {}
         _ => errors.push(error(
             "PROMOTION_TARGET_PARENT_INVALID",
             "Final target parent must already be a non-symlink directory",
             Some(parent),
         )),
     }
+}
+
+#[cfg(windows)]
+fn target_parent_can_reach_platform_validation(metadata: &fs::Metadata) -> bool {
+    metadata.file_type().is_dir() || crate::package_promoter_windows::is_reparse_point(metadata)
+}
+
+#[cfg(not(windows))]
+fn target_parent_can_reach_platform_validation(metadata: &fs::Metadata) -> bool {
+    metadata.file_type().is_dir() && !metadata.file_type().is_symlink()
 }
 
 #[cfg(unix)]

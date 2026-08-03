@@ -11,6 +11,10 @@ use windows_sys::Win32::Storage::FileSystem::{
 
 const MAX_WIN32_PATH_UNITS: usize = 260;
 
+pub(crate) fn is_reparse_point(metadata: &fs::Metadata) -> bool {
+    metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
+}
+
 pub(crate) fn validate_environment(
     staging: &Path,
     target: &Path,
@@ -96,7 +100,7 @@ fn reject_reparse_ancestors(path: &Path) -> Result<(), PackagePromotionError> {
                 failure.raw_os_error(),
             )
         })?;
-        if metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+        if is_reparse_point(&metadata) {
             return Err(error(
                 "PROMOTION_WINDOWS_REPARSE_POINT_UNSUPPORTED",
                 "Windows package path crosses a reparse point",
