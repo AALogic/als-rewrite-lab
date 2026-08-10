@@ -44,9 +44,8 @@ fn platform_exclusions(home: Option<&std::path::Path>, _roots: &[PathBuf]) -> Ve
 
 #[cfg(windows)]
 fn platform_roots(_home: Option<&std::path::Path>) -> Vec<PathBuf> {
-    use windows_sys::Win32::Storage::FileSystem::{
-        GetDriveTypeW, GetLogicalDrives, DRIVE_FIXED, DRIVE_REMOVABLE,
-    };
+    use windows_sys::Win32::Storage::FileSystem::{GetDriveTypeW, GetLogicalDrives};
+    use windows_sys::Win32::System::WindowsProgramming::{DRIVE_FIXED, DRIVE_REMOVABLE};
 
     let mask = unsafe { GetLogicalDrives() };
     (0..26)

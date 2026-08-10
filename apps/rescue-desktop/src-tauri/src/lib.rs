@@ -126,9 +126,11 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
     app.run(|app_handle, event| match event {
+        #[cfg(target_os = "macos")]
         tauri::RunEvent::Opened { urls } => {
             quick_copy_entry::route_opened_urls(app_handle, &urls, "macos_open_with");
         }
+        #[cfg(target_os = "macos")]
         tauri::RunEvent::Reopen {
             has_visible_windows: false,
             ..

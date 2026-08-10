@@ -961,3 +961,18 @@ The current tree passes the private-data guard. The explicit full-history audit
 found 220 legacy violations in 37 reachable objects, so public or commercial
 publication remains blocked until a deliberate history-sanitization migration
 is completed and verified from a fresh full clone.
+
+## 17. Windows CI Portability Correction
+
+The first canonical Draft PR exposed two compile-time portability defects that
+macOS could not detect. Windows drive-type constants were imported from the
+file-system namespace although `windows-sys 0.61.2` defines them under
+`Win32::System::WindowsProgramming`. The desktop run loop also matched Tauri
+`Opened` and `Reopen` variants unconditionally even though those variants are
+platform-gated by Tauri.
+
+The Windows dependency now enables the exact additional Win32 feature, the
+constants come from their generated namespace, and the macOS-only run-event
+arms are explicitly target-gated. Domain, copy, rewrite and Courier contracts
+are unchanged. GitHub Windows compilation is the acceptance test for this
+platform boundary.
