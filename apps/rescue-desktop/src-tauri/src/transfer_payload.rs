@@ -21,6 +21,7 @@ struct PayloadCandidate {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AttemptPhase {
     Armed,
+    #[cfg(any(target_os = "macos", test))]
     Dragging,
 }
 
@@ -138,6 +139,7 @@ impl TransferPayloadState {
         Ok(attempt)
     }
 
+    #[cfg(any(target_os = "macos", test))]
     pub(crate) fn begin_attempt(
         &self,
         attempt_id: &str,
@@ -154,6 +156,7 @@ impl TransferPayloadState {
         Ok(attempt.attempt.clone())
     }
 
+    #[cfg(any(target_os = "macos", test))]
     pub(crate) fn finish_attempt(
         &self,
         attempt_id: &str,

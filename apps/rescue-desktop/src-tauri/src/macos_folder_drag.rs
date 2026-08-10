@@ -13,6 +13,7 @@ pub(crate) struct FolderDragSurfaceRect {
     pub height: f64,
 }
 
+#[cfg(any(target_os = "macos", test))]
 pub(crate) fn validate_surface_rect(
     rect: FolderDragSurfaceRect,
     window_width: f64,
@@ -39,8 +40,9 @@ pub(crate) fn validate_surface_rect(
 pub(crate) async fn arm_folder_drag_surface(
     _app: &AppHandle,
     _attempt_id: String,
-    _rect: FolderDragSurfaceRect,
+    rect: FolderDragSurfaceRect,
 ) -> Result<(), UniversalPayloadDragError> {
+    let _ = (rect.x, rect.y, rect.width, rect.height);
     Err(error(
         "PAYLOAD_DRAG_PLATFORM_UNSUPPORTED",
         "arm_drag",

@@ -12,6 +12,7 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 pub(crate) const COURIER_SNAPSHOT_EVENT: &str = "courier-snapshot-changed";
+#[cfg(any(target_os = "macos", test))]
 pub(crate) const NATIVE_HANDOFF_CHANNEL: &str = "native_drag";
 pub(crate) const LOCAL_HANDOFF_CHANNEL: &str = "local_google_drive";
 static COLLECTION_SEQUENCE: AtomicU64 = AtomicU64::new(1);
@@ -243,6 +244,7 @@ pub(crate) fn complete_courier_handoff(
     emit_runtime_snapshot(app)
 }
 
+#[cfg(target_os = "macos")]
 pub(crate) fn cancel_courier_handoff(
     app: &AppHandle,
     collection_id: &str,

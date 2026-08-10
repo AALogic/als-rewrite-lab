@@ -4,12 +4,15 @@ use crate::universal_payload_drag::{
     finished, prepared, validate_request, UniversalPayloadDragError, UniversalPayloadDragFinished,
     UniversalPayloadDragPrepared, UniversalPayloadDragRequest,
 };
+#[cfg(target_os = "macos")]
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 pub(crate) const DRAG_FINISHED_EVENT: &str = "universal-payload-drag-finished";
+#[cfg(target_os = "macos")]
 pub(crate) const DRAG_STARTED_EVENT: &str = "universal-payload-drag-started";
 
+#[cfg(any(target_os = "macos", test))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum NativeHandoffDisposition {
     Complete,
@@ -17,6 +20,7 @@ enum NativeHandoffDisposition {
     Retry,
 }
 
+#[cfg(target_os = "macos")]
 #[derive(Clone, Serialize)]
 struct UniversalPayloadDragStarted<'a> {
     schema_version: &'static str,
@@ -77,6 +81,7 @@ pub(crate) fn reset_universal_payload_attempt(
     Ok(())
 }
 
+#[cfg(target_os = "macos")]
 pub(crate) fn emit_native_drag_started(app: &AppHandle, attempt_id: &str) {
     let payload = UniversalPayloadDragStarted {
         schema_version: "0.1",
@@ -90,6 +95,7 @@ pub(crate) fn emit_native_drag_started(app: &AppHandle, attempt_id: &str) {
     );
 }
 
+#[cfg(target_os = "macos")]
 pub(crate) fn finish_native_drag(
     app: &AppHandle,
     attempt_id: &str,
@@ -137,6 +143,7 @@ pub(crate) fn finish_native_drag(
     emit_finished(app, &finished(attempt_id, outcome, error_code));
 }
 
+#[cfg(any(target_os = "macos", test))]
 fn native_handoff_disposition(outcome: &str) -> NativeHandoffDisposition {
     match outcome {
         "dropped" => NativeHandoffDisposition::Complete,

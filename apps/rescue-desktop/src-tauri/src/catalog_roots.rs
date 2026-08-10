@@ -101,6 +101,7 @@ fn platform_exclusions(home: Option<&std::path::Path>, _roots: &[PathBuf]) -> Ve
         .collect()
 }
 
+#[cfg(not(windows))]
 fn existing_paths(paths: impl IntoIterator<Item = PathBuf>) -> Vec<PathBuf> {
     paths.into_iter().filter(|path| path.is_dir()).collect()
 }
