@@ -68,23 +68,39 @@ impl BatchCopyObserver for CancelAfterFirst {
     }
 }
 
-fn selection(id: &str, path: &str) -> ProjectSelection {
+fn selection(id: &str, path: PathBuf) -> ProjectSelection {
     ProjectSelection {
         selection_id: id.to_string(),
         selection_source: "catalog".to_string(),
         live_set_id: Some(format!("set-{id}")),
-        native_als_path: PathBuf::from(path),
+        native_als_path: path,
         catalog_revision: Some(3),
         observation_fingerprint: Some(format!("fingerprint-{id}")),
         freshness_status: "observed_in_latest_scan".to_string(),
     }
 }
 
+fn absolute_test_root(name: &str) -> PathBuf {
+    if cfg!(windows) {
+        PathBuf::from(format!(r"C:\{name}"))
+    } else {
+        PathBuf::from("/").join(name)
+    }
+}
+
+fn source_path(name: &str) -> PathBuf {
+    absolute_test_root("source").join(name)
+}
+
+fn destination_parent() -> PathBuf {
+    absolute_test_root("target")
+}
+
 fn prepare_request(selections: Vec<ProjectSelection>) -> BatchPrepareCopyRequest {
     BatchPrepareCopyRequest {
         request_id: "batch-preview".to_string(),
         selections,
-        destination_parent: PathBuf::from("/target"),
+        destination_parent: destination_parent(),
         experimental_compatibility_consent: false,
     }
 }
@@ -92,8 +108,8 @@ fn prepare_request(selections: Vec<ProjectSelection>) -> BatchPrepareCopyRequest
 fn prepared_batch(operations: &mut FakeOperations) -> rescue_application::BatchCopyPreview {
     prepare_batch_copy_with_operations(
         &prepare_request(vec![
-            selection("a", "/source/A.als"),
-            selection("b", "/source/B.als"),
+            selection("a", source_path("A.als")),
+            selection("b", source_path("B.als")),
         ]),
         operations,
     )
@@ -171,28 +187,30 @@ fn all_previews_finish_before_first_write() {
 fn unchanged_one_project_contract_is_reused() {
     let mut operations = FakeOperations::default();
     let preview = prepared_batch(&mut operations);
+    let expected_source = source_path("A.als");
+    let expected_target = destination_parent().join("A Rescue Project");
     assert_eq!(
         operations.prepare_requests[0].source_als_path,
-        PathBuf::from("/source/A.als")
+        expected_source
     );
     assert_eq!(
         operations.prepare_requests[0].target_project_root,
-        PathBuf::from("/target/A Rescue Project")
+        expected_target
     );
     assert!(!operations.prepare_requests[0].experimental_compatibility_consent);
     assert_eq!(
         preview.jobs[0].preview.as_ref(),
         Some(&preview_fixture_with_paths(
-            "/source/A.als",
-            "/target/A Rescue Project",
+            &source_path("A.als"),
+            &destination_parent().join("A Rescue Project"),
             &preview.jobs[0]
         ))
     );
 }
 
 fn preview_fixture_with_paths(
-    source: &str,
-    target: &str,
+    source: &Path,
+    target: &Path,
     job: &rescue_application::BatchPreviewJob,
 ) -> DesktopCopyPreview {
     let mut fixture = preview_fixture();
@@ -201,8 +219,8 @@ fn preview_fixture_with_paths(
         .as_ref()
         .map(|preview| preview.request_id.clone())
         .unwrap_or_default();
-    fixture.source_als_path = PathBuf::from(source);
-    fixture.target_project_root = PathBuf::from(target);
+    fixture.source_als_path = source.to_path_buf();
+    fixture.target_project_root = target.to_path_buf();
     fixture
 }
 
@@ -211,8 +229,8 @@ fn target_collision_blocks_all_colliding_jobs() {
     let mut operations = FakeOperations::default();
     let preview = prepare_batch_copy_with_operations(
         &prepare_request(vec![
-            selection("a", "/one/Same.als"),
-            selection("b", "/two/Same.als"),
+            selection("a", absolute_test_root("one").join("Same.als")),
+            selection("b", absolute_test_root("two").join("Same.als")),
         ]),
         &mut operations,
     );
@@ -307,7 +325,7 @@ fn tampered_batch_summary_is_rejected_without_write() {
 fn ready_target_outside_destination_is_rejected_without_write() {
     let mut operations = FakeOperations::default();
     let mut preview = prepared_batch(&mut operations);
-    let outside = PathBuf::from("/outside/A Rescue Project");
+    let outside = absolute_test_root("outside").join("A Rescue Project");
     preview.jobs[0].target_project_root = outside.clone();
     preview.jobs[0]
         .preview
@@ -342,9 +360,17 @@ fn batch_diagnostic_is_path_free() {
     let mut operations = FakeOperations::default();
     let preview = prepared_batch(&mut operations);
     let serialized = serde_json::to_string(&preview.diagnostic_report).expect("diagnostic JSON");
-    assert!(!serialized.contains("/source"));
+    let source_fragment = serde_json::to_string(&absolute_test_root("source"))
+        .expect("source path JSON")
+        .trim_matches('"')
+        .to_string();
+    let target_fragment = serde_json::to_string(&destination_parent())
+        .expect("target path JSON")
+        .trim_matches('"')
+        .to_string();
+    assert!(!serialized.contains(&source_fragment));
     assert!(!serialized.contains("A.als"));
-    assert!(!serialized.contains("/target"));
+    assert!(!serialized.contains(&target_fragment));
 }
 
 #[test]
