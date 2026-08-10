@@ -956,3 +956,8 @@ Exact clone, verification and build commands live in
 `docs/setup/BUILD_AND_RESTORE.md`. The commit split, limitations and checksums of
 the off-repository source/ref/runtime backup are recorded in
 `docs/history/HISTORY_RECONSTRUCTION_2026-08-10.md`.
+
+The current tree passes the private-data guard. The explicit full-history audit
+found 220 legacy violations in 37 reachable objects, so public or commercial
+publication remains blocked until a deliberate history-sanitization migration
+is completed and verified from a fresh full clone.

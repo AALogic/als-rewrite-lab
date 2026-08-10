@@ -76,11 +76,28 @@ matrix documented in the module 025 evidence.
 
 ## Known Boundary
 
-The default private-data guard passes for the current tree. Reachable legacy
-history may still contain private-path findings. The private repository and
-private alpha release may be used for recovery, but a public or commercial
-release remains blocked until `private_path_guard.py --release-history` passes
-or the documented history-recovery procedure is completed.
+The default private-data guard passes for the current tree. The full-history
+audit was also run and found 220 violations across 37 reachable legacy objects:
+144 private identifiers, 50 private corpus roots, 18 macOS home paths, four
+Windows home paths, three private provenance records and one private media
+filename.
+
+The complete private audit report remains outside Git at:
+
+```text
+$HOME/Documents/New project/history-reconstruction-backup-2026-08-10/release-history-audit-2026-08-10.txt
+```
+
+Its SHA-256 is:
+
+```text
+5547b48a4054da7c6abeb8f3e5e0aa973d781562bf549a1273b5e865fe60f224
+```
+
+The private repository and private alpha release may be used for recovery, but
+a public or commercial release remains blocked until
+`private_path_guard.py --release-history` passes after the documented
+history-recovery procedure is completed.
 
 ## Future Rule
 
