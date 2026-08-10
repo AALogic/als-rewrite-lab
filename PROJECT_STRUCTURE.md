@@ -1,8 +1,12 @@
 # Project Structure
 
-Status: official working structure  
+Status: historical structure proposal; not authoritative for the current tree
 Date: 2026-06-02  
 Scope: repository layout for spec-driven development, Rust core, CLI-first implementation and future Tauri desktop app
+
+> The implemented repository map is maintained in `README.md` and ownership in
+> `PROJECT_MAP.md`. The future-Tauri sequence below is historical because the
+> Tauri Desktop Alpha already exists.
 
 ## 1. Zasada nadrzedna
 
@@ -25,7 +29,7 @@ Spec first. Core first. UI later.
 Rootem projektu jest:
 
 ```text
-/Users/tru.siak/Documents/New project/als-rewrite-lab
+$WORKSPACE/als-rewrite-lab
 ```
 
 Ten folder mozna pozniej otworzyc w VS Code jako:
@@ -370,7 +374,7 @@ Tu mieszka laboratorium.
 Przyklady:
 
 ```text
-experiments/2026-05-30_blabla_stemiki_2_before_cas/
+experiments/<private-fixture-experiment>/
 experiments/2026-05-31_cas_downloads_wav/
 experiments/2026-05-31_duplicate_filenames/
 ```

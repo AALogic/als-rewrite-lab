@@ -1,0 +1,33 @@
+# Tasks: 015 LaboratoryPipeline
+
+- [x] Define LaboratoryPackageRequest v0.2 with optional UserSelectionSet v0.1.
+- [x] Define LaboratoryPackageResult v0.1.
+- [x] ENFORCED_BY_TEST: complete_pipeline_blocks_unconfirmed_candidate_before_staging
+- [x] ENFORCED_BY_TEST: confirmed_project_root_is_preserved_in_blocked_result
+- [x] ENFORCED_BY_TEST: missing_sample_blocks_before_staging
+- [x] ENFORCED_BY_TEST: ambiguous_same_name_candidates_block_before_staging
+- [x] ENFORCED_BY_TEST: existing_target_is_rejected_before_any_write
+- [x] ENFORCED_BY_TEST: dangling_output_symlink_is_rejected_before_any_write
+- [x] ENFORCED_BY_TEST: outputs_inside_confirmed_project_root_are_rejected
+- [x] ENFORCED_BY_TEST: ancestor_symlink_into_project_is_rejected
+- [x] ENFORCED_BY_TEST: case_variant_project_path_is_rejected
+- [x] ENFORCED_BY_TEST: unknown_project_root_blocks_before_inventory_and_writes
+- [x] ENFORCED_BY_TEST: zero_reference_project_blocks_before_staging
+- [x] ENFORCED_BY_TEST: unbounded_filesystem_root_is_rejected
+- [x] ENFORCED_BY_TEST: unsupported_live_version_blocks_before_staging
+- [x] ENFORCED_BY_TYPE: LaboratoryPackageRequest
+- [x] ENFORCED_BY_TYPE: LaboratoryPackageResult
+- [x] ENFORCED_BY_TYPE: LaboratoryPackageError
+- [x] REVIEW_ONLY: orchestration contains no duplicated ALS or matching policy
+- [x] REVIEW_ONLY: no write-capable stage runs before a ready package plan
+- [x] REVIEW_ONLY: completed discovery evidence is retained on output-scope rejection
+- [x] DOCUMENTED_ONLY: successful static validation still requires manual Ableton verification
+- [x] ENFORCED_BY_TEST: laboratory_command_requires_explicit_write_flag
+- [x] ENFORCED_BY_TEST: laboratory_command_accepts_bounded_inputs
+- [x] ENFORCED_BY_TEST: selected_missing_sample_completes_narrow_pipeline
+- [x] ENFORCED_BY_TEST: selected_missing_sample_fails_closed_without_atomic_replace
+- [x] ENFORCED_BY_TEST: changed_selected_sample_blocks_before_staging
+- [x] ENFORCED_BY_TEST: selection_for_different_als_blocks_before_staging
+- [x] Add an explicit laboratory CLI command and parser tests.
+- [x] Run the pipeline on a copied real ALS and preserve private evidence.
+- [ ] Perform and record manual Ableton verification when UI control is available.

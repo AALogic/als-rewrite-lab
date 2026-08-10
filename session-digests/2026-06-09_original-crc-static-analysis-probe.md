@@ -20,7 +20,7 @@ audio metadata correlation
 Recommended balanced dataset:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced/
+<private-corpus-root>/original_crc_static_direction_dataset_balanced/
 ```
 
 Scope:
@@ -62,7 +62,7 @@ tools/experiments/c/original_crc_fast_probe.c
 Results saved in:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced/static_analysis_probe/
+<private-corpus-root>/original_crc_static_direction_dataset_balanced/static_analysis_probe/
 ```
 
 Key files:

@@ -28,8 +28,6 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[3]
-CORPUS_DIR = ROOT / "experiments/2026-06-02_als_structure_corpus_20"
-DEFAULT_OUTPUT_DIR = CORPUS_DIR / "original_crc_static_direction_dataset"
 AUDIO_EXTENSIONS = {".wav", ".wave", ".aif", ".aiff", ".mp3", ".flac", ".m4a", ".ogg", ".aac"}
 
 
@@ -191,8 +189,8 @@ class SampleCandidate:
         return {ref.relative_path_type for ref in self.refs if ref.relative_path_type is not None}
 
 
-def load_manifest() -> list[dict[str, Any]]:
-    manifest_path = CORPUS_DIR / "selected_als_manifest.json"
+def load_manifest(corpus_dir: Path) -> list[dict[str, Any]]:
+    manifest_path = corpus_dir / "selected_als_manifest.json"
     return json.loads(manifest_path.read_text(encoding="utf-8"))
 
 
@@ -422,7 +420,19 @@ def choose_dataset(candidates: dict[str, SampleCandidate], max_samples: int, max
     return selected
 
 
-def copy_dataset(selected: dict[str, SampleCandidate], output_dir: Path, overwrite: bool) -> dict[str, Any]:
+def display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def copy_dataset(
+    selected: dict[str, SampleCandidate],
+    corpus_dir: Path,
+    output_dir: Path,
+    overwrite: bool,
+) -> dict[str, Any]:
     if output_dir.exists():
         if not overwrite:
             raise SystemExit(f"Output directory already exists: {output_dir}")
@@ -444,8 +454,8 @@ def copy_dataset(selected: dict[str, SampleCandidate], output_dir: Path, overwri
         shutil.copy2(als_path, target)
         copied_als.append(
             {
-                "source_copy_path": str(als_path.relative_to(ROOT)),
-                "copied_path": str(target.relative_to(ROOT)),
+                "source_copy_path": display_path(als_path),
+                "copied_path": display_path(target),
                 "sha256": sha256_file(target),
                 "size_bytes": target.stat().st_size,
             }
@@ -481,7 +491,7 @@ def copy_dataset(selected: dict[str, SampleCandidate], output_dir: Path, overwri
             refs_payload.append(
                 {
                     "als_id": ref.als_id,
-                    "als_copy": str(ref.als_copy_path.relative_to(ROOT)),
+                    "als_copy": display_path(ref.als_copy_path),
                     "als_source": str(ref.als_source_path),
                     "ref_index": ref.ref_index,
                     "path": ref.path_value,
@@ -501,7 +511,7 @@ def copy_dataset(selected: dict[str, SampleCandidate], output_dir: Path, overwri
                 "categories": sorted(candidate.categories),
                 "reasons": candidate.reasons,
                 "source_sample_path": str(source),
-                "copied_sample_path": str(target.relative_to(ROOT)),
+                "copied_sample_path": display_path(target),
                 "source_size_bytes": before_stat.st_size,
                 "copied_size_bytes": target.stat().st_size,
                 "source_unchanged_after_copy": source_unchanged,
@@ -517,7 +527,7 @@ def copy_dataset(selected: dict[str, SampleCandidate], output_dir: Path, overwri
                 "asd_sidecar": {
                     "exists": asd_source.exists(),
                     "source_path": str(asd_source) if asd_source.exists() else None,
-                    "copied_path": str(copied_asd.relative_to(ROOT)) if copied_asd else None,
+                    "copied_path": display_path(copied_asd) if copied_asd else None,
                     "sha256": copied_asd_sha256,
                 },
                 "refs": refs_payload,
@@ -528,8 +538,8 @@ def copy_dataset(selected: dict[str, SampleCandidate], output_dir: Path, overwri
     return {
         "status": "created",
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "output_dir": str(output_dir.relative_to(ROOT)),
-        "source_corpus": str(CORPUS_DIR.relative_to(ROOT)),
+        "output_dir": display_path(output_dir),
+        "source_corpus": display_path(corpus_dir),
         "safety": {
             "read_copied_als_only": True,
             "modified_original_als": False,
@@ -641,19 +651,23 @@ def write_readme(output_dir: Path, manifest: dict[str, Any], inventory: dict[str
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--corpus-dir", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--max-samples", type=int, default=60)
     parser.add_argument("--max-total-bytes", type=int, default=700 * 1024 * 1024)
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
-    manifest = load_manifest()
+    corpus_dir = args.corpus_dir if args.corpus_dir.is_absolute() else ROOT / args.corpus_dir
+    manifest = load_manifest(corpus_dir)
     refs = extract_refs(manifest)
     candidates = build_candidates(refs)
     selected = choose_dataset(candidates, args.max_samples, args.max_total_bytes)
 
-    output_dir = args.output_dir if args.output_dir.is_absolute() else ROOT / args.output_dir
-    dataset_manifest = copy_dataset(selected, output_dir, args.overwrite)
+    output_dir = args.output_dir or corpus_dir / "original_crc_static_direction_dataset"
+    if not output_dir.is_absolute():
+        output_dir = ROOT / output_dir
+    dataset_manifest = copy_dataset(selected, corpus_dir, output_dir, args.overwrite)
     inventory = inventory_summary(refs, candidates)
 
     # Convert Counter to normal dict for stable JSON.

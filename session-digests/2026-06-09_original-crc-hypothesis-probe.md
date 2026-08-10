@@ -7,7 +7,7 @@ Scope: test checksum hypotheses against copied sample subset
 ## Input
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/
+<private-corpus-root>/crc_probe_sample_subset/
 ```
 
 Input subset:
@@ -24,7 +24,7 @@ about 244 MB on disk
 Output:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/hypothesis_probe/
+<private-corpus-root>/crc_probe_sample_subset/hypothesis_probe/
 ```
 
 Tested:
@@ -53,7 +53,7 @@ strong candidates: none
 Output:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/fast_full_payload_probe/
+<private-corpus-root>/crc_probe_sample_subset/fast_full_payload_probe/
 ```
 
 Tested:
@@ -80,7 +80,7 @@ candidate matching more than one sample: none
 Only match:
 
 ```text
-sample: Sexy Back Remix FIFI G CLAP.wav
+sample: private_audio_fixture_001.wav
 context: audio_payload_wav_data
 function: crc16_x25
 value: 5963

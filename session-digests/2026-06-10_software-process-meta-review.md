@@ -7,8 +7,8 @@ Date: 2026-06-10
 Input reviewed:
 
 - pasted conversation and GPT meta-analysis from
-  `/Users/tru.siak/.codex/attachments/0cfc33d5-88c1-4015-a688-009f94cf9b18/pasted-text.txt`
-- current project files in `/Users/tru.siak/Documents/New project/als-rewrite-lab`
+  `<private-codex-attachment>/pasted-text.txt`
+- current project files in `$WORKSPACE/als-rewrite-lab`
 
 Local checks performed:
 
@@ -519,4 +519,3 @@ better source coverage
 context routing
 continuing product modules in small slices
 ```
-

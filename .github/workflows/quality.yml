@@ -1,0 +1,146 @@
+name: quality
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Run workspace tests
+        run: cargo test --workspace --locked
+
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+  workflow-contracts:
+    name: Workflow contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Test workflow guard
+        run: python3 -m unittest discover -s tools/tests -p "test_*.py"
+
+      - name: Check current-tree private data policy
+        run: python3 tools/private_path_guard.py
+
+      - name: Verify module contracts
+        run: python3 tools/workflow_guard.py verify-all
+
+  frontend:
+    name: Desktop frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/rescue-desktop
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/rescue-desktop/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Test desktop wire contract
+        run: npm test
+
+      - name: Check TypeScript
+        run: npm run check
+
+      - name: Build frontend
+        run: npm run build
+
+  windows-installer:
+    name: Windows x64 Alpha installer
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      ALS_RESCUE_BUILD_COMMIT: ${{ github.sha }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.96.0 --profile minimal
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/rescue-desktop/package-lock.json
+
+      - name: Install locked frontend dependencies
+        working-directory: apps/rescue-desktop
+        run: npm ci
+
+      - name: Build unsigned offline NSIS installer
+        working-directory: apps/rescue-desktop
+        run: npm run tauri build -- --target x86_64-pc-windows-msvc --bundles nsis
+
+      - name: Collect installer and SHA-256
+        run: |
+          $bundleRoot = Join-Path $env:GITHUB_WORKSPACE "target\x86_64-pc-windows-msvc\release\bundle\nsis"
+          $installers = @(Get-ChildItem -Path $bundleRoot -Filter "*.exe" -File)
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one NSIS installer in $bundleRoot, found $($installers.Count)"
+          }
+          $artifactRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts\windows-x64-alpha"
+          New-Item -ItemType Directory -Path $artifactRoot -Force | Out-Null
+          $artifactName = "ALS-Rescue-Windows-x64-Alpha-$env:GITHUB_SHA-setup.exe"
+          $artifactPath = Join-Path $artifactRoot $artifactName
+          Copy-Item $installers[0].FullName $artifactPath
+          $digest = (Get-FileHash -Algorithm SHA256 $artifactPath).Hash.ToLowerInvariant()
+          "$digest  $artifactName" | Set-Content -Encoding ascii "$artifactPath.sha256"
+          "installer_path=$artifactPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        id: installer
+
+      - name: Upload private Windows Alpha artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: als-rescue-windows-x64-alpha-${{ github.sha }}
+          path: artifacts/windows-x64-alpha/
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,12 @@
+[package]
+name = "rescue_execution"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rescue_packaging = { path = "../rescue_packaging" }
+serde = { version = "1", features = ["derive"] }
+sha2.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

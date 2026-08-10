@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "service_version": "0.1.0",
+    "catalog_revision": 4,
+    "coverage_status": "complete",
+    "total_group_count": 1,
+    "total_item_count": 1,
+    "visible_item_count": 1,
+    "hidden_backup_count": 0,
+    "hidden_stale_count": 0
+  },
+  "groups": [
+    {
+      "group_id": "group-1",
+      "display_name": "Test Project",
+      "group_kind": "project_folder",
+      "item_ids": ["set-1"],
+      "main_set_count": 1,
+      "backup_set_count": 0,
+      "freshness_status": "observed_in_latest_scan"
+    }
+  ],
+  "items": [
+    {
+      "item_id": "set-1",
+      "live_set_id": "set-1",
+      "group_id": "group-1",
+      "display_name": "Test.als",
+      "project_display_name": "Test Project",
+      "location_kind": "main_set",
+      "freshness_status": "observed_in_latest_scan",
+      "selection_status": "selectable",
+      "modified_time_unix_ms": 1785700000000,
+      "file_size": 2048,
+      "duplicate_display_name_count": 1,
+      "warning_codes": []
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}

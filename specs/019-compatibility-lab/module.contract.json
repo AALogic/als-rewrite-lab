@@ -1,0 +1,20 @@
+{
+  "id": "019-compatibility-lab",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {"document": "ENGINEERING_RULES.md", "version": "0.1", "required_sections": ["Purpose", "Modularity", "Testability", "Data Safety", "Project Hard Rules"]},
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["RewriteCompatibilityAssessment v0.1", "RewriteReferenceCompatibility v0.1", "DesktopApplicationProfile v0.1", "CompatibilityTestReport v0.1", "DesktopPrepareCopyRequest v0.2", "CurrentPathCopyRequest v0.3", "DesktopDiagnosticReport v0.3", "DesktopCopyDiagnosticReport v0.2", "candidate_success", "candidate_failure", "insufficient_evidence"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "required_checked_obligations": true,
+  "required_obligations": ["ENFORCED_BY_TYPE: RewriteCompatibilityAssessment", "ENFORCED_BY_TYPE: RewriteReferenceCompatibility", "ENFORCED_BY_TYPE: DesktopApplicationProfile", "ENFORCED_BY_TYPE: CompatibilityTestReportRequest", "ENFORCED_BY_TYPE: CompatibilityTestReport", "ENFORCED_BY_TEST: strict_profile_still_blocks_unconfirmed_document", "ENFORCED_BY_TEST: compatibility_lab_allows_known_shape_with_explicit_consent", "ENFORCED_BY_TEST: compatibility_lab_blocks_unknown_reference_shape", "ENFORCED_BY_TEST: compatibility_lab_keeps_sources_read_only", "ENFORCED_BY_TEST: strict_binary_rejects_experimental_consent", "ENFORCED_BY_TEST: compatibility_report_omits_private_paths_and_names", "ENFORCED_BY_TEST: manual_outcome_controls_provisional_conclusion", "ENFORCED_BY_TEST: compatibility_lab_wire_contract_is_stable", "REVIEW_ONLY: UI contains no structural compatibility policy", "REVIEW_ONLY: manual success never promotes a confirmed support profile"],
+  "required_tests": ["strict_profile_still_blocks_unconfirmed_document", "compatibility_lab_allows_known_shape_with_explicit_consent", "compatibility_lab_blocks_unknown_reference_shape", "compatibility_lab_keeps_sources_read_only", "strict_binary_rejects_experimental_consent", "compatibility_report_omits_private_paths_and_names", "manual_outcome_controls_provisional_conclusion", "compatibility_lab_wire_contract_is_stable"],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "expected_source_files": ["crates/rescue_core/src/rewrite_compatibility.rs", "crates/rescue_application/src/compatibility_report.rs"],
+  "quality_source_globs": ["crates/rescue_core/src/rewrite_compatibility.rs", "crates/rescue_application/src/compatibility_report.rs"],
+  "guarded_source_globs": ["crates/rescue_core/src/rewrite_compatibility.rs", "crates/rescue_application/src/compatibility_report.rs"],
+  "forbidden_guarded_source_patterns": [{"literal": "remove_file", "label": "file deletion"}, {"literal": "remove_dir", "label": "directory deletion"}, {"literal": "unwrap(", "label": "unwrap"}, {"literal": "expect(", "label": "expect"}],
+  "allowed_dependency_names": ["flate2", "rescue_analyzer", "rescue_catalog", "rescue_core", "rescue_pipeline", "roxmltree", "serde", "serde_json", "sha2", "tempfile", "thiserror"],
+  "quality_limits": {"max_source_file_lines": 300, "max_function_lines": 80}
+}

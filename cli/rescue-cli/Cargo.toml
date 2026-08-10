@@ -9,6 +9,10 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+rescue_analyzer = { path = "../../crates/rescue_analyzer" }
+rescue_application = { path = "../../crates/rescue_application" }
 rescue_core = { path = "../../crates/rescue_core" }
+rescue_pipeline = { path = "../../crates/rescue_pipeline" }
+rescue_resolution = { path = "../../crates/rescue_resolution" }
 serde = "1"
 serde_json = "1"

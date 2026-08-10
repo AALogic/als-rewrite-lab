@@ -1,0 +1,28 @@
+# Tasks: 012 Validator / SemanticDiff
+
+- [x] Define PackageValidationResult v0.4.
+- [x] ENFORCED_BY_TEST: system_dependency_cannot_be_copied_or_rewritten
+- [x] ENFORCED_BY_TEST: complete_staging_and_exact_semantic_diff_pass_validation
+- [x] ENFORCED_BY_TEST: tampered_audio_fails_hash_validation
+- [x] ENFORCED_BY_TEST: unexpected_staged_file_is_rejected
+- [x] ENFORCED_BY_TEST: unrelated_xml_change_fails_semantic_diff
+- [x] ENFORCED_BY_TEST: historical_reference_change_fails_semantic_diff
+- [x] ENFORCED_BY_TEST: approved_field_value_mismatch_fails_validation
+- [x] ENFORCED_BY_TEST: changed_original_source_is_detected
+- [x] ENFORCED_BY_TEST: existing_final_target_blocks_validation
+- [x] ENFORCED_BY_TEST: missing_ableton_project_marker_blocks_validation
+- [x] ENFORCED_BY_TEST: symlink_ableton_project_marker_blocks_validation
+- [x] ENFORCED_BY_TEST: mismatched_run_contracts_are_rejected
+- [x] ENFORCED_BY_TEST: validation_is_read_only
+- [x] ENFORCED_BY_TEST: path_only_semantic_diff_preserves_relative_fields
+- [x] ENFORCED_BY_TEST: metadata_only_audio_validates_without_content_hash
+- [x] ENFORCED_BY_TYPE: PackageValidationRequest
+- [x] ENFORCED_BY_TYPE: PackageValidationResult
+- [x] ENFORCED_BY_TYPE: PackageValidationMetadata
+- [x] ENFORCED_BY_TYPE: DirectoryValidationRecord
+- [x] ENFORCED_BY_TYPE: FileValidationRecord
+- [x] ENFORCED_BY_TYPE: SemanticDiffRecord
+- [x] ENFORCED_BY_TYPE: PackageValidationWarning
+- [x] ENFORCED_BY_TYPE: PackageValidationError
+- [x] REVIEW_ONLY: validator has no filesystem writes
+- [x] REVIEW_ONLY: success requires exact planned tree and semantic diff

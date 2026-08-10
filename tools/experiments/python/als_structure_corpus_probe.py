@@ -24,37 +24,12 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_ROOTS = [
-    Path("/Users/tru.siak/cover"),
-    Path("/Users/tru.siak/POLISHBOYS LIVE "),
-    Path("/Users/tru.siak/REMIX"),
-    Path("/Users/tru.siak/TRU.SIAK LIVE"),
-    Path("/Users/tru.siak/ZGRANIA"),
-    Path("/Users/tru.siak/Downloads"),
-]
-
 EXCLUDE_PARTS = {
     ".Trash",
     ".git",
     "node_modules",
     "target",
 }
-
-KNOWN_ANALYZED_HINTS = [
-    "als-rewrite-lab",
-    "first new Project",
-    "kombinacja piejo",
-    "TEMPLATE 1.0_TRUSIAK",
-    "OAKS REMIX VOC",
-    "remixG Project",
-    "na szczycie Project",
-    "Blabla_stemiki_2 Project",
-    "cziki Project",
-    "COXED twoja kolej",
-    "calakazesplice_v2.als",
-    "most%20-%20new%20location%20rewritten.als",
-    "new%20location%20-%20rewritten.als",
-]
 
 INTERESTING_TAG_PATTERNS = [
     "Sample",
@@ -158,14 +133,14 @@ def project_key_for(path: Path) -> str:
     return str(path.parent)
 
 
-def is_excluded(path: Path) -> bool:
+def is_excluded(path: Path, excluded_hints: list[str]) -> bool:
     text = str(path)
-    if any(hint in text for hint in KNOWN_ANALYZED_HINTS):
+    if any(hint in text for hint in excluded_hints):
         return True
     return any(part in EXCLUDE_PARTS for part in path.parts)
 
 
-def find_candidates(roots: list[Path]) -> list[Candidate]:
+def find_candidates(roots: list[Path], excluded_hints: list[str]) -> list[Candidate]:
     candidates: list[Candidate] = []
     for root in roots:
         if not root.exists():
@@ -177,7 +152,7 @@ def find_candidates(roots: list[Path]) -> list[Candidate]:
                 if not filename.lower().endswith(".als"):
                     continue
                 path = current / filename
-                if is_excluded(path):
+                if is_excluded(path, excluded_hints):
                     continue
                 try:
                     stat = path.stat()
@@ -675,7 +650,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment-dir", required=True, type=Path)
     parser.add_argument("--limit", default=20, type=int)
-    parser.add_argument("--roots", nargs="*", type=Path, default=DEFAULT_ROOTS)
+    parser.add_argument("--roots", nargs="+", required=True, type=Path)
+    parser.add_argument("--exclude-hint", action="append", default=[])
     args = parser.parse_args()
 
     experiment_dir = args.experiment_dir
@@ -683,7 +659,7 @@ def main() -> int:
     reports_dir = experiment_dir / "reports"
     per_file_dir = reports_dir / "per_file"
 
-    candidates = find_candidates(args.roots)
+    candidates = find_candidates(args.roots, args.exclude_hint)
     selected = select_corpus(candidates, args.limit)
     if len(selected) < args.limit:
         print(f"Only selected {len(selected)} files out of requested {args.limit}", file=sys.stderr)

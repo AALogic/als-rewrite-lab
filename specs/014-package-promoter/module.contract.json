@@ -1,0 +1,80 @@
+{
+  "id": "014-package-promoter",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
+  },
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["PackagePlan v0.4", "PackagePromotionResult v0.2", "metadata-only", "already_promoted_verified", "ready_for_manual_ableton_check"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "ENFORCED_BY_TEST: validated_staging_is_promoted_without_touching_sources",
+    "ENFORCED_BY_TEST: existing_final_target_is_never_overwritten",
+    "ENFORCED_BY_TEST: tampered_staged_file_blocks_promotion",
+    "ENFORCED_BY_TEST: unexpected_file_blocks_promotion",
+    "ENFORCED_BY_TEST: missing_private_ledger_blocks_promotion",
+    "ENFORCED_BY_TEST: failed_validation_state_blocks_promotion",
+    "ENFORCED_BY_TEST: repeated_promotion_verifies_existing_package",
+    "ENFORCED_BY_TEST: symlink_inside_staging_blocks_promotion",
+    "ENFORCED_BY_TEST: changed_original_source_blocks_promotion",
+    "ENFORCED_BY_TEST: current_path_audio_uses_metadata_only_verification_end_to_end",
+    "ENFORCED_BY_TYPE: PackagePromotionRequest",
+    "ENFORCED_BY_TYPE: PackagePromotionResult",
+    "ENFORCED_BY_TYPE: PackagePromotionMetadata",
+    "ENFORCED_BY_TYPE: PromotedFileRecord",
+    "ENFORCED_BY_TYPE: PackagePromotionError",
+    "REVIEW_ONLY: existing final target is never intentionally overwritten",
+    "REVIEW_ONLY: promoter makes no package content decisions",
+    "DOCUMENTED_ONLY: hardened Unix no-replace directory rename remains pre-release work",
+    "ENFORCED_BY_TEST: windows_unicode_package_is_promoted_with_no_replace",
+    "ENFORCED_BY_TEST: windows_reparse_point_root_blocks_promotion",
+    "REVIEW_ONLY: Windows promotion accepts local same-volume NTFS only"
+  ],
+  "required_tests": [
+    "validated_staging_is_promoted_without_touching_sources",
+    "existing_final_target_is_never_overwritten",
+    "tampered_staged_file_blocks_promotion",
+    "unexpected_file_blocks_promotion",
+    "missing_private_ledger_blocks_promotion",
+    "failed_validation_state_blocks_promotion",
+    "repeated_promotion_verifies_existing_package",
+    "symlink_inside_staging_blocks_promotion",
+    "changed_original_source_blocks_promotion",
+    "current_path_audio_uses_metadata_only_verification_end_to_end",
+    "windows_unicode_package_is_promoted_with_no_replace",
+    "windows_reparse_point_root_blocks_promotion"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "PackagePromotionRequest": ["promotion_id"],
+    "PackagePromotionResult": ["metadata", "former_staging_root", "final_target_root", "promoted_files", "promotion_status", "manual_check_status", "errors"],
+    "PackagePromotionMetadata": ["promoter_version", "promotion_schema_version", "promotion_id", "plan_id", "execution_id", "rewrite_id", "validation_id", "manifest_id", "verified_file_count", "error_count"],
+    "PromotedFileRecord": ["relative_path", "expected_sha256", "observed_sha256", "expected_size", "observed_size", "verification_method", "file_status"],
+    "PackagePromotionError": ["error_code", "message", "path"]
+  },
+  "expected_source_files": [
+    "crates/rescue_promotion/src/package_promoter.rs",
+    "crates/rescue_promotion/src/package_promoter_impl.rs",
+    "crates/rescue_promotion/src/package_promoter_inputs.rs",
+    "crates/rescue_promotion/src/package_promoter_windows.rs",
+    "crates/rescue_promotion/src/package_promoter_files.rs",
+    "crates/rescue_promotion/src/package_promoter_result.rs",
+    "crates/rescue_promotion/src/package_promoter_verification.rs"
+  ],
+  "quality_source_globs": ["crates/rescue_promotion/src/*.rs"],
+  "guarded_source_globs": ["crates/rescue_promotion/src/*.rs"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "remove_dir_all", "label": "recursive deletion"},
+    {"literal": "remove_file", "label": "file deletion"},
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"}
+  ],
+  "allowed_dependency_names": ["rescue_execution", "rescue_manifest", "rescue_packaging", "rescue_rewriter", "rescue_validation", "serde", "sha2", "tempfile", "windows-sys"],
+  "quality_limits": {"max_source_file_lines": 360, "max_function_lines": 105}
+}

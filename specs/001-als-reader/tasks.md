@@ -137,6 +137,8 @@ inside ALSReader is legacy and must not override ALSReadModel v0.2.
 - [x] ENFORCED_BY_TEST: gzip_with_invalid_xml_returns_structured_error
 - [x] ENFORCED_BY_TEST: gzip_without_ableton_root_returns_structured_error
 - [x] ENFORCED_BY_TEST: active_relative_path_type_zero_is_preserved
+- [x] ENFORCED_BY_TEST: live_11_3_audio_clip_reference_is_supported_for_laboratory_rewrite
+- [x] ENFORCED_BY_TEST: unknown_or_unsupported_context_is_not_a_rewrite_candidate
 - [x] ENFORCED_BY_TEST: read_only_safety
 - [x] ENFORCED_BY_TYPE: ALSReadModel
 - [x] ENFORCED_BY_TYPE: SetMetadata
@@ -160,6 +162,9 @@ inside ALSReader is legacy and must not override ALSReadModel v0.2.
 - [x] ENFORCED_BY_GUARD: hidden uncertainty phrases block build
 - [x] DOCUMENTED_ONLY: module belongs to ALS inspection and dependency fact extraction flow
 - [x] DOCUMENTED_ONLY: ALSReader reads ALS and emits ALSReadModel; it is not a verifier/classifier/matcher/planner/rewriter
+- [x] ENFORCED_BY_TEST: live_11_3_project_local_type3_reference_is_supported_for_path_only_rewrite
+- [x] ENFORCED_BY_TEST: live_11_3_multisample_type3_reference_is_supported_for_path_only_rewrite
+- [x] ENFORCED_BY_TEST: unsafe_project_local_relative_path_requires_test
 
 ## 12. Retrospective Guard Verification
 

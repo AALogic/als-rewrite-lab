@@ -1,9 +1,9 @@
 # Module Spec 001: ALSReader
 
-Status: draft v0.2 contract update; v0.1 implementation exists as read-only diagnostic slice  
-Date: 2026-06-09  
-Owner: Product Office / Codex  
-Implementation target: Rust core + CLI  
+Status: v0.2 read contract with narrow Live 11.3 rewrite handoff
+Date: 2026-08-02
+Owner: Product Office / Codex
+Implementation target: Rust core + CLI
 Product source: `PRODUCT_SPEC.md`
 
 ## 1. Responsibility
@@ -153,6 +153,27 @@ Fatal errors return structured errors and no trusted `ALSReadModel`.
 
 Warnings may return with a valid `ALSReadModel`.
 
+## 5A. Narrow Rewrite Handoff
+
+ALSReader may mark a reference `supported` only when all observed structure is
+inside the confirmed laboratory profile:
+
+```text
+Ableton MajorVersion = 5
+Ableton MinorVersion = 11.0_11300
+Creator starts with Ableton Live 11.3.
+SampleRef has a direct FileRef child
+SampleRef parent is AudioClip or MultiSamplePart
+usage_context = audio_clip or simpler_multisample
+RelativePathType = 1, or RelativePathType = 3 with a safe Samples/... RelativePath
+```
+
+This is structural evidence for downstream rewrite planning, not permission to
+write. Type 1 authorizes only the experimental external-to-Imported planner
+profile. Safe Type 3 authorizes only the confirmed laboratory Path-only
+relocation profile. Other parents, versions, path types or unsafe relative
+paths remain `requires_test`, are not rewrite candidates and block rewrite.
+
 ## 6. ALSReadModel v0.2
 
 Top-level fields:
@@ -258,6 +279,28 @@ non_audio_signal_count
 historical_refs
 non_audio_dependency_signals
 ```
+
+Rewrite evidence handoff, promoted for an explicit writer consumer:
+
+```text
+SetMetadata.source_als_path
+SetMetadata.source_file_hash
+SetMetadata.ableton_document_version
+SetMetadata.ableton_creator_version
+SetMetadata.ableton_minor_version
+ActiveAudioReference.ref_id
+ActiveAudioReference.raw_path
+ActiveAudioReference.raw_relative_path
+ActiveAudioReference.relative_path_type
+ActiveAudioReference.xml_locator
+ActiveAudioReference.is_rewrite_candidate
+ActiveAudioReference.rewrite_support_status
+```
+
+This is not part of the DependencyExtractor core handoff. PackagePlanner and
+ALSRewriter may consume it only under ADR-005, tied to the exact source hash and
+a versioned E-03 support rule. A locator is not stable identity across an
+arbitrary Ableton save.
 
 Diagnostic-only or preserve-for-future examples:
 
@@ -676,10 +719,10 @@ documented as ALSReadModel serialization.
 Existing fixture copies:
 
 ```text
-tests/fixtures/als/cziki_after_cas.als
-tests/fixtures/als/cziki_before_cas.als
-tests/fixtures/als/template_zero_active.als
-tests/fixtures/als/kombinacja_piejo.als
+tests/fixtures/als/private_fixture_001_after_collect.als
+tests/fixtures/als/private_fixture_001_before_collect.als
+tests/fixtures/als/synthetic_fixture_zero_active.als
+tests/fixtures/als/private_fixture_002_external_refs.als
 tests/fixtures/invalid/not_gzip.als
 ```
 

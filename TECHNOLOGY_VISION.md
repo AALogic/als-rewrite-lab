@@ -58,8 +58,8 @@ Desktop shell:
   Tauri
 
 UI:
-  TypeScript + web frontend
-  Prefer simple Vite app first
+  React + TypeScript
+  Vite frontend
 
 Database:
   SQLite
@@ -509,11 +509,16 @@ Do czasu jej odwolania, projekt powinien isc tym torem:
 ```text
 1. Rust core
 2. Rust CLI first
-3. Tauri + TypeScript desktop later
+3. Tauri + React/TypeScript Desktop Alpha after the proven core slice
 4. SQLite when persistent index is needed
 5. Python only for experiments
 6. Max for Live / JUCE as future adapters, not core
 ```
+
+The core slice reached this gate on 2026-08-02: real Live 11.3 analysis,
+explicit candidate selection, packaging, rewrite, static validation, manifest
+and manual Ableton-open verification all completed. Desktop Alpha is therefore
+the active implementation direction.
 
 ## 18. Najwazniejsza zasada technologiczna
 

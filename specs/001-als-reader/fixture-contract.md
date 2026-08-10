@@ -4,6 +4,15 @@ Status: draft; v0.1 fixture counts with v0.2 contract addendum
 Date: 2026-06-02  
 Scope: expected fixture behavior for ALSReader tests
 
+Update note 2026-07-27:
+
+```text
+Core automated tests use generated synthetic gzip/XML ALS fixtures.
+The named private projects below remain an optional evidence corpus and are not
+required in a clean clone, worktree or CI environment.
+Their large observed counts are evidence, not a requirement for every unit test.
+```
+
 Update note 2026-06-09:
 
 ```text
@@ -25,20 +34,20 @@ If we know the expected counts before implementation, the parser cannot silently
 define its own meaning of "works".
 ```
 
-## 2. Required Fixtures
+## 2. Private Evidence Fixtures
 
-### cziki_after_cas
+### private_fixture_001_after_collect
 
 Path:
 
 ```text
-tests/fixtures/als/cziki_after_cas.als
+tests/fixtures/als/private_fixture_001_after_collect.als
 ```
 
 Source provenance:
 
 ```text
-/Users/tru.siak/Documents/TRWAJA GRUBE TESTY/cziki Project/cziki.als
+<private-fixture-source>/private_fixture_001_after_collect.als
 ```
 
 Expected:
@@ -60,18 +69,18 @@ It represents a Collect All and Save project where imported samples are
 project-local with RelativePathType 3 and Ableton Core Library refs remain type 5.
 ```
 
-### cziki_before_cas_copy
+### private_fixture_001_before_collect
 
 Path:
 
 ```text
-tests/fixtures/als/cziki_before_cas.als
+tests/fixtures/als/private_fixture_001_before_collect.als
 ```
 
 Source provenance:
 
 ```text
-experiments/2026-05-30_blabla_stemiki_2_before_cas/project_copy/cziki.als
+<private-fixture-source>/private_fixture_001_before_collect.als
 ```
 
 Expected:
@@ -93,18 +102,18 @@ It represents the same project family before Collect All and Save, with external
 active sample paths preserved as RelativePathType 1.
 ```
 
-### template_zero_active
+### synthetic_fixture_zero_active
 
 Path:
 
 ```text
-tests/fixtures/als/template_zero_active.als
+tests/fixtures/als/synthetic_fixture_zero_active.als
 ```
 
 Source provenance:
 
 ```text
-/Users/tru.siak/REMIX/TEMPLATE 1.0_TRUSIAK Project/TEMPLATE 1.0_TRUSIAK.als
+<synthetic-fixture-source>/synthetic_fixture_zero_active.als
 ```
 
 Expected:
@@ -128,18 +137,18 @@ without having active audio SampleRef dependencies.
 
 ## 3. Optional Fixture
 
-### kombinacja_piejo
+### private_fixture_002_external_refs
 
 Path:
 
 ```text
-tests/fixtures/als/kombinacja_piejo.als
+tests/fixtures/als/private_fixture_002_external_refs.als
 ```
 
 Source provenance:
 
 ```text
-/Users/tru.siak/first new Project/kombinacja piejo.als
+<private-fixture-source>/private_fixture_002_external_refs.als
 ```
 
 Expected:
@@ -217,39 +226,49 @@ fatal errors produce no trusted ALSReadModel
 Fixture-specific v0.2 expectations:
 
 ```text
-cziki_after_cas:
+private_fixture_001_after_collect:
   active_audio_references: 153
   relative_path_type_counts: 3 -> 33, 5 -> 120
   sample_ref_historical_original_file_ref_count: 32
   total_original_file_ref_count: 71
 
-cziki_before_cas_copy:
+private_fixture_001_before_collect:
   active_audio_references: 153
   relative_path_type_counts: 1 -> 33, 5 -> 120
   sample_ref_historical_original_file_ref_count: 32
   total_original_file_ref_count: 71
 
-template_zero_active:
+synthetic_fixture_zero_active:
   active_audio_references: 0
   relative_path_type_counts: none
   sample_ref_historical_original_file_ref_count: 0
   total_original_file_ref_count: 6
 
-kombinacja_piejo:
+private_fixture_002_external_refs:
   active_audio_references: 11
   relative_path_type_counts: 1 -> 11
   sample_ref_historical_original_file_ref_count: 0
   total_original_file_ref_count: 7
 ```
 
-Known missing v0.2 fixtures:
+Generated v0.2 contract fixtures cover:
 
 ```text
-RelativePathType 0 fixture
+active and historical reference separation
+RelativePathType 0, 1, 3 and 5 preservation
 non-audio dependency signal fixture
-plugin/preset evidence fixture
-Max for Live dependency signal fixture
-ambiguous or unknown ALS structure fixture
+invalid gzip and invalid XML
+Windows drive-letter and UNC path text on macOS
+read-only input behavior
+```
+
+Still requiring private-domain evidence or dedicated experiments:
+
+```text
+plugin/preset evidence
+Max for Live dependency signals
+ambiguous or unknown real ALS structures
+large-corpus regression counts
 ```
 
 Boundary rule:

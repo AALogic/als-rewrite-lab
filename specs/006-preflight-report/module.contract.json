@@ -1,0 +1,60 @@
+{
+  "id": "006-preflight-report",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
+  },
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["PreflightReport v0.2", "candidate availability is not asset resolution", "pure report projection", "system dependencies are reported separately from missing assets"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: candidate availability is not asset resolution",
+    "DOCUMENTED_ONLY: preflight is a private local report",
+    "REVIEW_ONLY: report projection remains read-only",
+    "REVIEW_ONLY: CLI only orchestrates domain modules",
+    "ENFORCED_BY_TEST: all_candidates_observed_remain_unresolved",
+    "ENFORCED_BY_TEST: missing_requirement_requests_asset_search",
+    "ENFORCED_BY_TEST: unknown_requirement_requests_review",
+    "ENFORCED_BY_TEST: untrusted_input_blocks_report",
+    "ENFORCED_BY_TEST: source_mismatch_blocks_report",
+    "ENFORCED_BY_TEST: local_candidate_paths_are_explainable",
+    "ENFORCED_BY_TEST: preflight_output_is_deterministic",
+    "ENFORCED_BY_TEST: preflight_cli_command_is_available",
+    "ENFORCED_BY_TEST: system_dependency_is_exposed_separately_from_missing_assets",
+    "ENFORCED_BY_TYPE: PreflightReport",
+    "ENFORCED_BY_TYPE: PreflightReportMetadata",
+    "ENFORCED_BY_TYPE: PreflightProjectContext",
+    "ENFORCED_BY_TYPE: PreflightSummary",
+    "ENFORCED_BY_TYPE: PreflightRequirement",
+    "ENFORCED_BY_TYPE: PreflightNotice",
+    "ENFORCED_BY_TYPE: PreflightReportError"
+  ],
+  "required_tests": ["all_candidates_observed_remain_unresolved", "missing_requirement_requests_asset_search", "unknown_requirement_requests_review", "untrusted_input_blocks_report", "source_mismatch_blocks_report", "local_candidate_paths_are_explainable", "preflight_output_is_deterministic", "preflight_cli_command_is_available", "system_dependency_is_exposed_separately_from_missing_assets"],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "PreflightReport": ["report_metadata", "project", "summary", "requirements", "notices", "errors"],
+    "PreflightReportMetadata": ["report_version", "assessment_version", "source_als_path", "source_file_hash", "requirement_count", "notice_count", "error_count"],
+    "PreflightProjectContext": ["discovery_status", "confirmed_project_root", "set_location", "candidate_root_count"],
+    "PreflightSummary": ["overall_status", "reference_occurrence_count", "required_asset_count", "system_dependency_count", "candidate_observed_count", "needs_search_count", "unknown_count", "unresolved_count"],
+    "PreflightRequirement": ["required_asset_id", "filename", "occurrence_count", "source_category", "management_class", "portability_status", "availability_status", "resolution_status", "candidate_paths", "risk_flags"],
+    "PreflightNotice": ["notice_id", "notice_code", "message", "required_asset_id"],
+    "PreflightReportError": ["error_code", "message"]
+  },
+  "expected_source_files": ["crates/rescue_analyzer/src/preflight_report.rs", "crates/rescue_analyzer/src/preflight_report_impl.rs"],
+  "quality_source_globs": ["crates/rescue_analyzer/src/preflight_report*.rs", "cli/rescue-cli/src/main.rs"],
+  "guarded_source_globs": ["crates/rescue_analyzer/src/preflight_report*.rs"],
+  "forbidden_output_fields": ["selected_path", "resolved_path", "copy_operation", "rewrite_operation", "runtime_verified"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "std::fs", "label": "filesystem access"},
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"}
+  ],
+  "allowed_dependency_names": ["clap", "flate2", "rescue_analyzer", "rescue_application", "rescue_core", "rescue_pipeline", "rescue_resolution", "roxmltree", "serde", "serde_json", "sha2", "thiserror"],
+  "quality_limits": {"max_source_file_lines": 320, "max_function_lines": 70}
+}

@@ -59,11 +59,11 @@ To jest aktywna lokalizacja pliku audio, ktora Ableton wykorzystuje przy otwiera
 
 W minimalnym rewrite nie trzeba go zmieniac.
 
-Test `COXED twoja kolej` potwierdzil, ze projekt dziala po zmianie tylko aktywnych `Path`, przy nietknietych historycznych `OriginalFileRef`.
+Test `private_fixture_003_rewrite_result` potwierdzil, ze projekt dziala po zmianie tylko aktywnych `Path`, przy nietknietych historycznych `OriginalFileRef`.
 
 ### 2.4 CAS robi wiecej niz minimalny rewrite
 
-W eksperymencie `cziki` Ableton Collect All and Save:
+W eksperymencie `private_fixture_001` Ableton Collect All and Save:
 
 1. skopiowal zewnetrzne audio do `Samples/Imported`,
 2. zmienil aktywne `Path`,
@@ -80,16 +80,16 @@ Eksperyment:
 
 ```text
 source:
-/Users/tru.siak/Documents/TRWAJA GRUBE TESTY/cziki Project
+<private-lab-root>/source-project
 
 target:
-/Users/tru.siak/Documents/TRWAJA GRUBE TESTY/COXED twoja kolej
+<private-lab-root>/relocated-project
 ```
 
 Operacja:
 
 1. skopiowano caly projekt,
-2. w skopiowanym `cziki.als` zmieniono tylko aktywne `SampleRef/FileRef/Path`,
+2. w skopiowanym `private_fixture_001.als` zmieniono tylko aktywne `SampleRef/FileRef/Path`,
 3. nie zmieniono `RelativePath`,
 4. nie zmieniono `RelativePathType`,
 5. nie zmieniono `OriginalFileRef`,
@@ -152,7 +152,7 @@ Uzywac, gdy aktywne audio siedzi poza folderem projektu, np.:
 ```text
 Downloads
 Desktop
-TRU.SIAK LIVE/drumsy
+<private-audio-folder>
 Splice modified/cache
 other Ableton projects
 ```
@@ -503,14 +503,14 @@ Blokuj, gdy:
 8. target path koliduje z innym plikiem,
 9. parser wykryl nierozpoznana strukture.
 
-## 11. Lekcje z eksperymentu `cziki`
+## 11. Lekcje z eksperymentu `private_fixture_001`
 
 ### 11.1 CAS
 
 Before:
 
 ```text
-33 external audio refs from TRU.SIAK LIVE/drumsy
+33 external audio refs from <private-audio-folder>
 120 Core Library refs
 RelativePathType: 1 for external, 5 for Core
 ```

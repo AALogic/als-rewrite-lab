@@ -1,0 +1,161 @@
+{
+  "id": "004-project-discovery",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": [
+      "Purpose",
+      "Clean Code",
+      "Modularity",
+      "Testability",
+      "Error Handling",
+      "Data Safety",
+      "Project Hard Rules"
+    ]
+  },
+  "required_docs": [
+    "spec.md",
+    "plan.md",
+    "tasks.md",
+    "fixture-contract.md"
+  ],
+  "required_spec_literals": [
+    "ProjectDiscoveryResult v0.1",
+    "parent(ALS)",
+    "Ableton Project Info",
+    "read metadata only"
+  ],
+  "blocking_markers": [
+    "BLOCKING_UNKNOWN",
+    "Gate Status: UNKNOWN",
+    "Gate Status: AMBIGUOUS",
+    "Gate Status: CONFLICTING"
+  ],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: E-01 confirms exact Ableton Project Info marker evidence",
+    "DOCUMENTED_ONLY: parent(ALS) alone is not Project root evidence",
+    "REVIEW_ONLY: module remains bounded ancestor metadata inspection",
+    "REVIEW_ONLY: no main-Set decision is introduced",
+    "ENFORCED_BY_TEST: exact_marker_confirms_project_root",
+    "ENFORCED_BY_TEST: nested_set_uses_marker_bearing_ancestor",
+    "ENFORCED_BY_TEST: backup_set_is_labeled_without_main_set_claim",
+    "ENFORCED_BY_TEST: absent_marker_keeps_project_root_unknown",
+    "ENFORCED_BY_TEST: case_variant_marker_is_not_confirmed",
+    "ENFORCED_BY_TEST: nested_markers_are_ambiguous",
+    "ENFORCED_BY_TEST: marker_symlink_is_not_confirmed",
+    "ENFORCED_BY_TEST: source_symlink_is_rejected",
+    "ENFORCED_BY_TEST: discovery_is_read_only",
+    "ENFORCED_BY_TYPE: ProjectDiscoveryRequest",
+    "ENFORCED_BY_TYPE: ProjectDiscoveryResult",
+    "ENFORCED_BY_TYPE: ProjectDiscoveryMetadata",
+    "ENFORCED_BY_TYPE: ProjectRootCandidate",
+    "ENFORCED_BY_TYPE: ProjectDiscoveryWarning",
+    "ENFORCED_BY_TYPE: ProjectDiscoveryError"
+  ],
+  "required_tests": [
+    "exact_marker_confirms_project_root",
+    "nested_set_uses_marker_bearing_ancestor",
+    "backup_set_is_labeled_without_main_set_claim",
+    "absent_marker_keeps_project_root_unknown",
+    "case_variant_marker_is_not_confirmed",
+    "nested_markers_are_ambiguous",
+    "marker_symlink_is_not_confirmed",
+    "source_symlink_is_rejected",
+    "discovery_is_read_only"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "ProjectDiscoveryRequest": [
+      "source_als_path"
+    ],
+    "ProjectDiscoveryResult": [
+      "metadata",
+      "candidates",
+      "confirmed_project_root",
+      "discovery_status",
+      "set_location",
+      "warnings",
+      "errors"
+    ],
+    "ProjectDiscoveryMetadata": [
+      "discovery_version",
+      "source_als_path",
+      "ancestors_checked",
+      "candidate_count",
+      "warning_count",
+      "error_count"
+    ],
+    "ProjectRootCandidate": [
+      "candidate_path",
+      "marker_path",
+      "marker_status",
+      "depth_from_set"
+    ],
+    "ProjectDiscoveryWarning": [
+      "warning_id",
+      "warning_code",
+      "message",
+      "path",
+      "evidence_status"
+    ],
+    "ProjectDiscoveryError": [
+      "error_code",
+      "message",
+      "path"
+    ]
+  },
+  "expected_source_files": [
+    "crates/rescue_analyzer/src/project_discovery.rs",
+    "crates/rescue_analyzer/src/project_discovery_impl.rs"
+  ],
+  "quality_source_globs": [
+    "crates/rescue_analyzer/src/project_discovery*.rs"
+  ],
+  "guarded_source_globs": [
+    "crates/rescue_analyzer/src/**/*.rs"
+  ],
+  "forbidden_output_fields": [
+    "main_set",
+    "selected_set",
+    "resolved_asset",
+    "copy_operation",
+    "rewrite_operation"
+  ],
+  "forbidden_guarded_source_patterns": [
+    {
+      "literal": "unwrap(",
+      "label": "unwrap"
+    },
+    {
+      "literal": "expect(",
+      "label": "expect"
+    },
+    {
+      "literal": "std::fs::write",
+      "label": "write"
+    },
+    {
+      "literal": "std::fs::remove",
+      "label": "remove"
+    }
+  ],
+  "allowed_dependency_names": [
+    "clap",
+    "flate2",
+    "rescue_core",
+    "roxmltree",
+    "serde",
+    "serde_json",
+    "sha2",
+    "thiserror"
+  ],
+  "quality_limits": {
+    "max_source_file_lines": 260,
+    "max_function_lines": 70
+  }
+}

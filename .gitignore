@@ -2,6 +2,7 @@
 /target/
 **/.DS_Store
 *.log
+/.lavish/
 
 # Local archives and generated bundles
 /Archiwum.zip
@@ -23,6 +24,9 @@
 *.flac
 *.mp3
 *.m4a
+*.ogg
+*.aac
+*.[sS][dD]2
 
 # Temporary files
 *.tmp

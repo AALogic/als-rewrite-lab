@@ -1,8 +1,8 @@
 # Engineering Rules
 
-Status: active engineering standard  
-Engineering Rules Version: 0.1  
-Date: 2026-06-09  
+Status: active engineering standard
+Engineering Rules Version: 0.1
+Date: 2026-07-27
 Applies to: all implementation modules from `002-dependency-extractor` onward
 
 ## 1. Purpose
@@ -128,8 +128,8 @@ Example:
 ```text
 ALSReader reads ALS and returns ALSReadModel.
 DependencyExtractor normalizes active audio references.
-PathVerifier checks whether paths exist.
-SampleMatcher proposes matches.
+PathObservation records path candidates without selecting identity.
+AssetResolution ranks candidates and applies explicit selection policy.
 PackagePlanner decides copy/rewrite plans.
 ALSRewriter rewrites supported ALS references in copies.
 ```
@@ -385,7 +385,7 @@ MUST: Dependencies should point inward toward domain models and explicit
 MUST: UI must not rewrite ALS directly.
 MUST: ALSRewriter must not decide what should be copied.
 MUST: PackagePlanner must not perform the copy.
-MUST: CopyStager must not rewrite ALS.
+MUST: StagingExecutor must not rewrite ALS.
 ```
 
 Layer intent:

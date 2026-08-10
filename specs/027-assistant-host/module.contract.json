@@ -1,0 +1,73 @@
+{
+  "id": "027-assistant-host",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
+  },
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["AssistantPresentationModel v0.3", "presentation host", "stacked Folder and Play blocks", "parcel-only outbound interaction surface", "integrated held-payload visual", "outside module scope"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "hidden_uncertainty_gate": true,
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: AssistantHost is a presentation host, not a plugin runtime",
+    "DOCUMENTED_ONLY: presentation projects queue work and payload as separate facts",
+    "REVIEW_ONLY: AssistantHost owns no Tauri effects or capability policy",
+    "REVIEW_ONLY: module 018 and QuickCopy copy behavior remain unchanged",
+    "REVIEW_ONLY: licensing, provider catalogs and multiple characters stay outside scope",
+    "REVIEW_ONLY: AssistantHost owns no queue settings browser delivery or filesystem effect",
+    "REVIEW_ONLY: courier apparent scale remains stable outside working perspective",
+    "DOCUMENTED_ONLY: the held parcel is part of the character sprite strip",
+    "REVIEW_ONLY: the payload surface is invisible interaction geometry only",
+    "FRONTEND_TEST: ready_character_and_parcel_share_one_sprite",
+    "FRONTEND_TEST: native_drag_switches_to_empty_hands_without_duplicate_parcel",
+    "FRONTEND_TEST: cancelled_and_failed_drag_restore_integrated_parcel",
+    "FRONTEND_TEST: courier_canvas_scale_remains_stable_across_payload_states"
+  ],
+  "required_tests": [],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "subset",
+  "public_contract": {},
+  "expected_source_files": [
+    "apps/rescue-desktop/src/assistant/AssistantHost.tsx",
+    "apps/rescue-desktop/src/assistant/contracts.ts",
+    "apps/rescue-desktop/src/quick/quickCopyPresenter.ts",
+    "apps/rescue-desktop/src/assistant/AssistantHost.test.tsx"
+  ],
+  "dependency_manifest_paths": ["apps/rescue-desktop/package.json"],
+  "quality_source_globs": [
+    "apps/rescue-desktop/src/assistant/AssistantHost.tsx",
+    "apps/rescue-desktop/src/quick/quickCopyPresenter.ts"
+  ],
+  "guarded_source_globs": [
+    "apps/rescue-desktop/src/assistant/AssistantHost.tsx",
+    "apps/rescue-desktop/src/assistant/contracts.ts",
+    "apps/rescue-desktop/src/quick/quickCopyPresenter.ts"
+  ],
+  "forbidden_output_fields": ["final_target_root", "provider_url", "package_plan", "rewrite_operation"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "invoke(", "label": "Tauri effect"},
+    {"literal": "listen(", "label": "Tauri event effect"},
+    {"literal": "std::fs", "label": "filesystem behavior"},
+    {"literal": "rescue_rewriter", "label": "rewrite behavior"}
+  ],
+  "allowed_dependency_names": [
+    "@tauri-apps/api",
+    "@tauri-apps/plugin-dialog",
+    "@tauri-apps/plugin-opener",
+    "@types/react",
+    "@types/react-dom",
+    "@vitejs/plugin-react",
+    "lucide-react",
+    "react",
+    "react-dom",
+    "typescript",
+    "vite",
+    "vitest"
+  ],
+  "quality_limits": {"max_source_file_lines": 220, "max_function_lines": 65}
+}

@@ -1,0 +1,15 @@
+{"window_main":false,"window_level":3,"collection_behavior":262481,"elapsed_ms":67,"app_active":false,"window_class":"NSWindow","on_active_space":true,"sequence":1,"ignores_mouse_events":false,"window_visible":true,"stage":"probe_started","window_key":false,"schema_version":"0.1"}
+{"schema_version":"0.1","y":186,"source_operation_mask":55,"elapsed_ms":14847,"sequence":2,"stage":"dragging_entered","x":15}
+{"y":167,"stage":"prepare_for_drag_operation","sequence":3,"schema_version":"0.1","source_operation_mask":55,"x":40,"elapsed_ms":15289}
+{"schema_version":"0.1","stage":"perform_drag_operation","file_count":1,"x":40,"source_operation_mask":55,"sequence":4,"elapsed_ms":15291,"y":167}
+{"schema_version":"0.1","elapsed_ms":15297,"stage":"conclude_drag_operation","sequence":5}
+{"window_level":3,"window_visible":true,"sequence":6,"schema_version":"0.1","window_class":"NSWindow","window_key":false,"elapsed_ms":15312,"window_main":false,"on_active_space":true,"collection_behavior":262481,"ignores_mouse_events":false,"stage":"workspace_application_activated","app_active":false}
+{"schema_version":"0.1","elapsed_ms":15816,"window_visible":true,"on_active_space":true,"window_class":"NSWindow","app_active":false,"stage":"active_space_changed","window_key":false,"ignores_mouse_events":false,"collection_behavior":262481,"window_main":false,"window_level":3,"sequence":7}
+{"window_level":3,"window_visible":true,"sequence":8,"schema_version":"0.1","window_class":"NSWindow","window_key":false,"elapsed_ms":17396,"window_main":false,"on_active_space":true,"collection_behavior":262481,"ignores_mouse_events":false,"stage":"workspace_application_activated","app_active":false}
+{"window_level":3,"window_visible":true,"sequence":9,"schema_version":"0.1","window_class":"NSWindow","window_key":false,"elapsed_ms":17913,"window_main":false,"on_active_space":true,"collection_behavior":262481,"ignores_mouse_events":false,"stage":"active_space_changed","app_active":false}
+{"source_operation_mask":55,"x":15,"elapsed_ms":21515,"schema_version":"0.1","stage":"dragging_entered","sequence":10,"y":186}
+{"elapsed_ms":21968,"y":167,"sequence":11,"x":40,"source_operation_mask":55,"stage":"prepare_for_drag_operation","schema_version":"0.1"}
+{"file_count":1,"stage":"perform_drag_operation","x":40,"sequence":12,"y":167,"elapsed_ms":21970,"source_operation_mask":55,"schema_version":"0.1"}
+{"elapsed_ms":21973,"sequence":13,"stage":"conclude_drag_operation","schema_version":"0.1"}
+{"schema_version":"0.1","elapsed_ms":63687,"window_visible":true,"on_active_space":true,"window_class":"NSWindow","app_active":false,"stage":"workspace_application_activated","window_key":false,"ignores_mouse_events":false,"collection_behavior":262481,"window_main":false,"window_level":3,"sequence":14}
+{"schema_version":"0.1","elapsed_ms":64467,"window_visible":true,"on_active_space":true,"window_class":"NSWindow","app_active":false,"stage":"active_space_changed","window_key":false,"ignores_mouse_events":false,"collection_behavior":262481,"window_main":false,"window_level":3,"sequence":15}

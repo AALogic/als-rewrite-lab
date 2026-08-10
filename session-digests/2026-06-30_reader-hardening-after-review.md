@@ -94,5 +94,5 @@ cargo clippy --workspace --all-targets -- -D warnings
 python3 tools/workflow_guard.py verify-module 001-als-reader
 python3 tools/workflow_guard.py verify-module 002-dependency-extractor
 CLI smoke:
-  cargo run -q -p rescue-cli -- extract tests/fixtures/als/kombinacja_piejo.als --json
+  cargo run -q -p rescue-cli -- extract tests/fixtures/als/private_fixture_002_external_refs.als --json
 ```

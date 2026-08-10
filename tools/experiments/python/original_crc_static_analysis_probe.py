@@ -28,8 +28,6 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[3]
-DATASET_DIR = ROOT / "experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced"
-DEFAULT_OUTPUT_DIR = DATASET_DIR / "static_analysis_probe"
 C_HELPER_SOURCE = ROOT / "tools/experiments/c/original_crc_fast_probe.c"
 
 
@@ -371,13 +369,15 @@ def grouped_rows_by_key(samples: list[dict[str, Any]], key_name: str) -> list[di
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset-dir", type=Path, default=DATASET_DIR)
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--dataset-dir", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
     dataset_dir = args.dataset_dir if args.dataset_dir.is_absolute() else ROOT / args.dataset_dir
-    output_dir = args.output_dir if args.output_dir.is_absolute() else ROOT / args.output_dir
+    output_dir = args.output_dir or dataset_dir / "static_analysis_probe"
+    if not output_dir.is_absolute():
+        output_dir = ROOT / output_dir
     if output_dir.exists():
         if not args.overwrite:
             raise SystemExit(f"Output directory already exists: {output_dir}")
@@ -586,8 +586,8 @@ def main() -> int:
     report = {
         "status": "completed",
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "dataset_dir": str(dataset_dir.relative_to(ROOT)),
-        "output_dir": str(output_dir.relative_to(ROOT)),
+        "dataset_dir": str(dataset_dir),
+        "output_dir": str(output_dir),
         "tooling": {
             "afinfo": shutil.which("afinfo"),
             "afconvert": shutil.which("afconvert"),

@@ -1,0 +1,62 @@
+{
+  "id": "016-desktop-application",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
+  },
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["DesktopAnalyzeRequest v0.1", "DesktopAnalyzeResult v0.1", "DesktopDiagnosticReport v0.3", "PreflightReport v0.2", "source category", "management class", "portability status", "analysis_complete", "analysis_failed"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: Desktop Alpha is local-only and one-project-at-a-time",
+    "REVIEW_ONLY: service contains no ALS parsing, matching, copy or rewrite policy",
+    "REVIEW_ONLY: UI and CLI depend on the service rather than domain internals for preflight",
+    "ENFORCED_BY_TEST: valid_project_returns_desktop_preflight",
+    "ENFORCED_BY_TEST: diagnostic_report_omits_private_names_and_paths",
+    "ENFORCED_BY_TEST: missing_als_returns_structured_failure",
+    "ENFORCED_BY_TEST: desktop_analysis_is_read_only",
+    "ENFORCED_BY_TEST: desktop_analysis_is_deterministic",
+    "ENFORCED_BY_TEST: diagnostic_preserves_system_dependency_classification",
+    "ENFORCED_BY_TEST: desktop_ipc_wire_contract_is_stable",
+    "ENFORCED_BY_TYPE: DesktopAnalyzeRequest",
+    "ENFORCED_BY_TYPE: DesktopAnalyzeResult",
+    "ENFORCED_BY_TYPE: DesktopDiagnosticReport",
+    "ENFORCED_BY_TYPE: DiagnosticRequirement",
+    "ENFORCED_BY_TYPE: DesktopApplicationError"
+  ],
+  "required_tests": ["valid_project_returns_desktop_preflight", "diagnostic_report_omits_private_names_and_paths", "missing_als_returns_structured_failure", "desktop_analysis_is_read_only", "desktop_analysis_is_deterministic", "diagnostic_preserves_system_dependency_classification", "desktop_ipc_wire_contract_is_stable"],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "DesktopAnalyzeRequest": ["request_id", "source_als_path"],
+    "DesktopAnalyzeResult": ["service_version", "request_id", "run_status", "preflight_report", "diagnostic_report", "errors"],
+    "DesktopDiagnosticReport": ["diagnostic_schema_version", "request_id", "service_version", "build_commit", "host_os", "host_arch", "run_status", "elapsed_ms", "source_als_sha256", "summary", "requirements", "rewrite_compatibility", "error_codes"],
+    "DiagnosticRequirement": ["required_asset_id", "occurrence_count", "source_category", "management_class", "portability_status", "availability_status", "resolution_status", "risk_flags"],
+    "DesktopApplicationError": ["error_code", "stage", "message"]
+  },
+  "expected_source_files": ["crates/rescue_application/src/lib.rs", "crates/rescue_application/src/desktop_analysis.rs", "crates/rescue_application/src/desktop_diagnostic.rs"],
+  "quality_source_globs": [
+    "crates/rescue_application/src/lib.rs",
+    "crates/rescue_application/src/desktop_analysis.rs",
+    "crates/rescue_application/src/desktop_diagnostic.rs"
+  ],
+  "guarded_source_globs": [
+    "crates/rescue_application/src/lib.rs",
+    "crates/rescue_application/src/desktop_analysis.rs",
+    "crates/rescue_application/src/desktop_diagnostic.rs"
+  ],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "std::fs::write", "label": "filesystem write"},
+    {"literal": "remove_file", "label": "file deletion"},
+    {"literal": "remove_dir", "label": "directory deletion"},
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"}
+  ],
+  "allowed_dependency_names": ["rescue_analyzer", "rescue_catalog", "rescue_core", "rescue_pipeline", "serde", "serde_json", "flate2", "sha2", "tempfile"],
+  "quality_limits": {"max_source_file_lines": 260, "max_function_lines": 75}
+}

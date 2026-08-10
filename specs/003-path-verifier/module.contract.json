@@ -1,6 +1,6 @@
 {
   "id": "003-path-verifier",
-  "status": "blocked_pending_evidence",
+  "status": "ready",
   "pilot": true,
   "guard_version": "0.2",
   "engineering_rules": {
@@ -56,8 +56,7 @@
     "Gate Status: UNKNOWN",
     "Gate Status: AMBIGUOUS",
     "Gate Status: CONFLICTING",
-    "Known Unknown: blocking",
-    "BLOCKING_UNKNOWN"
+    "Known Unknown: blocking"
   ],
   "hidden_uncertainty_gate": true,
   "hidden_uncertainty_phrases": [
@@ -77,6 +76,8 @@
     "DOCUMENTED_ONLY: synthetic cross-platform fixture matrix is accepted",
     "ENFORCED_BY_GUARD: blocking markers removed only after evidence review",
     "ENFORCED_BY_TEST: confirmed_project_root_produces_relative_candidate",
+    "ENFORCED_BY_TEST: relative_path_type_zero_uses_raw_path",
+    "ENFORCED_BY_TEST: type_one_and_five_relative_paths_are_not_project_joined",
     "ENFORCED_BY_TEST: absent_project_root_produces_no_relative_candidate",
     "ENFORCED_BY_TEST: both_safe_candidates_are_preserved_without_selection",
     "ENFORCED_BY_TEST: existing_regular_file_is_observed_without_identity_claim",
@@ -115,6 +116,8 @@
   ],
   "required_tests": [
     "confirmed_project_root_produces_relative_candidate",
+    "relative_path_type_zero_uses_raw_path",
+    "type_one_and_five_relative_paths_are_not_project_joined",
     "absent_project_root_produces_no_relative_candidate",
     "both_safe_candidates_are_preserved_without_selection",
     "existing_regular_file_is_observed_without_identity_claim",

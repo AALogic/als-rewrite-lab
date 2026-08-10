@@ -1,7 +1,7 @@
 # Product Backlog
 
-Status: working backlog  
-Date: 2026-06-08
+Status: working backlog
+Date: 2026-07-27
 
 ## 1. Cel
 
@@ -18,35 +18,23 @@ tematy researchowe
 rzeczy odlozone poza MVP
 ```
 
-## 2. Teraz
+## 2. Aktualna Kolejnosc
 
-Rzeczy najblizsze pracy:
+`CURRENT_STATE.md` jest jedynym wlascicielem aktualnego stanu, blockerow i
+nastepnego kroku. Ten backlog ich nie kopiuje.
 
-```text
-ALSReader Contract Review through PRODUCT_SPINE.md
-Use ALS Structure Corpus 20 as review evidence
-Decision: diagnostic JSON vs downstream contract
-Update Spec 001 / fixture-contract if output is too narrow
-Then choose: automated CLI smoke test or specs/002-project-analyzer
-```
+## 3. Kandydaci Na Pozniej
 
-## 3. Nastepne
-
-Rzeczy po pierwszym readerze:
-
-```text
-ProjectAnalyzer
-source_category / storage_state
-preflight report
-basic package planner
-```
+Pozycje w tym pliku sa kandydatami, a nie aktywna kolejnoscia implementacji.
+Promocja do biezacej pracy wymaga aktualizacji `CURRENT_STATE.md` i aktywnej
+specyfikacji modulu.
 
 ## 4. Pozniej
 
 Rzeczy wazne, ale nie na MVP:
 
 ```text
-Tauri desktop UI
+fine-grained desktop progress, cancellation and recovery
 SQLite asset index
 redirect ledger
 multi-project scan
@@ -68,6 +56,192 @@ RelativePathType 0 may represent project-relative paths stored directly in Path.
 ALSReader may need two layers: raw/internal dependency model and diagnostic JSON.
 ALSReader may need to preserve xml_context / usage_context for downstream modules.
 ```
+
+## 5A. Local Project And File Dependency Catalog
+
+Classification:
+
+```text
+Later product capability
+Build after multi-project discovery and the persistent local asset index
+Not part of the current one-project MVP
+```
+
+Product idea:
+
+```text
+Give the user a local CMDB-like view of Ableton projects, Live Set versions,
+audio files and the relationships between them.
+
+The user should be able to start from either side:
+
+project -> all files and system dependencies used by that project
+file -> every project and Set snapshot that references that file
+```
+
+Questions the capability should answer:
+
+```text
+Which projects use this sample?
+How many Set versions depend on it?
+Where are all known occurrences of the same content?
+What projects are at risk if this path disappears or the file is moved?
+Is a relationship current, historical, missing, ambiguous or only inferred?
+Which files appear unreferenced within the latest complete scan evidence?
+```
+
+Expected views:
+
+```text
+searchable project list
+searchable file/content list
+project detail with dependency table
+file detail with reverse project references
+interactive relationship graph for exploration
+impact preview before a future move, cleanup or library reorganization
+```
+
+The graph is a presentation and query capability, not a reason to introduce a
+graph database now. SQLite join tables should be sufficient for the expected
+many-to-many relationships. The domain model should distinguish at least:
+
+```text
+ProjectWork
+LiveSet
+SetSnapshot
+ReferenceOccurrence
+RequiredAsset
+FileOccurrence
+ContentRecord
+Volume
+ScanRun
+```
+
+Every relationship must retain evidence and freshness, including the source
+ALS snapshot, observation time, scan coverage and current/historical status.
+Partial or stale scans must be visible to the user and must never authorize a
+destructive cleanup. This catalog remains local-only and read-only until a
+separate planned operation explicitly requests a move, relink or cleanup.
+
+Likely implementation order:
+
+```text
+multi-project discovery
+-> versioned Set snapshots
+-> persistent incremental file index
+-> relationship builder and reverse-reference queries
+-> table/search UI
+-> graph visualization
+-> impact analysis for future move/cleanup workflows
+```
+
+## 5B. Live Set Version Families And Semantic Diff
+
+Classification:
+
+```text
+Later product capability
+Build after lightweight multi-project discovery and versioned Set snapshots
+Not part of the current project scanner or batch-copy MVP
+```
+
+Product idea:
+
+```text
+Group ALS snapshots that are confirmed or likely to be versions of the same
+musical work. Show a simple timeline or family view and let the user compare
+two selected versions using a semantic, producer-friendly diff.
+```
+
+The product must distinguish:
+
+```text
+confirmed relationship
+  official Ableton Backup sequence, explicit user confirmation, or a change
+  directly observed and recorded by this application
+
+probable relationship
+  multiple independent similarity signals support the same Set family
+
+unknown relationship
+  evidence is insufficient or conflicting
+```
+
+Static ALS research on 2026-08-03 did not find a reliable embedded parent or
+project-lineage identifier. In the local corpus:
+
+```text
+Revision was shared by hundreds of unrelated ALS files created by the same
+Ableton build and must be treated as build metadata, not project identity.
+
+OverwriteProtectionNumber was also massively reused and must not be treated as
+project identity or inheritance evidence.
+```
+
+Candidate evidence for probable families may include:
+
+```text
+same confirmed Ableton Project Folder
+normalized Set-name similarity
+official Backup filename stem and embedded timestamp
+filesystem chronology, with copy/move caveats
+overlap of referenced sample paths or names
+overlap of track, clip, device and pointee identifiers
+track names and structural layout
+plugin/device-chain similarity
+tempo, scenes, locators and arrangement characteristics
+Ableton creator/document compatibility
+```
+
+No single similarity signal may silently create a confirmed parent-child edge.
+Templates can preserve object IDs, track layouts and devices across unrelated
+songs. Same-folder placement is also evidence, not proof. The relationship
+record should retain every supporting and conflicting observation, confidence,
+ruleset version and any user confirmation.
+
+Preferred presentation:
+
+```text
+confirmed Ableton backups -> chronological history
+probable Save As variants -> probable family/timeline
+uncertain ordering -> flat family ordered by observed time, without fake arrows
+```
+
+The diff should be semantic rather than a raw XML diff. Candidate user-facing
+changes include:
+
+```text
+tempo and Ableton version changes
+tracks, scenes and locators added or removed
+track renames and structural changes
+clips added, removed or materially changed
+sample dependencies added, removed or made missing
+plugins and devices added, removed or changed
+project completeness changes
+```
+
+Likely future module boundaries:
+
+```text
+SetFingerprintExtractor
+  produces a versioned, normalized structural fingerprint for one ALS snapshot
+
+VersionRelationshipAnalyzer
+  ranks family and chronology hypotheses while preserving evidence status
+
+SemanticSetDiffer
+  compares two snapshots and returns producer-facing changes
+```
+
+Do not enlarge ALSReader into a version-history engine. Fingerprints and diffs
+should be computed lazily when project details are opened or as background
+catalog work, then cached by ALS snapshot hash and extractor version. This does
+not require hashing referenced audio files.
+
+Domain evidence to retain:
+
+- [Ableton: Backup Sets](https://help.ableton.com/hc/en-us/articles/360000377870-Backup-Sets)
+- [Ableton: Saving Projects](https://help.ableton.com/hc/en-us/articles/115000915804-Saving-Projects)
 
 ## 6. Ryzyka
 
@@ -114,34 +288,30 @@ Deferred until the right module boundary:
 Enum migration:
   Replace decision/status strings with Rust enums gradually.
   First candidates: PathBasis, ExtractionStatus, EvidenceStatus, Severity.
-  Suggested timing: start in 003 PathVerifier and migrate 001/002 only when
-  it does not disrupt the active module.
+  Reassess only inside an active module; do not retrofit 001/002 merely to
+  satisfy this backlog note.
 
 Activity status:
   active_audio_references currently means SampleRef/FileRef extracted from
   reader scope with usage_context unknown.
-  Before ALS rewrite, add activity_status or rename semantics if tests show
-  SampleRef can represent unsupported/non-active contexts.
+  Before widening ALS rewrite readiness, add activity_status or rename
+  semantics if tests show SampleRef can represent unsupported/non-active
+  contexts.
 
 Stable dependency identity:
   dep_audio_000000 is valid for the current 002 contract.
-  Before ManifestWriter or cross-run comparison, add a stable_dependency_key
-  derived from ALS hash, xml locator, raw path and supporting evidence.
+  Before promising cross-run identity, add a stable_dependency_key derived from
+  ALS hash, xml locator, raw path and supporting evidence.
 
 Parsed numeric evidence:
   Keep ALSReader raw fields as strings.
-  PathVerifier/SampleMatcher should add parsed_original_file_size and parse
-  status fields instead of repeatedly parsing raw strings independently.
+  Reassess parsed_original_file_size ownership in the active observation or
+  resolution contract instead of repeatedly parsing raw strings independently.
 
 Storage model:
   Current Rust structs are in-memory/domain/JSON models.
   A future SQLite schema must not treat storage IDs as domain IDs.
 
-PathVerifier implementation:
-  specs/003-path-verifier is prepared, but core verification code is not yet
-  implemented.
-  Next coding step should run workflow_guard module-ready 003-path-verifier,
-  then implement only read-only path existence and size evidence checks.
 ```
 
 ## 6B. Deferred Workflow Recommendations From Architecture Review
@@ -149,71 +319,28 @@ PathVerifier implementation:
 Status:
 
 ```text
-accepted as direction, not implemented now
+remaining deferred recommendations
 ```
 
 Deferred until the matching module boundary:
 
 ```text
-PreflightReport:
-  Add after PathVerifier and before first package/rewrite UX.
-  Purpose: user-facing ready/missing/blocked summary.
-
-Trusted write types:
-  Add before CopyStager / ALSRewriter.
-  Purpose: make it hard in code to write without PackagePlan.
-
-Manifest schema:
-  Add before first generated portable project is accepted as successful.
-  Purpose: record old path, new path, evidence, rule versions and decisions.
-
-Atomic write policy:
-  Add before ALSRewriter.
-  Purpose: write temp ALS, validate gzip/XML/semantic diff, then promote.
-
 cargo-deny / dependency policy:
   Add after repository structure is tracked cleanly in Git.
   Purpose: license/advisory/supply-chain checks in CI.
 
-CI:
-  Add when the repo is ready to be pushed or shared.
-  Required checks: fmt, check, test, clippy, workflow_guard for active modules.
-
 SQLite index:
   Add only when AssetIndexer needs persistent reuse across runs.
 
-Tauri desktop UI:
-  Add after core pipeline can produce trustworthy preflight/package plans.
+Desktop distribution:
+  Add signing, notarization and release provenance after the manual runtime gate.
 ```
 
 ## 6C. Agent Workflow Readiness
 
-Status:
-
-```text
-tooling pilot passed on a separate private synthetic repository
-product repository is not yet connected to remote CI or Firstmate coding
-```
-
-Confirmed on 2026-07-26:
-
-```text
-No-Mistakes can detect and repair a contract violation missed by author tests.
-Firstmate can dispatch a read-only Codex scout through Treehouse and Herdr,
-preserve a durable report and clean up the isolated worktree.
-A clean clone of this product repository compiles but cargo test fails 8
-ALSReader fixture tests because private ignored ALS files are unavailable.
-```
-
-Required before delegated product coding or remote CI:
-
-```text
-Generate small synthetic gzip/XML ALS fixtures for core parser behavior.
-Keep real user projects and the 20-file corpus outside Git.
-Make cargo test --workspace --locked pass in a clean clone.
-Run workflow guards in that clean clone.
-Only then register the product with Firstmate or configure a GitHub remote.
-```
+Live repository, gate, and CI readiness belongs to `CURRENT_STATE.md`,
+`README.md`, and `.github/workflows/quality.yml`. This backlog does not mirror
+that state.
 
 Operating recommendation:
 
@@ -227,7 +354,7 @@ repays its larger time and token cost.
 ## 7. Research Evidence To Reuse
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/
+<private-corpus-root>/
   20 copied ALS files
   findings.md
   structure_report.md
@@ -393,4 +520,67 @@ Create small Live Sets using:
   one Max for Live device
 Run Collect All and Save.
 Compare project folder contents and ALS FileRef/device references before/after.
+```
+
+### ALP Inspection And Optional Export Research
+
+Status:
+
+```text
+Later / Research
+Not part of the current MVP
+No ALP writer implementation approved
+```
+
+Purpose:
+
+```text
+Investigate Ableton Live Pack (.alp) as an optional transport/archive format
+after Rescue has already created and validated a self-contained Ableton Project.
+Potential future value includes read-only Pack inspection, Pack dependency
+reporting and an optional final export or Live-assisted handoff.
+```
+
+Known evidence:
+
+```text
+.alp is an undocumented proprietary binary container, not a renamed ZIP.
+Observed official Pack structure includes a pl-a header, FolderConfigData,
+concatenated payload data and a trailing serialized file/directory index with
+offsets, sizes, names, versions and package metadata.
+Official licensed Packs may contain .eflac / Encrypted FLAC assets and must not
+be treated as equivalent to user-created project Packs without experiments.
+```
+
+Guardrails:
+
+```text
+Rescue continues to produce a normal validated Ableton Project folder.
+Do not make ALP generation a requirement for portable project creation.
+Do not implement licensed Pack decryption, authorization bypass or repackaging.
+Do not write ALP until a read-only parser, version matrix and round-trip corpus
+have established the supported user-created Pack format.
+Prefer Ableton Live's own Create Pack operation when Live-assisted export is
+sufficient.
+```
+
+Required experiments:
+
+```text
+1. Create minimal user-owned Projects and Packs in available Live 10/11/12 versions.
+2. Vary one input at a time: ALS, WAV, AIF, preset, ASD and nested directories.
+3. Compare Pack headers, payloads, trailing indexes and version metadata.
+4. Unpack each Pack through Live and compare restored files with source hashes.
+5. Separate user-created Pack behavior from official licensed Pack behavior.
+6. Build a bounded read-only ALP inspector before considering extraction or writing.
+7. Validate every experimental writer output by installing it in matching Live versions.
+```
+
+Promotion gate:
+
+```text
+Return to this topic only after the normal Project-folder package flow is stable
+and there is a concrete product need for ALP inspection or one-file export.
+Any writer requires a dedicated module spec, security limits for archive input,
+cross-version fixtures and manual Ableton round-trip verification.
 ```

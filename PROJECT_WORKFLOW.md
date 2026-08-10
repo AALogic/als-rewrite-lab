@@ -1,8 +1,12 @@
 # Project Workflow
 
-Status: practical working protocol  
+Status: historical workflow reference; superseded by `AGENTS.md`
 Date: 2026-05-31  
 Scope: how to move from conversations and experiments to specs and code without chaos
+
+> Use `CURRENT_STATE.md` for the present task, module contracts for executable
+> gates, and `ENGINEERING_RULES.md` for implementation quality. This file is
+> retained as background and does not define the current build order.
 
 ## 1. Najprostsza zasada
 

@@ -1,35 +1,16 @@
-use flate2::write::GzEncoder;
-use flate2::Compression;
+mod support;
+
 use rescue_core::{analyze_als, ALSError, ALSReadModel, MAX_COMPRESSED_ALS_BYTES};
 use std::collections::BTreeMap;
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+
+use support::{gzip_als, raw_als, synthetic_als};
 
 fn fixture_path(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../tests/fixtures")
         .join(name)
-}
-
-fn corpus_copy_path(name: &str) -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../experiments/2026-06-02_als_structure_corpus_20/copies")
-        .join(name)
-}
-
-fn write_temp_gzip(name: &str, body: &str) -> PathBuf {
-    let unique = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let path = std::env::temp_dir().join(format!("{name}_{unique}.als"));
-    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
-    encoder.write_all(body.as_bytes()).unwrap();
-    let bytes = encoder.finish().unwrap();
-    fs::write(&path, bytes).unwrap();
-    path
 }
 
 fn minimal_ableton_with_file_ref(path: &str, relative_path: &str) -> String {
@@ -72,6 +53,50 @@ fn minimal_ableton_with_historical_and_non_audio_refs() -> &'static str {
 </Ableton>"#
 }
 
+fn live_11_3_audio_clip_with_file_ref() -> &'static str {
+    r#"<Ableton MajorVersion="5" MinorVersion="11.0_11300" SchemaChangeCount="7" Creator="Ableton Live 11.3.43">
+  <LiveSet>
+    <AudioClip>
+      <SampleRef>
+        <FileRef>
+          <Path Value="/external/kick.wav" />
+          <RelativePath Value="../kick.wav" />
+          <RelativePathType Value="1" />
+          <Type Value="2" />
+          <OriginalFileSize Value="123" />
+          <OriginalCrc Value="456" />
+        </FileRef>
+        <DefaultDuration Value="44.1" />
+        <DefaultSampleRate Value="44100" />
+      </SampleRef>
+    </AudioClip>
+  </LiveSet>
+</Ableton>"#
+}
+
+fn live_11_3_type3_reference(parent: &str, relative_path: &str) -> String {
+    format!(
+        r#"<Ableton MajorVersion="5" MinorVersion="11.0_11300" SchemaChangeCount="7" Creator="Ableton Live 11.3.43">
+  <LiveSet>
+    <{parent}>
+      <SampleRef>
+        <FileRef>
+          <Path Value="/old/Project/{relative_path}" />
+          <RelativePath Value="{relative_path}" />
+          <RelativePathType Value="3" />
+          <Type Value="2" />
+          <OriginalFileSize Value="123" />
+          <OriginalCrc Value="456" />
+        </FileRef>
+        <DefaultDuration Value="44.1" />
+        <DefaultSampleRate Value="44100" />
+      </SampleRef>
+    </{parent}>
+  </LiveSet>
+</Ableton>"#
+    )
+}
+
 fn relative_path_type_counts(model: &ALSReadModel) -> BTreeMap<String, usize> {
     let mut counts = BTreeMap::new();
 
@@ -88,14 +113,15 @@ fn relative_path_type_counts(model: &ALSReadModel) -> BTreeMap<String, usize> {
 
 #[test]
 fn valid_als_returns_read_model_json() {
-    let model = analyze_als(fixture_path("als/cziki_before_cas.als")).unwrap();
+    let fixture = synthetic_als("valid_read_model", &["1", "1", "5", "5"], 2);
+    let model = analyze_als(fixture.path()).unwrap();
 
     assert_eq!(model.set_metadata.als_read_model_version, "0.2");
-    assert_eq!(model.set_metadata.sample_ref_count, 153);
-    assert_eq!(model.set_metadata.active_audio_ref_count, 153);
-    assert_eq!(model.active_audio_references.len(), 153);
-    assert_eq!(model.set_metadata.historical_ref_count, 71);
-    assert_eq!(model.historical_refs.len(), 71);
+    assert_eq!(model.set_metadata.sample_ref_count, 4);
+    assert_eq!(model.set_metadata.active_audio_ref_count, 4);
+    assert_eq!(model.active_audio_references.len(), 4);
+    assert_eq!(model.set_metadata.historical_ref_count, 2);
+    assert_eq!(model.historical_refs.len(), 2);
 
     let json = serde_json::to_value(&model).unwrap();
     assert!(json.get("set_metadata").is_some());
@@ -108,7 +134,8 @@ fn valid_als_returns_read_model_json() {
 
 #[test]
 fn active_refs_are_not_historical_refs() {
-    let template = analyze_als(fixture_path("als/template_zero_active.als")).unwrap();
+    let template_fixture = synthetic_als("zero_active", &[], 6);
+    let template = analyze_als(template_fixture.path()).unwrap();
 
     assert_eq!(template.set_metadata.sample_ref_count, 0);
     assert_eq!(template.set_metadata.active_audio_ref_count, 0);
@@ -120,33 +147,37 @@ fn active_refs_are_not_historical_refs() {
         .iter()
         .all(|historical_ref| historical_ref.usage_note == "historical_provenance"));
 
-    let cziki = analyze_als(fixture_path("als/cziki_before_cas.als")).unwrap();
+    let active_fixture = synthetic_als("active_and_historical", &["1", "1", "5", "5"], 2);
+    let active = analyze_als(active_fixture.path()).unwrap();
 
-    assert_eq!(cziki.set_metadata.sample_ref_count, 153);
-    assert_eq!(cziki.set_metadata.active_audio_ref_count, 153);
-    assert_eq!(cziki.active_audio_references.len(), 153);
-    assert_eq!(cziki.set_metadata.historical_ref_count, 71);
-    assert_eq!(cziki.historical_refs.len(), 71);
+    assert_eq!(active.set_metadata.sample_ref_count, 4);
+    assert_eq!(active.set_metadata.active_audio_ref_count, 4);
+    assert_eq!(active.active_audio_references.len(), 4);
+    assert_eq!(active.set_metadata.historical_ref_count, 2);
+    assert_eq!(active.historical_refs.len(), 2);
 }
 
 #[test]
 fn relative_path_type_is_captured_raw() {
-    let before = analyze_als(fixture_path("als/cziki_before_cas.als")).unwrap();
-    let after = analyze_als(fixture_path("als/cziki_after_cas.als")).unwrap();
+    let before_fixture = synthetic_als("before_cas_shape", &["1", "1", "5", "5", "5"], 0);
+    let after_fixture = synthetic_als("after_cas_shape", &["3", "3", "5", "5", "5"], 0);
+    let before = analyze_als(before_fixture.path()).unwrap();
+    let after = analyze_als(after_fixture.path()).unwrap();
 
     assert_eq!(
         relative_path_type_counts(&before),
-        BTreeMap::from([("1".to_string(), 33), ("5".to_string(), 120)])
+        BTreeMap::from([("1".to_string(), 2), ("5".to_string(), 3)])
     );
     assert_eq!(
         relative_path_type_counts(&after),
-        BTreeMap::from([("3".to_string(), 33), ("5".to_string(), 120)])
+        BTreeMap::from([("3".to_string(), 2), ("5".to_string(), 3)])
     );
 }
 
 #[test]
 fn als_reader_v0_2_does_not_check_filesystem_paths() {
-    let model = analyze_als(fixture_path("als/kombinacja_piejo.als")).unwrap();
+    let fixture = synthetic_als("no_filesystem_check", &["1"], 0);
+    let model = analyze_als(fixture.path()).unwrap();
     let json = serde_json::to_value(&model).unwrap();
 
     assert!(json
@@ -164,7 +195,8 @@ fn als_reader_v0_2_does_not_check_filesystem_paths() {
 
 #[test]
 fn active_audio_refs_preserve_rewrite_relevant_fields() {
-    let model = analyze_als(fixture_path("als/kombinacja_piejo.als")).unwrap();
+    let fixture = synthetic_als("rewrite_fields", &["1"], 0);
+    let model = analyze_als(fixture.path()).unwrap();
     let first = model
         .active_audio_references
         .first()
@@ -180,27 +212,88 @@ fn active_audio_refs_preserve_rewrite_relevant_fields() {
 }
 
 #[test]
+fn live_11_3_audio_clip_reference_is_supported_for_laboratory_rewrite() {
+    let fixture = gzip_als("live_11_3_audio_clip", live_11_3_audio_clip_with_file_ref());
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert_eq!(reference.usage_context, "audio_clip");
+    assert!(reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "supported");
+}
+
+#[test]
+fn live_11_3_project_local_type3_reference_is_supported_for_path_only_rewrite() {
+    let xml = live_11_3_type3_reference("AudioClip", "Samples/Recorded/kick.wav");
+    let fixture = gzip_als("live_11_3_project_local_type3", &xml);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert_eq!(reference.usage_context, "audio_clip");
+    assert!(reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "supported");
+}
+
+#[test]
+fn live_11_3_multisample_type3_reference_is_supported_for_path_only_rewrite() {
+    let xml = live_11_3_type3_reference("MultiSamplePart", "Samples/Recorded/kick.wav");
+    let fixture = gzip_als("live_11_3_multisample_type3", &xml);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert_eq!(reference.usage_context, "simpler_multisample");
+    assert!(reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "supported");
+}
+
+#[test]
+fn unsafe_project_local_relative_path_requires_test() {
+    let xml = live_11_3_type3_reference("AudioClip", "Samples/../outside.wav");
+    let fixture = gzip_als("live_11_3_unsafe_project_local", &xml);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert!(!reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "requires_test");
+}
+
+#[test]
+fn unknown_or_unsupported_context_is_not_a_rewrite_candidate() {
+    let xml = minimal_ableton_with_file_ref("/external/kick.wav", "../kick.wav")
+        .replace("MinorVersion=\"12\"", "MinorVersion=\"11.0_11300\"")
+        .replace(
+            "Creator=\"Ableton Live\"",
+            "Creator=\"Ableton Live 11.3.43\"",
+        );
+    let fixture = gzip_als("live_11_3_unknown_context", &xml);
+    let model = analyze_als(fixture.path()).expect("fixture should parse");
+    let reference = &model.active_audio_references[0];
+
+    assert_eq!(reference.usage_context, "unknown");
+    assert!(!reference.is_rewrite_candidate);
+    assert_eq!(reference.rewrite_support_status, "requires_test");
+}
+
+#[test]
 fn als_reader_does_not_infer_project_root_from_als_parent() {
-    let path = write_temp_gzip(
+    let fixture = gzip_als(
         "project_root_not_inferred",
         &minimal_ableton_with_file_ref("/Samples/Kick.wav", "Samples/Kick.wav"),
     );
-    let model = analyze_als(&path).unwrap();
+    let model = analyze_als(fixture.path()).unwrap();
 
-    let _ = fs::remove_file(path);
-    assert_eq!(model.set_metadata.reader_version, "0.2.2");
+    assert_eq!(model.set_metadata.reader_version, "0.2.4");
     assert_eq!(model.set_metadata.source_project_root, None);
 }
 
 #[test]
 fn xml_context_does_not_duplicate_the_observed_element() {
-    let path = write_temp_gzip(
+    let fixture = gzip_als(
         "xml_context_without_duplicate",
         minimal_ableton_with_historical_and_non_audio_refs(),
     );
-    let model = analyze_als(&path).unwrap();
+    let model = analyze_als(fixture.path()).unwrap();
 
-    let _ = fs::remove_file(path);
     assert_eq!(
         model.historical_refs[0].xml_context,
         "Ableton/LiveSet/SourceContext/OriginalFileRef"
@@ -219,31 +312,29 @@ fn xml_context_does_not_duplicate_the_observed_element() {
 
 #[test]
 fn filename_from_handles_windows_backslashes_on_macos() {
-    let path = write_temp_gzip(
+    let fixture = gzip_als(
         "windows_backslash_path",
-        &minimal_ableton_with_file_ref(r"C:\Users\Bartosz\Samples\kick.wav", ""),
+        &minimal_ableton_with_file_ref(r"C:\Users\fixture\Samples\kick.wav", ""),
     );
-    let model = analyze_als(&path).unwrap();
+    let model = analyze_als(fixture.path()).unwrap();
 
-    let _ = fs::remove_file(path);
     let first = &model.active_audio_references[0];
     assert_eq!(first.filename.as_deref(), Some("kick.wav"));
     assert_eq!(first.extension.as_deref(), Some("wav"));
     assert_eq!(
         first.raw_path.as_deref(),
-        Some(r"C:\Users\Bartosz\Samples\kick.wav")
+        Some(r"C:\Users\fixture\Samples\kick.wav")
     );
 }
 
 #[test]
 fn filename_from_handles_windows_unc_path_on_macos() {
-    let path = write_temp_gzip(
+    let fixture = gzip_als(
         "windows_unc_path",
         &minimal_ableton_with_file_ref(r"\\NAS\Samples\snare.aif", ""),
     );
-    let model = analyze_als(&path).unwrap();
+    let model = analyze_als(fixture.path()).unwrap();
 
-    let _ = fs::remove_file(path);
     let first = &model.active_audio_references[0];
     assert_eq!(first.filename.as_deref(), Some("snare.aif"));
     assert_eq!(first.extension.as_deref(), Some("aif"));
@@ -252,13 +343,12 @@ fn filename_from_handles_windows_unc_path_on_macos() {
 
 #[test]
 fn filename_from_uses_relative_path_when_raw_path_is_empty() {
-    let path = write_temp_gzip(
+    let fixture = gzip_als(
         "empty_raw_path_with_relative_path",
         &minimal_ableton_with_file_ref("", "Samples/Recorded/kick.aiff"),
     );
-    let model = analyze_als(&path).unwrap();
+    let model = analyze_als(fixture.path()).unwrap();
 
-    let _ = fs::remove_file(path);
     let first = &model.active_audio_references[0];
     assert_eq!(first.filename.as_deref(), Some("kick.aiff"));
     assert_eq!(first.extension.as_deref(), Some("aiff"));
@@ -271,7 +361,8 @@ fn filename_from_uses_relative_path_when_raw_path_is_empty() {
 
 #[test]
 fn invalid_gzip_returns_structured_error() {
-    let error = analyze_als(fixture_path("invalid/not_gzip.als")).unwrap_err();
+    let fixture = raw_als("not_gzip", b"this is not a gzip stream");
+    let error = analyze_als(fixture.path()).unwrap_err();
 
     assert!(matches!(error, ALSError::NotGzip { .. }));
     assert_eq!(error.to_info().error_code, "ALS_NOT_GZIP");
@@ -287,49 +378,46 @@ fn missing_file_returns_structured_error() {
 
 #[test]
 fn compressed_als_size_limit_returns_structured_error() {
-    let unique = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let path = std::env::temp_dir().join(format!("too_large_compressed_{unique}.als"));
-    let file = fs::File::create(&path).unwrap();
+    let fixture = raw_als("too_large_compressed", &[]);
+    let file = fs::OpenOptions::new()
+        .write(true)
+        .open(fixture.path())
+        .unwrap();
     file.set_len(MAX_COMPRESSED_ALS_BYTES + 1).unwrap();
 
-    let error = analyze_als(&path).unwrap_err();
+    let error = analyze_als(fixture.path()).unwrap_err();
 
-    let _ = fs::remove_file(path);
     assert!(matches!(error, ALSError::CompressedTooLarge { .. }));
     assert_eq!(error.to_info().error_code, "ALS_COMPRESSED_TOO_LARGE");
 }
 
 #[test]
 fn gzip_with_invalid_xml_returns_structured_error() {
-    let path = write_temp_gzip("invalid_xml", "<Ableton><LiveSet>");
-    let error = analyze_als(&path).unwrap_err();
+    let fixture = gzip_als("invalid_xml", "<Ableton><LiveSet>");
+    let error = analyze_als(fixture.path()).unwrap_err();
 
-    let _ = fs::remove_file(path);
     assert!(matches!(error, ALSError::InvalidXml { .. }));
     assert_eq!(error.to_info().error_code, "ALS_XML_INVALID");
 }
 
 #[test]
 fn gzip_without_ableton_root_returns_structured_error() {
-    let path = write_temp_gzip("missing_ableton_root", "<NotAbleton />");
-    let error = analyze_als(&path).unwrap_err();
+    let fixture = gzip_als("missing_ableton_root", "<NotAbleton />");
+    let error = analyze_als(fixture.path()).unwrap_err();
 
-    let _ = fs::remove_file(path);
     assert!(matches!(error, ALSError::MissingAbletonRoot { .. }));
     assert_eq!(error.to_info().error_code, "ALS_UNSUPPORTED_ROOT");
 }
 
 #[test]
 fn active_relative_path_type_zero_is_preserved() {
-    let model = analyze_als(corpus_copy_path("14__POLISHBOYS_WWA_11.10_GOSCINKA.als")).unwrap();
+    let fixture = synthetic_als("relative_path_type_zero", &["0", "0", "0", "3", "3"], 0);
+    let model = analyze_als(fixture.path()).unwrap();
     let counts = relative_path_type_counts(&model);
 
-    assert_eq!(model.set_metadata.sample_ref_count, 1800);
-    assert_eq!(counts.get("0"), Some(&1100));
-    assert_eq!(counts.get("3"), Some(&700));
+    assert_eq!(model.set_metadata.sample_ref_count, 5);
+    assert_eq!(counts.get("0"), Some(&3));
+    assert_eq!(counts.get("3"), Some(&2));
     assert!(model.warnings.iter().all(|warning| {
         warning.warning_code != "unknown_relative_path_type"
             && warning.warning_code != "missing_relative_path_type"
@@ -338,12 +426,12 @@ fn active_relative_path_type_zero_is_preserved() {
 
 #[test]
 fn read_only_safety() {
-    let path = fixture_path("als/kombinacja_piejo.als");
-    let before = fs::read(&path).unwrap();
+    let fixture = synthetic_als("read_only_safety", &["1"; 11], 0);
+    let before = fs::read(fixture.path()).unwrap();
 
-    let analysis = analyze_als(&path).unwrap();
+    let analysis = analyze_als(fixture.path()).unwrap();
 
-    let after = fs::read(&path).unwrap();
+    let after = fs::read(fixture.path()).unwrap();
     assert_eq!(before, after);
     assert_eq!(analysis.set_metadata.sample_ref_count, 11);
     assert_eq!(analysis.set_metadata.active_audio_ref_count, 11);

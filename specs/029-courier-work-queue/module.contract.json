@@ -1,0 +1,50 @@
+{
+  "id": "029-courier-work-queue",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {"document": "ENGINEERING_RULES.md", "version": "0.1", "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]},
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["CourierWorkItem v0.1", "CourierQueueSnapshot v0.1", "acceptance order", "Removal never touches the file on disk"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "hidden_uncertainty_gate": true,
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: queue accepts resolved selections and owns no copy policy",
+    "REVIEW_ONLY: removal never deletes or moves a source file",
+    "REVIEW_ONLY: native paths do not enter exported queue errors",
+    "ENFORCED_BY_TEST: courier_queue_preserves_acceptance_order",
+    "ENFORCED_BY_TEST: courier_queue_rejects_active_duplicate_source",
+    "ENFORCED_BY_TEST: removed_item_can_be_added_again",
+    "ENFORCED_BY_TEST: processing_item_cannot_be_removed",
+    "ENFORCED_BY_TEST: non_als_directory_and_symlink_are_rejected",
+    "ENFORCED_BY_TEST: queue_errors_are_path_free",
+    "ENFORCED_BY_TEST: queue_never_mutates_source_files",
+    "ENFORCED_BY_TYPE: CourierWorkQueue",
+    "ENFORCED_BY_TYPE: CourierWorkItem",
+    "ENFORCED_BY_TYPE: CourierQueueSnapshot",
+    "ENFORCED_BY_TYPE: CourierQueueError"
+  ],
+  "required_tests": ["courier_queue_preserves_acceptance_order", "courier_queue_rejects_active_duplicate_source", "removed_item_can_be_added_again", "processing_item_cannot_be_removed", "non_als_directory_and_symlink_are_rejected", "queue_errors_are_path_free", "queue_never_mutates_source_files"],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "subset",
+  "public_contract": {
+    "CourierWorkItem": ["work_item_id", "selection", "source_display_name", "accepted_sequence", "status"],
+    "CourierQueueSnapshot": ["schema_version", "items", "pending_item_count"],
+    "CourierQueueError": ["error_code", "stage", "message"]
+  },
+  "expected_source_files": ["crates/rescue_application/src/courier_work_queue.rs", "crates/rescue_application/tests/courier_work_queue.rs"],
+  "quality_source_globs": ["crates/rescue_application/src/courier_work_queue.rs"],
+  "guarded_source_globs": ["crates/rescue_application/src/courier_work_queue.rs"],
+  "forbidden_output_fields": ["package_plan", "rewrite_operation", "copy_operation", "provider_url", "upload_status"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "std::fs::copy", "label": "copy policy"},
+    {"literal": "remove_file", "label": "source deletion"},
+    {"literal": "remove_dir", "label": "source deletion"},
+    {"literal": "flate2", "label": "ALS parsing"},
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"}
+  ],
+  "allowed_dependency_names": ["flate2", "rescue_analyzer", "rescue_catalog", "rescue_core", "rescue_pipeline", "serde", "serde_json", "sha2", "tempfile"],
+  "quality_limits": {"max_source_file_lines": 300, "max_function_lines": 70}
+}

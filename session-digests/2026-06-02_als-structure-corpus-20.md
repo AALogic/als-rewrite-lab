@@ -20,7 +20,7 @@ copies deeply and preserve what we learn so context does not disappear.
 Created experiment:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/
+<private-corpus-root>/
 ```
 
 Created research helper:
@@ -48,31 +48,31 @@ Original Ableton projects were not modified.
 Start here:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/README.md
+<private-corpus-root>/README.md
 ```
 
 Human interpretation:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/findings.md
+<private-corpus-root>/findings.md
 ```
 
 Generated report:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/structure_report.md
+<private-corpus-root>/structure_report.md
 ```
 
 Machine-readable summary:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/reports/corpus_summary.json
+<private-corpus-root>/reports/corpus_summary.json
 ```
 
 Per-file reports:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/reports/per_file/
+<private-corpus-root>/reports/per_file/
 ```
 
 ## 4. Key Evidence

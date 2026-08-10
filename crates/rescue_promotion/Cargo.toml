@@ -1,0 +1,19 @@
+[package]
+name = "rescue_promotion"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rescue_execution = { path = "../rescue_execution" }
+rescue_manifest = { path = "../rescue_manifest" }
+rescue_packaging = { path = "../rescue_packaging" }
+rescue_rewriter = { path = "../rescue_rewriter" }
+rescue_validation = { path = "../rescue_validation" }
+serde = { version = "1", features = ["derive"] }
+sha2.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Storage_FileSystem"] }
+
+[dev-dependencies]
+tempfile = "3"

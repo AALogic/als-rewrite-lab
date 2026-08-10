@@ -1,0 +1,235 @@
+{
+  "id": "020-als-project-scanner",
+  "status": "verified",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": [
+      "Purpose",
+      "Clean Code",
+      "Modularity",
+      "Testability",
+      "Error Handling",
+      "Data Safety",
+      "Project Hard Rules"
+    ]
+  },
+  "required_docs": [
+    "spec.md",
+    "plan.md",
+    "tasks.md",
+    "fixture-contract.md"
+  ],
+  "required_spec_literals": [
+    "ProjectScanRequest v0.1",
+    "ProjectScanResult v0.1",
+    "never open or decompress ALS content",
+    "never follow symlinks or reparse-point traversal candidates",
+    "ProjectCatalogBuilder"
+  ],
+  "blocking_markers": [
+    "BLOCKING_UNKNOWN",
+    "Gate Status: UNKNOWN",
+    "Gate Status: AMBIGUOUS",
+    "Gate Status: CONFLICTING"
+  ],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: complete means complete only within approved roots and exclusions",
+    "DOCUMENTED_ONLY: Windows reparse behavior needs native evidence",
+    "REVIEW_ONLY: scanner does not parse ALS or inspect audio",
+    "REVIEW_ONLY: scanner does not group Project folders or infer version families",
+    "REVIEW_ONLY: scanner performs no filesystem writes",
+    "ENFORCED_BY_TEST: standard_project_entries_are_observed",
+    "ENFORCED_BY_TEST: backup_and_standalone_als_are_retained",
+    "ENFORCED_BY_TEST: invalid_gzip_als_is_not_opened",
+    "ENFORCED_BY_TEST: uppercase_als_is_recognized",
+    "ENFORCED_BY_TEST: non_als_files_are_ignored",
+    "ENFORCED_BY_TEST: multiple_main_sets_are_not_collapsed",
+    "ENFORCED_BY_TEST: same_names_in_different_roots_stay_distinct",
+    "ENFORCED_BY_TEST: overlapping_roots_do_not_duplicate_observations",
+    "ENFORCED_BY_TEST: explicit_exclusions_are_honored",
+    "ENFORCED_BY_TEST: symlinks_are_not_followed",
+    "ENFORCED_BY_TEST: entry_limit_marks_project_scan_partial",
+    "ENFORCED_BY_TEST: depth_limit_marks_project_scan_partial",
+    "ENFORCED_BY_TEST: inaccessible_directory_preserves_partial_results",
+    "ENFORCED_BY_TEST: cancellation_returns_collected_observations",
+    "ENFORCED_BY_TEST: progress_events_contain_no_private_paths",
+    "ENFORCED_BY_TEST: project_scan_is_read_only",
+    "ENFORCED_BY_TEST: project_scan_output_is_deterministic",
+    "ENFORCED_BY_TEST: fake_catalog_builder_uses_project_scan_contract",
+    "ENFORCED_BY_TYPE: ProjectScanRequest",
+    "ENFORCED_BY_TYPE: ProjectScanResult",
+    "ENFORCED_BY_TYPE: ProjectScanMetadata",
+    "ENFORCED_BY_TYPE: ALSFileObservation",
+    "ENFORCED_BY_TYPE: ProjectMarkerObservation",
+    "ENFORCED_BY_TYPE: ProjectScanProgress",
+    "ENFORCED_BY_TYPE: ProjectScanWarning",
+    "ENFORCED_BY_TYPE: ProjectScanError"
+  ],
+  "required_tests": [
+    "standard_project_entries_are_observed",
+    "backup_and_standalone_als_are_retained",
+    "invalid_gzip_als_is_not_opened",
+    "uppercase_als_is_recognized",
+    "non_als_files_are_ignored",
+    "multiple_main_sets_are_not_collapsed",
+    "same_names_in_different_roots_stay_distinct",
+    "overlapping_roots_do_not_duplicate_observations",
+    "explicit_exclusions_are_honored",
+    "symlinks_are_not_followed",
+    "entry_limit_marks_project_scan_partial",
+    "depth_limit_marks_project_scan_partial",
+    "inaccessible_directory_preserves_partial_results",
+    "cancellation_returns_collected_observations",
+    "progress_events_contain_no_private_paths",
+    "project_scan_is_read_only",
+    "project_scan_output_is_deterministic",
+    "fake_catalog_builder_uses_project_scan_contract"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "ProjectScanRequest": [
+      "scan_run_id",
+      "roots",
+      "excluded_roots",
+      "max_entries",
+      "max_depth",
+      "traversal_policy_version"
+    ],
+    "ProjectScanResult": [
+      "metadata",
+      "als_files",
+      "project_markers",
+      "warnings",
+      "errors"
+    ],
+    "ProjectScanMetadata": [
+      "scanner_version",
+      "traversal_policy_version",
+      "scan_run_id",
+      "scan_status",
+      "requested_root_count",
+      "accepted_root_count",
+      "directories_visited",
+      "entries_visited",
+      "als_file_count",
+      "project_marker_count",
+      "skipped_symlink_count",
+      "skipped_excluded_count",
+      "warning_count",
+      "error_count"
+    ],
+    "ALSFileObservation": [
+      "observation_id",
+      "source_root",
+      "native_path",
+      "relative_path",
+      "filename",
+      "extension",
+      "file_size",
+      "modified_time_unix_ms",
+      "entry_kind",
+      "observation_status"
+    ],
+    "ProjectMarkerObservation": [
+      "marker_observation_id",
+      "source_root",
+      "project_root_candidate",
+      "marker_path",
+      "relative_marker_path",
+      "marker_name",
+      "entry_kind",
+      "observation_status"
+    ],
+    "ProjectScanProgress": [
+      "scan_run_id",
+      "stage",
+      "requested_root_count",
+      "roots_completed",
+      "directories_visited",
+      "entries_visited",
+      "als_file_count",
+      "project_marker_count",
+      "warning_count"
+    ],
+    "ProjectScanWarning": [
+      "warning_id",
+      "warning_code",
+      "message",
+      "path"
+    ],
+    "ProjectScanError": [
+      "error_code",
+      "message",
+      "path"
+    ]
+  },
+  "expected_source_files": [
+    "crates/rescue_catalog/src/project_scan.rs",
+    "crates/rescue_catalog/src/project_scan_control.rs",
+    "crates/rescue_catalog/src/project_scan_impl.rs",
+    "crates/rescue_catalog/src/project_scan_observe.rs",
+    "crates/rescue_catalog/src/project_scan_walk.rs"
+  ],
+  "quality_source_globs": [
+    "crates/rescue_catalog/src/project_scan*.rs"
+  ],
+  "guarded_source_globs": [
+    "crates/rescue_catalog/src/project_scan*.rs"
+  ],
+  "forbidden_output_fields": [
+    "project_folder_id",
+    "project_work_id",
+    "primary_set",
+    "version_family",
+    "dependency_ref",
+    "content_hash",
+    "match_score",
+    "copy_operation",
+    "rewrite_operation"
+  ],
+  "forbidden_guarded_source_patterns": [
+    {
+      "literal": "std::fs::write",
+      "label": "write"
+    },
+    {
+      "literal": "std::fs::remove",
+      "label": "remove"
+    },
+    {
+      "literal": "canonicalize(",
+      "label": "canonicalize"
+    },
+    {
+      "literal": "flate2",
+      "label": "ALS decompression"
+    },
+    {
+      "literal": "sha2",
+      "label": "hashing"
+    },
+    {
+      "literal": "unwrap(",
+      "label": "unwrap"
+    },
+    {
+      "literal": "expect(",
+      "label": "expect"
+    }
+  ],
+  "allowed_dependency_names": [
+    "serde",
+    "serde_json",
+    "sha2",
+    "tempfile"
+  ],
+  "quality_limits": {
+    "max_source_file_lines": 280,
+    "max_function_lines": 80
+  }
+}

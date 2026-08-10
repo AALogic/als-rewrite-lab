@@ -16,23 +16,23 @@ This is not a full Collect All and Save package.
 Selected from:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/copies/
+<private-corpus-root>/
 ```
 
 Selected ALS ids:
 
 ```text
-11__FILIP-SB-REMIX.als
-12__TAKE ON ME.als
-15__MIDI IRYS.als
-16__na szczycie_bez grubasa.als
-17__SZAMAN POZNAN EXP.als
+private_corpus_fixture_011.als
+private_corpus_fixture_012.als
+private_corpus_fixture_015.als
+private_corpus_fixture_016.als
+private_corpus_fixture_017.als
 ```
 
 ## Output Location
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/
+<private-corpus-root>/crc_probe_sample_subset/
 ```
 
 Main files:

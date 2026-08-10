@@ -42,7 +42,7 @@ checks source file stat after copy to confirm originals were not changed
 Created:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset/
+<private-corpus-root>/original_crc_static_direction_dataset/
 ```
 
 Result:
@@ -61,7 +61,7 @@ This dataset is collision-heavy. It is useful, but less balanced.
 Created:
 
 ```text
-experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced/
+<private-corpus-root>/original_crc_static_direction_dataset_balanced/
 ```
 
 Result:

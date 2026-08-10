@@ -1,7 +1,7 @@
 # Product Spine
 
 Status: active product spine  
-Date: 2026-06-02  
+Date: 2026-08-05
 Scope: global product promise, use cases, capability map and gates from vision to code
 
 ## 1. Purpose
@@ -51,6 +51,8 @@ dependencies across messy local folders.
 The product should help users:
 
 ```text
+discover Ableton Project folders and Live Sets across approved local roots
+choose one or many concrete Sets without exposing filesystem complexity
 inspect which audio files Ableton projects depend on
 understand where those files live
 detect external, missing, risky or shared dependencies
@@ -107,11 +109,58 @@ It is not a RequiredAsset, FileOccurrence or ContentIdentity.
 
 Path is location evidence, not identity.
 File existence is availability evidence, not proof of the expected sample.
+For packaging current project state, an exact existing active path may be
+preserved as the current binding without claiming historical content identity.
+Moved recovery candidates still require strong expected identity or explicit
+source-bound user selection.
 The parent of an ALS file is not automatically the Ableton Project root.
 Facts, observations, evidence and decisions must not share one catch-all model.
 ```
 
+Project catalog concepts are also distinct:
+
+```text
+ProjectFolder
+  one physical filesystem container supported by Ableton Project structure
+  evidence
+
+LiveSet
+  one concrete .als file observed at one native path and time
+
+BackupSet
+  one LiveSet observed under an Ableton Backup directory; hidden by default
+  in the ordinary list but never discarded
+
+ProjectWork
+  a future logical musical work or version family supported by separate
+  relationship evidence; it is not inferred by the scanner or physical catalog
+```
+
 ## 4. Primary Use Cases
+
+### UC0: Discover And Select Ableton Projects
+
+User asks:
+
+```text
+Show me the Ableton projects on this computer so I can choose one or many Sets
+to inspect or copy.
+```
+
+Required flow:
+
+```text
+obtain explicit local scan scope
+-> observe ALS files and Project markers without parsing every ALS
+-> build a physical ProjectFolder / LiveSet catalog
+-> hide but retain Backup Sets
+-> present a simple selectable list
+-> create an explicit ProjectSelection for every selected LiveSet
+```
+
+The catalog must not silently infer that several Live Sets in one folder are
+versions of the same musical work. Version-family analysis is a separate later
+capability.
 
 ### UC1: Inspect Project Dependencies
 
@@ -158,6 +207,20 @@ scan/read
 -> write manifest
 -> user verifies in Ableton
 ```
+
+The same capability may be entered through more than one presentation surface.
+The first compact entry is one explicit `.als` opened with ALS Rescue on macOS:
+
+```text
+Open With ALS Rescue
+-> compact assistant near the cursor
+-> choose destination parent
+-> reuse the ordinary one-project preview and execute contracts
+-> show complete, incomplete or unable outcome
+```
+
+This surface does not create a second copy policy, watch Finder selections or
+replace Ableton as the default `.als` opener.
 
 ### UC3: Relocate Self-Contained Project
 
@@ -206,6 +269,12 @@ User asks:
 Help me organize samples and know what can be moved, copied, kept or cleaned.
 ```
 
+The product should also let the user browse a local CMDB-like catalog from both
+directions: project to all referenced files, and file/content to every project
+and Set snapshot that depends on it. A graph is one visualization of this
+catalog; searchable tables, reverse references, evidence freshness and impact
+preview are equally important.
+
 Required flow:
 
 ```text
@@ -220,6 +289,18 @@ multi-project scan
 ## 5. Capability Map
 
 ```text
+Observe ALS candidates and Project markers under approved roots
+  -> ALSProjectScanner
+
+Build a physical ProjectFolder / LiveSet / BackupSet catalog
+  -> ProjectCatalogBuilder
+
+Persist catalog snapshots and freshness
+  -> ProjectCatalogStore
+
+Expose catalog selection to the desktop
+  -> ProjectCatalogApplicationService
+
 Read ALS facts
   -> ALSReader
 
@@ -235,60 +316,158 @@ Observe recorded path candidates
 Group occurrences into logical requirements
   -> DependencyAssessment
 
-Scan selected filesystem scopes later
+Bind audio still present at one recorded path without claiming identity
+  -> CurrentPathBinding
+
+Scan selected filesystem scopes
   -> AssetInventory
 
-Resolve missing or moved assets later
+Resolve missing or moved assets
   -> AssetResolution
 
-Plan package/rewrite operation later
+Plan package/rewrite operation
   -> PackagePlanner
 
-Stage/copy files safely later
+Stage/copy files safely
   -> StagingExecutor
 
-Rewrite supported ALS copies later
+Rewrite supported ALS copies
   -> ALSRewriter
 
-Validate semantic changes later
+Validate semantic changes
   -> Validator
 
-Record private operation history later
+Record private operation history
   -> PrivateLedger
 
-Export portable evidence later
+Export portable evidence
   -> PackageManifest
+
+Promote a validated fresh package
+  -> PackagePromoter
+
+Compose the bounded laboratory flow
+  -> LaboratoryPipeline
+
+Run the existing one-project application flow for many explicit selections
+  -> BatchCopyApplicationService
+
+Hand one completed Project folder to a trusted browser destination
+  -> ExternalFolderHandoff
+
+Render a compact character without giving presentation ownership of work
+  -> AssistantHost
+
+Bind the latest completed Project folder to private native drag attempts
+  -> TransferPayload
 ```
 
 ### 5.1 Current MVP Boundary
 
-The first MVP is one selected project and read-only evidence:
+The current implementation target is one selected project and audio-only
+recovery:
 
 ```text
-ALSReader
--> DependencyExtractor
--> ReferenceOccurrence grouping
--> candidate path observations
--> DependencyAssessment
--> report: available / unavailable / unknown / unsupported
+read and report dependencies
+scan explicitly selected local scopes
+rank candidates from a complete inventory and select only with expected content
+identity or an explicit user decision
+build and inspect an immutable plan
+create a fresh staged package
+rewrite only a confirmed laboratory ALS profile
+validate files and semantic XML difference
+write private and portable manifests
+promote to an absent target
+require manual Ableton verification
 ```
 
-Not in the first MVP:
+Active next MVP increment:
 
 ```text
-global disk scan
-persistent asset index
-automatic missing-sample matching
-copying
-package creation
-ALS rewrite
-batch
-desktop UI
-plugin installation or transfer
+lightweight read-only discovery of ALS files under approved roots
+physical ProjectFolder / LiveSet / BackupSet catalog
+local persistent catalog with explicit scan coverage and freshness
+simple project list and manual Add ALS fallback using one ProjectSelection
+sequential multi-project preview and copy using the existing one-project flow
+per-project isolation, manifests and aggregate batch reporting
 ```
 
-The later features remain product directions, but they may not widen the first
-vertical slice.
+Still outside the current MVP:
+
+```text
+whole-computer audio sample indexing and moved-file matching
+continuous filesystem watching and automatic incremental refresh
+parallel project copy execution
+automatic Live Set version-family inference and semantic version diff
+plugin, preset, Pack and Max for Live portability
+cleanup or deletion
+Live 9/10/12 and Windows rewrite support claims
+```
+
+Implemented write modules remain laboratory-only until the real Ableton runtime
+gate and release hardening are complete.
+
+Desktop Alpha is now inside the current MVP. It covers one selected project,
+shows preflight facts, collects explicit user choices, invokes approved
+application-service workflows and presents final evidence. It does not add new
+matching, copy or rewrite policy.
+
+### 5.2 Desktop Alpha Boundary
+
+Required first vertical slice:
+
+```text
+choose one ALS
+-> run read-only analysis through DesktopApplicationService
+-> show project/dependency summary
+-> save a local run report
+```
+
+Implemented write-capable desktop slice:
+
+```text
+use only audio that still exists at paths recorded by the selected ALS
+-> report missing audio without searching for replacements
+-> choose an absent output target
+-> preview a complete or incomplete immutable copy plan
+-> create and validate the copy after explicit confirmation
+-> show whether the result is complete or still has missing files
+```
+
+Project catalog discovery and sequential batch copy are implemented Desktop
+increments. They remain separate from whole-computer audio indexing: the first
+pass observes ALS files and Project markers only, and performs deep ALS analysis
+only for explicit user selections. One or many concrete Sets can be selected;
+many Sets reuse the unchanged one-project pipeline sequentially. Moved-file
+matching and whole-computer audio candidate indexing remain a later product
+stage.
+
+The compact quick surface may also expose the exact latest successful Project
+folder as a one-shot native copy drag after an explicit provider action. This
+handoff does not upload data itself, automate the browser, create archives or
+claim that a remote transfer completed.
+
+The compact surface is being refactored into three explicit responsibilities
+without changing the one-project copy policy:
+
+```text
+QuickCopy job
+  owns destination, preview, execution and copy outcome
+
+TransferPayload
+  privately owns the eligible completed Project folder and drag attempts
+
+AssistantHost
+  renders speech, character, controls and interaction geometry
+```
+
+This foundation still has one courier and one `wetransfer_web` action. Provider
+catalogs, inbound ALS drop, visible delivered/reload behavior, character
+catalogs, multiple visible characters and licensing are later increments.
+
+Diagnostic exports are local and user-initiated. A shareable export must omit
+ALS bytes, audio bytes and private absolute paths by default. The unredacted
+private ledger remains local unless the user deliberately chooses otherwise.
 
 ## 6. Gate Statuses
 

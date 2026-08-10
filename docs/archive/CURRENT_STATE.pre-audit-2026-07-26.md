@@ -216,7 +216,7 @@ Aktywne audio refs sa w SampleRef/FileRef.
 
 SourceContext/OriginalFileRef jest historia/provenance i nie musi byc zmieniany w minimalnym rewrite.
 
-Dla self-contained projektu minimalny Path-only rewrite zadzialal na kopii cziki Project -> COXED twoja kolej.
+Dla self-contained projektu minimalny Path-only rewrite zadzialal na kopii private_fixture_001 -> private_fixture_003_rewrite_result.
 
 Oryginalne projekty maja pozostac nietkniete.
 
@@ -284,7 +284,7 @@ Historical v0.1 cargo fmt --check: PASS.
 Historical v0.1 cargo test: PASS, 5 tests passed.
 
 Historical v0.1 manual CLI smoke test:
-  cargo run -q -p rescue-cli -- analyze tests/fixtures/als/kombinacja_piejo.als --json
+  cargo run -q -p rescue-cli -- analyze tests/fixtures/als/private_fixture_002_external_refs.als --json
   PASS, JSON zwrocil sample_ref_count 11 i active_file_ref_count 11.
 
 PROJECT_MAP.md zostal dodany jako mapa domen i granic odpowiedzialnosci.
@@ -340,7 +340,7 @@ cargo fmt --check po ALSReadModel v0.2: PASS.
 cargo test po ALSReadModel v0.2: PASS, 7 tests passed.
 
 Manual CLI smoke test po ALSReadModel v0.2:
-  cargo run -q -p rescue-cli -- analyze tests/fixtures/als/kombinacja_piejo.als --json
+  cargo run -q -p rescue-cli -- analyze tests/fixtures/als/private_fixture_002_external_refs.als --json
   PASS, JSON zwrocil set_metadata, active_audio_references, historical_refs
   i non_audio_dependency_signals.
 
@@ -361,11 +361,11 @@ ALSReader v0.2 hardening po review GPT:
   cargo test: PASS, 11 tests passed
 
 Eksperyment ALS Structure Corpus 20 zostal wykonany i zapisany:
-  experiments/2026-06-02_als_structure_corpus_20/
+  <private-corpus-root>/
   session-digests/2026-06-02_als-structure-corpus-20.md
 
 Eksperyment OriginalCrc sample subset zostal wykonany i zapisany:
-  experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/
+  <private-corpus-root>/crc_probe_sample_subset/
   session-digests/2026-06-09_original-crc-probe-sample-subset.md
 
 Wynik:
@@ -376,8 +376,8 @@ Wynik:
   dla tych 21 probek
 
 Eksperyment OriginalCrc hypothesis probe zostal wykonany i zapisany:
-  experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/hypothesis_probe/
-  experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/fast_full_payload_probe/
+  <private-corpus-root>/crc_probe_sample_subset/hypothesis_probe/
+  <private-corpus-root>/crc_probe_sample_subset/fast_full_payload_probe/
   session-digests/2026-06-09_original-crc-hypothesis-probe.md
 
 Wynik:
@@ -389,7 +389,7 @@ Wynik:
 
 Plan nastepnego testu OriginalCrc zostal zapisany:
   PRODUCT_SPEC.md, sekcja 11.6 OriginalCrc Controlled Ableton Test
-  experiments/2026-06-02_als_structure_corpus_20/crc_probe_sample_subset/controlled_ableton_original_crc_test_plan.md
+  <private-corpus-root>/crc_probe_sample_subset/controlled_ableton_original_crc_test_plan.md
 
 Cel planu:
   sprawdzic w kontrolowanym projekcie Abletona, czy OriginalCrc reaguje na
@@ -398,12 +398,12 @@ Cel planu:
 
 Eksperyment OriginalCrc static direction dataset zostal wykonany i zapisany:
   tools/experiments/python/original_crc_static_direction_dataset.py
-  experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset/
-  experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced/
+  <private-corpus-root>/original_crc_static_direction_dataset/
+  <private-corpus-root>/original_crc_static_direction_dataset_balanced/
   session-digests/2026-06-09_original-crc-static-direction-dataset.md
 
 Rekomendowany dataset do kolejnych statycznych testow:
-  experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced/
+  <private-corpus-root>/original_crc_static_direction_dataset_balanced/
 
 Wynik balanced:
   copied ALS files: 8
@@ -421,7 +421,7 @@ Bezpieczenstwo:
 
 Eksperyment OriginalCrc static analysis probe zostal wykonany:
   tools/experiments/python/original_crc_static_analysis_probe.py
-  experiments/2026-06-02_als_structure_corpus_20/original_crc_static_direction_dataset_balanced/static_analysis_probe/
+  <private-corpus-root>/original_crc_static_direction_dataset_balanced/static_analysis_probe/
   session-digests/2026-06-09_original-crc-static-analysis-probe.md
 
 Testy wykonane:
@@ -609,21 +609,21 @@ Nie robi:
 Fixture contract ma pierwsze oczekiwane liczby:
 
 ```text
-cziki_after_cas:
+private_fixture_001_after_collect:
   SampleRef 153
   active FileRef 153
   RelativePathType: 3 -> 33, 5 -> 120
 
-cziki_before_cas_copy:
+private_fixture_001_before_collect:
   SampleRef 153
   active FileRef 153
   RelativePathType: 1 -> 33, 5 -> 120
 
-template_zero_active:
+synthetic_fixture_zero_active:
   SampleRef 0
   active FileRef 0
 
-kombinacja_piejo:
+private_fixture_002_external_refs:
   SampleRef 11
   active FileRef 11
   unique active paths 4
@@ -1244,7 +1244,7 @@ Nawigator: przeczytaj CURRENT_STATE.md, PRODUCT_SPINE.md, AGENTS.md, AI_CONTRACT
 Jesli wracamy do eksperymentu ALS corpus:
 
 ```text
-Nawigator: przeczytaj experiments/2026-06-02_als_structure_corpus_20/README.md,
+Nawigator: przeczytaj <private-corpus-root>/README.md,
 findings.md oraz session-digests/2026-06-02_als-structure-corpus-20.md.
 Chce uzyc tych wynikow jako dowodu w ALSReader Contract Review.
 ```

@@ -1,44 +1,55 @@
 flowchart TD
-    User["User selects one Ableton project"]
-    Context["ProjectDiscovery or explicit context\nProject root is evidence, not parent(ALS)"]
-    ALSReader["001 ALSReader\nread gzip XML\nemit ALSReadModel"]
-    DependencyExtractor["002 DependencyExtractor\nemit ReferenceOccurrence-compatible DependencyRef"]
-    PathObservation["003 PathObservation\nrecord every safe path candidate\nno selection"]
-    DependencyAssessment["DependencyAssessment\ngroup RequiredAsset\nassess availability"]
-    ReadOnlyReport["Read-only report\navailable / unavailable / unknown / unsupported"]
+    User["User selects one copied ALS and bounded scan roots"]
+    Discovery["004 ProjectDiscovery"]
+    Reader["001 ALSReader"]
+    Extractor["002 DependencyExtractor"]
+    Observation["003 PathObservation"]
+    Assessment["005 DependencyAssessment"]
+    Preflight["006 PreflightReport"]
+    Inventory["007 AssetInventory"]
+    Resolution["008 AssetResolution"]
+    CurrentBinding["008 CurrentPathBinding"]
+    Planner["009 PackagePlanner"]
+    Staging["010 StagingExecutor"]
+    Rewriter["011 ALSRewriter"]
+    Validation["012 PackageValidator / SemanticDiff"]
+    Manifest["013 PrivateLedger / PackageManifest"]
+    Promotion["014 PackagePromoter"]
+    Manual["Manual Ableton verification"]
 
-    AssetInventory["Later: AssetInventory\nscan selected scopes"]
-    AssetResolution["Later: AssetResolution\nrank evidence and record decisions"]
-    PackagePlanner["Later: PackagePlanner\nbuild explicit operation plan"]
-    StagingExecutor["Later: StagingExecutor\ncopy into staging"]
-    ALSRewriter["Later: supported ALSRewriter\nrewrite copied ALS only"]
-    Validator["Later: Validator\nvalidate package and semantic diff"]
-    Ledger["Later: PrivateLedger + PackageManifest"]
+    User --> Discovery
+    User --> Reader
+    Discovery --> Observation
+    Reader --> Extractor
+    Extractor --> Observation
+    Extractor --> Assessment
+    Observation --> Assessment
+    Discovery --> Preflight
+    Assessment --> Preflight
+    Assessment --> CurrentBinding
+    CurrentBinding --> Planner
+    Preflight --> Inventory
+    Inventory --> Resolution
+    Assessment --> Resolution
+    Resolution --> Planner
+    Reader --> Planner
+    Planner --> Staging
+    Staging --> Rewriter
+    Rewriter --> Validation
+    Validation --> Manifest
+    Manifest --> Promotion
+    Promotion --> Manual
 
-    User --> Context
-    User --> ALSReader
-    Context --> PathObservation
-    ALSReader --> DependencyExtractor
-    DependencyExtractor --> PathObservation
-    DependencyExtractor --> DependencyAssessment
-    PathObservation --> DependencyAssessment
-    DependencyAssessment --> ReadOnlyReport
+    Original["Original ALS and media: read-only"]
+    Original -. "read only" .-> Reader
+    Original -. "ALS hash; audio stable metadata and one copy" .-> Staging
 
-    DependencyAssessment -. "later" .-> AssetInventory
-    AssetInventory --> AssetResolution
-    AssetResolution --> PackagePlanner
-    PackagePlanner --> StagingExecutor
-    StagingExecutor --> ALSRewriter
-    ALSRewriter --> Validator
-    Validator --> Ledger
+    Gate1["Complete inventory and unique evidence"]
+    Gate2["Ready immutable plan"]
+    Gate3["Exact semantic validation"]
+    Gate4["Fresh final target"]
 
-    Original["Original ALS and media\nread-only"]
-    Original -. "read only" .-> ALSReader
-
-    Safety1["Path availability is not asset identity"]
-    Safety2["No plan means no write"]
-    Safety3["No validation means no promotion"]
-
-    Safety1 -.-> PathObservation
-    Safety2 -.-> PackagePlanner
-    Safety3 -.-> Validator
+    Gate1 -.-> Resolution
+    Gate2 -.-> Staging
+    Gate3 -.-> Manifest
+    Gate4 -.-> Promotion

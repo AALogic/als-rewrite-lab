@@ -1,6 +1,21 @@
 [workspace]
 members = [
   "crates/rescue_core",
+  "crates/rescue_analyzer",
+  "crates/rescue_catalog",
+  "crates/rescue_resolution",
+  "crates/rescue_packaging",
+  "crates/rescue_execution",
+  "crates/rescue_rewriter",
+  "crates/rescue_validation",
+  "crates/rescue_manifest",
+  "crates/rescue_promotion",
+  "crates/rescue_pipeline",
+  "crates/rescue_application",
   "cli/rescue-cli",
+  "apps/rescue-desktop/src-tauri",
 ]
 resolver = "2"
+
+[workspace.dependencies]
+sha2 = "0.10"

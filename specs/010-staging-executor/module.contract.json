@@ -1,0 +1,76 @@
+{
+  "id": "010-staging-executor",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]
+  },
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["PackagePlan v0.4", "StagingExecutionResult v0.3", "stable_source_and_size", "Ableton Project Info", "fail_if_exists"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "ENFORCED_BY_TEST: ready_plan_is_copied_and_hash_verified_in_new_staging_root",
+    "ENFORCED_BY_TEST: source_hash_mismatch_fails_before_target_promotion",
+    "ENFORCED_BY_TEST: existing_staging_root_is_rejected_without_writes",
+    "ENFORCED_BY_TEST: unsafe_relative_target_is_rejected",
+    "ENFORCED_BY_TEST: blocked_plan_is_rejected",
+    "ENFORCED_BY_TEST: missing_ableton_project_marker_in_plan_is_rejected_before_writes",
+    "ENFORCED_BY_TEST: repeated_execution_reports_existing_staging_instead_of_overwriting",
+    "ENFORCED_BY_TEST: final_target_and_sources_remain_untouched",
+    "ENFORCED_BY_TEST: symlink_source_is_rejected",
+    "ENFORCED_BY_TEST: metadata_only_audio_copy_records_no_content_hash",
+    "ENFORCED_BY_TYPE: StagingExecutionRequest",
+    "ENFORCED_BY_TYPE: StagingExecutionResult",
+    "ENFORCED_BY_TYPE: StagingExecutionMetadata",
+    "ENFORCED_BY_TYPE: DirectoryExecutionRecord",
+    "ENFORCED_BY_TYPE: CopyExecutionRecord",
+    "ENFORCED_BY_TYPE: StagingExecutionWarning",
+    "ENFORCED_BY_TYPE: StagingExecutionError",
+    "REVIEW_ONLY: executor does not choose assets or rewrite ALS",
+    "REVIEW_ONLY: only an absent staging root may be created",
+    "DOCUMENTED_ONLY: malicious local path-swap hardening remains pre-release work"
+  ],
+  "required_tests": [
+    "ready_plan_is_copied_and_hash_verified_in_new_staging_root",
+    "source_hash_mismatch_fails_before_target_promotion",
+    "existing_staging_root_is_rejected_without_writes",
+    "unsafe_relative_target_is_rejected",
+    "blocked_plan_is_rejected",
+    "missing_ableton_project_marker_in_plan_is_rejected_before_writes",
+    "repeated_execution_reports_existing_staging_instead_of_overwriting",
+    "final_target_and_sources_remain_untouched",
+    "symlink_source_is_rejected",
+    "metadata_only_audio_copy_records_no_content_hash"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "StagingExecutionRequest": ["execution_id", "staging_root"],
+    "StagingExecutionResult": ["metadata", "staging_root", "staged_als_relative_path", "directory_records", "copy_records", "execution_status", "warnings", "errors"],
+    "StagingExecutionMetadata": ["executor_version", "execution_schema_version", "execution_id", "plan_id", "source_als_hash", "planned_directory_count", "completed_directory_count", "planned_copy_count", "completed_copy_count", "warning_count", "error_count"],
+    "DirectoryExecutionRecord": ["operation_id", "target_relative_path", "purpose", "operation_status"],
+    "CopyExecutionRecord": ["operation_id", "operation_kind", "source_path", "target_relative_path", "expected_sha256", "observed_sha256", "expected_size", "observed_size", "verification_method", "operation_status"],
+    "StagingExecutionWarning": ["warning_code", "message", "operation_id"],
+    "StagingExecutionError": ["error_code", "message", "operation_id", "path"]
+  },
+  "expected_source_files": [
+    "crates/rescue_execution/src/staging_executor.rs",
+    "crates/rescue_execution/src/staging_executor_impl.rs",
+    "crates/rescue_execution/src/staging_directories.rs",
+    "crates/rescue_execution/src/staging_copy.rs",
+    "crates/rescue_execution/src/staging_validation.rs"
+  ],
+  "quality_source_globs": ["crates/rescue_execution/src/staging_*.rs"],
+  "guarded_source_globs": ["crates/rescue_execution/src/staging_*.rs"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"},
+    {"literal": "remove_dir_all", "label": "recursive deletion"}
+  ],
+  "allowed_dependency_names": ["rescue_packaging", "serde", "sha2", "tempfile"],
+  "quality_limits": {"max_source_file_lines": 280, "max_function_lines": 85}
+}

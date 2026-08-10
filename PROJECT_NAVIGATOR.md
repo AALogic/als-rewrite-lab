@@ -1,8 +1,12 @@
 # Project Navigator
 
-Status: working guide  
+Status: historical workflow reference; not an operational source of truth
 Date: 2026-06-02  
 Scope: a guided workflow that turns conversations, discoveries and tests into a real product
+
+> Current routing lives in `AGENTS.md`; current work and the only operational
+> next step live in `CURRENT_STATE.md`. This document preserves the earlier
+> discovery workflow and must not override either file.
 
 ## 1. Po co istnieje ten dokument
 
@@ -475,7 +479,7 @@ Najprostszy setup:
 
 ```text
 Open Folder:
-/Users/tru.siak/Documents/New project
+$WORKSPACE
 ```
 
 W VS Code korzystasz glownie z:
@@ -662,7 +666,7 @@ ALSReader nie robi:
 
 ```text
 Wejscie:
-cziki.als
+private_fixture_001.als
 
 Oczekiwane:
 153 SampleRef
