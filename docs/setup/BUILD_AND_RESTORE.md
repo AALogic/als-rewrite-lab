@@ -1,12 +1,12 @@
 # Build And Restore
 
 This document is the shortest supported route from an empty machine to the
-source milestone represented by `v0.1.0-courier-macos-alpha`.
+source milestone represented by `v0.1.1-courier-macos-alpha`.
 
 ## Canonical Source
 
 - private repository: `https://github.com/AALogic/als-rewrite-lab.git`
-- release tag: `v0.1.0-courier-macos-alpha`
+- preferred release tag: `v0.1.1-courier-macos-alpha`
 - Rust version: pinned by `rust-toolchain.toml`
 - Node version used for the milestone: pinned by `.nvmrc`
 - Rust and JavaScript dependencies: pinned by `Cargo.lock` and
@@ -21,7 +21,7 @@ progress and must not be treated as release identifiers.
 git clone https://github.com/AALogic/als-rewrite-lab.git
 cd als-rewrite-lab
 git fetch --tags
-git switch --detach v0.1.0-courier-macos-alpha
+git switch --detach v0.1.1-courier-macos-alpha
 ```
 
 Authentication is required because the repository is private.

@@ -949,7 +949,7 @@ recorded in
 The previously uncommitted accepted product state is now represented by an
 honest Git checkpoint followed by a separate Finder-compatible macOS migration
 commit. Existing history through `2add94a` remains unchanged. The immutable
-recovery point is `v0.1.0-courier-macos-alpha` in the private canonical GitHub
+recovery point is `v0.1.1-courier-macos-alpha` in the private canonical GitHub
 repository.
 
 Exact clone, verification and build commands live in

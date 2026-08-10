@@ -23,9 +23,14 @@ The uncommitted product work was divided by evidence and responsibility:
    runtime evidence supporting that change.
 3. The following documentation commit records the recovery procedure, toolchain
    pins and this reconstruction statement.
+4. `d73f776` corrects two Windows-only compile boundaries exposed by the first
+   canonical Draft PR: generated Win32 constant namespaces and macOS-only Tauri
+   run events.
 
-The release tag `v0.1.0-courier-macos-alpha` identifies the complete validated
-state after these commits.
+The immutable `v0.1.0-courier-macos-alpha` tag remains the first validated macOS
+recovery point. It is not moved. The preferred
+`v0.1.1-courier-macos-alpha` tag identifies the complete state including the
+Windows CI correction.
 
 ## Why The Split Is Honest
 
