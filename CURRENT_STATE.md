@@ -943,3 +943,16 @@ main-window launch. The stricter five-repeat matrices and complete outbound
 parcel handoff remain open acceptance work. Evidence and rollback details are
 recorded in
 `docs/experiments/macos-courier-production-floating-migration-2026-08-10.md`.
+
+## 16. Reproducible Source Milestone
+
+The previously uncommitted accepted product state is now represented by an
+honest Git checkpoint followed by a separate Finder-compatible macOS migration
+commit. Existing history through `2add94a` remains unchanged. The immutable
+recovery point is `v0.1.0-courier-macos-alpha` in the private canonical GitHub
+repository.
+
+Exact clone, verification and build commands live in
+`docs/setup/BUILD_AND_RESTORE.md`. The commit split, limitations and checksums of
+the off-repository source/ref/runtime backup are recorded in
+`docs/history/HISTORY_RECONSTRUCTION_2026-08-10.md`.

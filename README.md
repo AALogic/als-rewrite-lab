@@ -1,8 +1,10 @@
 # ALS Rewrite Lab
 
-Private Rust laboratory for evidence-based Ableton audio dependency recovery.
+Private Rust/Tauri project for evidence-based Ableton audio dependency recovery
+and portable project-copy workflows.
 
-The current code implements a guarded, one-project vertical slice:
+The current code implements the guarded one-project pipeline and reuses it in a
+project catalog, sequential batch workflow and compact macOS Courier:
 
 ```text
 read ALS -> extract audio references -> observe paths -> assess requirements
@@ -10,10 +12,10 @@ read ALS -> extract audio references -> observe paths -> assess requirements
 -> rewrite a copied ALS -> validate -> write manifests -> promote a fresh package
 ```
 
-The original ALS and original media remain read-only. A local Tauri Desktop
-Alpha can analyze one project and create a plan-bound current-path copy, but it
-is not yet a distributable product and does not claim rewrite support for Live
-9, Live 10, Live 12, or native Windows projects.
+The original ALS and original media remain read-only. The local Tauri alpha can
+analyze projects and create plan-bound current-path copies. It is still a
+private test release: it is not notarized for public distribution and does not
+claim broad rewrite compatibility across Live or Windows versions.
 
 The write modules remain available for isolated laboratory verification, but
 the composed command currently blocks before staging until expected content
@@ -62,6 +64,11 @@ tests/fixtures/         synthetic, reproducible fixtures only
 Read `AGENTS.md`, `CURRENT_STATE.md`, and `PRODUCT_SPINE.md` before changing
 product behavior.
 
+For an immutable milestone, exact verification commands and clean-machine build
+instructions, use [Build And Restore](docs/setup/BUILD_AND_RESTORE.md). The
+history reconstruction is recorded in
+[History Reconstruction 2026-08-10](docs/history/HISTORY_RECONSTRUCTION_2026-08-10.md).
+
 ## Windows Test Laboratory
 
 Use [docs/setup/WINDOWS_TEST_LAB.md](docs/setup/WINDOWS_TEST_LAB.md) to prepare a
@@ -85,8 +92,8 @@ or Windows read-only laboratory handoff.
 The default guard checks the staged index and untracked worktree. It checks
 private home paths, private-corpus identifiers, UTF-8 and UTF-16 path dumps, and
 rejects unscannable tracked binary content except for an exact allowlist of
-required application icons and product-owned visual assets. It also rejects tracked Ableton and
-common audio extensions case-insensitively before decoding payloads, including
+required application icons and product-owned visual assets. It also rejects
+tracked Ableton and common audio extensions case-insensitively before decoding payloads, including
 OGG, AAC, and SD2. Eligible objects are size-checked before their contents are
 streamed, and oversized objects fail closed without loading their payloads. No
 tracked synthetic media or binary fixture is allowlisted; tests create synthetic
