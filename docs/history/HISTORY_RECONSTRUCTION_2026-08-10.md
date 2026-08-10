@@ -32,11 +32,13 @@ The uncommitted product work was divided by evidence and responsibility:
    path factory, preserving the same test scenarios on macOS and Windows.
 7. `7c6b6d6` makes the compile boundary around macOS-only Courier drag internals
    explicit so warning-free Clippy remains enforceable on Windows.
+8. `c374053` removes two Windows-only Clippy violations from reparse-point scan
+   checks without changing their behavior.
 
 The immutable `v0.1.0-courier-macos-alpha` tag remains the first validated macOS
 recovery point. It is not moved. The preferred
-`v0.1.1-courier-macos-alpha` tag identifies the complete state including both
-Windows CI corrections.
+`v0.1.1-courier-macos-alpha` tag identifies the complete state including the
+Windows portability corrections.
 
 ## Why The Split Is Honest
 
@@ -84,6 +86,15 @@ fresh clone as part of milestone publication.
 The macOS application had already passed the recorded owner/runtime smoke tests.
 The Git validation does not replace the remaining repeated native acceptance
 matrix documented in the module 025 evidence.
+
+The first GitHub Windows jobs exposed and proved the compile namespace, Tauri
+event and native-path fixture defects described above. After their correction,
+an `x86_64-pc-windows-msvc` source check and warning-free Clippy check passed
+locally with only the Windows resource compiler replaced by a non-linking test
+adapter. This does not execute Windows binaries or create an installer. Final
+Windows runtime tests and NSIS creation remain pending because GitHub stopped
+assigning runners with an account billing/spending-limit failure before any job
+steps began.
 
 ## Known Boundary
 

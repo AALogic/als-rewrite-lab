@@ -983,3 +983,11 @@ internals are target-gated while the Windows unsupported-platform adapters stay
 available, allowing warning-free Clippy on both systems. GitHub Windows
 compilation, tests and installer creation are the acceptance tests for this
 platform boundary.
+
+The final source currently passes local `x86_64-pc-windows-msvc` checking and
+warning-free Clippy when only the unavailable Windows resource compiler is
+replaced by a non-linking test adapter. This verifies Rust source and target
+gates, not Windows execution or installer creation. New GitHub jobs are blocked
+before runner allocation by an account billing/spending-limit error, so the
+remaining Windows runtime and NSIS acceptance evidence must be collected after
+that external account condition is resolved.
