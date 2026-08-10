@@ -233,6 +233,11 @@ mod tests {
     #[test]
     fn path_key_is_stable_for_native_path() {
         let path = std::path::PathBuf::from("/tmp/Song.als");
-        assert_eq!(path_key(&path).as_deref(), Some("/tmp/Song.als"));
+        let expected = if cfg!(windows) {
+            "/tmp/song.als"
+        } else {
+            "/tmp/Song.als"
+        };
+        assert_eq!(path_key(&path).as_deref(), Some(expected));
     }
 }

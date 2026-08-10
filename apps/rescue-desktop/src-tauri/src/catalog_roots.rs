@@ -108,6 +108,7 @@ fn existing_paths(paths: impl IntoIterator<Item = PathBuf>) -> Vec<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::platform_project_scan_scope;
+    #[cfg(target_os = "macos")]
     use std::path::PathBuf;
 
     #[test]
