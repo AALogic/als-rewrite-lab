@@ -973,6 +973,9 @@ platform-gated by Tauri.
 
 The Windows dependency now enables the exact additional Win32 feature, the
 constants come from their generated namespace, and the macOS-only run-event
-arms are explicitly target-gated. Domain, copy, rewrite and Courier contracts
-are unchanged. GitHub Windows compilation is the acceptance test for this
-platform boundary.
+arms are explicitly target-gated. A second CI pass exposed a unit-test
+expectation that preserved path letter case even though Windows queue keys are
+intentionally case-insensitive; the expectation is now platform-aware. Domain,
+copy, rewrite and Courier contracts are unchanged. GitHub Windows compilation,
+tests and installer creation are the acceptance tests for this platform
+boundary.

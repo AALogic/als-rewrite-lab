@@ -26,11 +26,13 @@ The uncommitted product work was divided by evidence and responsibility:
 4. `d73f776` corrects two Windows-only compile boundaries exposed by the first
    canonical Draft PR: generated Win32 constant namespaces and macOS-only Tauri
    run events.
+5. `2559342` aligns the native-path normalization test with Windows
+   case-insensitive queue keys and removes a platform-specific unused import.
 
 The immutable `v0.1.0-courier-macos-alpha` tag remains the first validated macOS
 recovery point. It is not moved. The preferred
-`v0.1.1-courier-macos-alpha` tag identifies the complete state including the
-Windows CI correction.
+`v0.1.1-courier-macos-alpha` tag identifies the complete state including both
+Windows CI corrections.
 
 ## Why The Split Is Honest
 
