@@ -1,0 +1,214 @@
+{
+  "id": "021-project-catalog-builder",
+  "status": "verified",
+  "guard_version": "0.2",
+  "engineering_rules": {
+    "document": "ENGINEERING_RULES.md",
+    "version": "0.1",
+    "required_sections": [
+      "Purpose",
+      "Clean Code",
+      "Modularity",
+      "Testability",
+      "Error Handling",
+      "Data Safety",
+      "Project Hard Rules"
+    ]
+  },
+  "required_docs": [
+    "spec.md",
+    "plan.md",
+    "tasks.md",
+    "fixture-contract.md"
+  ],
+  "required_spec_literals": [
+    "ProjectCatalogBuildRequest v0.1",
+    "ProjectCatalogSnapshot v0.1",
+    "no primary Set is selected",
+    "ambiguous_project_context",
+    "ProjectCatalogStore"
+  ],
+  "blocking_markers": [
+    "BLOCKING_UNKNOWN",
+    "Gate Status: UNKNOWN",
+    "Gate Status: AMBIGUOUS",
+    "Gate Status: CONFLICTING"
+  ],
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: catalog IDs are local path occurrences, not musical-work identity",
+    "DOCUMENTED_ONLY: exact Backup component is the only automatic backup rule in v0.1",
+    "REVIEW_ONLY: builder has no filesystem access",
+    "REVIEW_ONLY: builder does not select a primary Set or infer version families",
+    "REVIEW_ONLY: builder has no dependency, package, copy or rewrite policy",
+    "ENFORCED_BY_TEST: standard_project_builds_physical_catalog",
+    "ENFORCED_BY_TEST: multiple_main_sets_are_retained_without_primary_selection",
+    "ENFORCED_BY_TEST: backup_set_is_retained_separately",
+    "ENFORCED_BY_TEST: standalone_set_remains_ungrouped",
+    "ENFORCED_BY_TEST: same_display_names_at_different_paths_do_not_merge",
+    "ENFORCED_BY_TEST: nested_marker_candidates_remain_ambiguous",
+    "ENFORCED_BY_TEST: marker_without_set_is_retained",
+    "ENFORCED_BY_TEST: partial_and_cancelled_scan_coverage_propagates",
+    "ENFORCED_BY_TEST: failed_or_inconsistent_scan_is_rejected",
+    "ENFORCED_BY_TEST: catalog_output_is_deterministic",
+    "ENFORCED_BY_TEST: path_ids_change_when_native_paths_change",
+    "ENFORCED_BY_TEST: catalog_warnings_contain_no_native_paths",
+    "ENFORCED_BY_TEST: fake_catalog_store_uses_snapshot_contract",
+    "ENFORCED_BY_TYPE: ProjectCatalogBuildRequest",
+    "ENFORCED_BY_TYPE: ProjectCatalogSnapshot",
+    "ENFORCED_BY_TYPE: ProjectCatalogMetadata",
+    "ENFORCED_BY_TYPE: ProjectFolderRecord",
+    "ENFORCED_BY_TYPE: LiveSetRecord",
+    "ENFORCED_BY_TYPE: ProjectCatalogWarning",
+    "ENFORCED_BY_TYPE: ProjectCatalogError"
+  ],
+  "required_tests": [
+    "standard_project_builds_physical_catalog",
+    "multiple_main_sets_are_retained_without_primary_selection",
+    "backup_set_is_retained_separately",
+    "standalone_set_remains_ungrouped",
+    "same_display_names_at_different_paths_do_not_merge",
+    "nested_marker_candidates_remain_ambiguous",
+    "marker_without_set_is_retained",
+    "partial_and_cancelled_scan_coverage_propagates",
+    "failed_or_inconsistent_scan_is_rejected",
+    "catalog_output_is_deterministic",
+    "path_ids_change_when_native_paths_change",
+    "catalog_warnings_contain_no_native_paths",
+    "fake_catalog_store_uses_snapshot_contract"
+  ],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "ProjectCatalogBuildRequest": [
+      "snapshot_id",
+      "scan_result"
+    ],
+    "ProjectCatalogSnapshot": [
+      "metadata",
+      "project_folders",
+      "live_sets",
+      "warnings",
+      "errors"
+    ],
+    "ProjectCatalogMetadata": [
+      "catalog_version",
+      "identity_policy_version",
+      "snapshot_id",
+      "source_scan_run_id",
+      "source_scan_status",
+      "build_status",
+      "project_folder_count",
+      "live_set_count",
+      "main_set_count",
+      "backup_set_count",
+      "ungrouped_set_count",
+      "ambiguous_set_count",
+      "source_warning_count",
+      "source_error_count",
+      "warning_count",
+      "error_count"
+    ],
+    "ProjectFolderRecord": [
+      "project_folder_id",
+      "source_root",
+      "native_root_path",
+      "marker_path",
+      "display_name",
+      "structural_status",
+      "main_set_ids",
+      "backup_set_ids",
+      "latest_modified_time_unix_ms"
+    ],
+    "LiveSetRecord": [
+      "live_set_id",
+      "source_root",
+      "native_als_path",
+      "relative_path",
+      "display_name",
+      "file_size",
+      "modified_time_unix_ms",
+      "location_kind",
+      "association_status",
+      "project_folder_id",
+      "candidate_project_folder_ids",
+      "observation_fingerprint"
+    ],
+    "ProjectCatalogWarning": [
+      "warning_id",
+      "warning_code",
+      "message",
+      "related_set_id",
+      "related_project_folder_ids"
+    ],
+    "ProjectCatalogError": [
+      "error_code",
+      "message"
+    ]
+  },
+  "expected_source_files": [
+    "crates/rescue_catalog/src/project_catalog.rs",
+    "crates/rescue_catalog/src/project_catalog_identity.rs",
+    "crates/rescue_catalog/src/project_catalog_grouping.rs",
+    "crates/rescue_catalog/src/project_catalog_impl.rs",
+    "crates/rescue_catalog/src/project_catalog_validation.rs"
+  ],
+  "quality_source_globs": [
+    "crates/rescue_catalog/src/project_catalog.rs",
+    "crates/rescue_catalog/src/project_catalog_grouping.rs",
+    "crates/rescue_catalog/src/project_catalog_identity.rs",
+    "crates/rescue_catalog/src/project_catalog_impl.rs",
+    "crates/rescue_catalog/src/project_catalog_validation.rs"
+  ],
+  "guarded_source_globs": [
+    "crates/rescue_catalog/src/project_catalog.rs",
+    "crates/rescue_catalog/src/project_catalog_grouping.rs",
+    "crates/rescue_catalog/src/project_catalog_identity.rs",
+    "crates/rescue_catalog/src/project_catalog_impl.rs",
+    "crates/rescue_catalog/src/project_catalog_validation.rs"
+  ],
+  "forbidden_output_fields": [
+    "primary_set",
+    "recommended_set",
+    "project_work_id",
+    "version_family",
+    "dependency_ref",
+    "content_identity",
+    "match_score",
+    "copy_operation",
+    "rewrite_operation"
+  ],
+  "forbidden_guarded_source_patterns": [
+    {
+      "literal": "std::fs",
+      "label": "filesystem access"
+    },
+    {
+      "literal": "canonicalize(",
+      "label": "canonicalize"
+    },
+    {
+      "literal": "flate2",
+      "label": "ALS decompression"
+    },
+    {
+      "literal": "unwrap(",
+      "label": "unwrap"
+    },
+    {
+      "literal": "expect(",
+      "label": "expect"
+    }
+  ],
+  "allowed_dependency_names": [
+    "serde",
+    "serde_json",
+    "sha2",
+    "tempfile"
+  ],
+  "quality_limits": {
+    "max_source_file_lines": 280,
+    "max_function_lines": 80
+  }
+}

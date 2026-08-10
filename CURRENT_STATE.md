@@ -1,8 +1,8 @@
 # Current State
 
-Status: Windows x64 Compatibility Lab installer is built and ready for private Ableton testing
+Status: Courier Collection V1 is implemented and verified on macOS
 
-Date: 2026-08-03
+Date: 2026-08-06
 
 Branch: `codex/windows-x64-alpha`
 
@@ -48,6 +48,11 @@ The implemented one-project audio path is:
 017 CurrentPathCopyPipeline
 018 DesktopCopyApplicationService
 019 CompatibilityLab
+020 ALSProjectScanner
+021 ProjectCatalogBuilder
+022 ProjectCatalogStore
+023 ProjectCatalogApplicationService
+024 BatchCopyApplicationService
 ```
 
 The CLI now supports:
@@ -67,10 +72,12 @@ The desktop application exists under `apps/rescue-desktop`. It is a local Tauri
 2 application with a React/TypeScript interface. Its current flow is:
 
 ```text
-choose one ALS -> analyze project -> show dependency summary and audio table
--> optionally copy a redacted diagnostic report
--> choose a destination -> review a read-only complete/incomplete copy preview
--> explicitly confirm -> create and validate a fresh Project copy
+load or refresh the private Project catalog
+-> select one or many concrete Live Sets, or add ALS files manually
+-> one Set: use the existing analysis and copy flow
+-> many Sets: choose one destination and review every preview before any write
+-> explicitly confirm -> create and validate fresh Project copies sequentially
+-> show per-project results plus one aggregate, path-redacted report
 ```
 
 The UI calls application services; it does not parse ALS, inspect paths, decide
@@ -78,6 +85,29 @@ completeness, copy files or rewrite references itself. The current-path copy
 uses only exact files that still exist at locations observed from the ALS. It
 does not search for moved samples. Missing references remain unchanged and are
 recorded as omissions in the package manifest.
+
+The Project catalog and batch foundation now includes modules 020 through 024.
+`ALSProjectScanner` walks only explicit approved roots, observes regular `.als`
+files and exact `Ableton Project Info` directories, reports partial or cancelled
+coverage, never follows filesystem links and never opens ALS content.
+`ProjectCatalogBuilder` then performs a pure transformation into physical
+ProjectFolder and LiveSet records. It retains multiple main Sets, separates
+exact Backup children, preserves ungrouped or ambiguous Sets and never invents
+a primary Set or version family. `ProjectCatalogStore` persists those records in
+a private versioned JSON state, preserves prior evidence after partial scans,
+marks complete-scan absence as stale rather than deleting history, and writes
+atomically on macOS and Windows x64.
+
+`ProjectCatalogApplicationService` exposes only path-redacted display records,
+resolves explicit catalog or manual selections into one shared
+`ProjectSelection` contract and leaves grouping policy outside React. The
+Desktop can select one or many concrete Live Sets. One selection enters the
+existing one-project flow; many selections enter `BatchCopyApplicationService`.
+Batch prepares every one-project preview before any write, blocks target
+collisions, executes ready jobs sequentially, isolates failures, supports
+cancellation between projects and emits an aggregate path-redacted report.
+The underlying one-project planning, rewrite, validation, manifest and promotion
+policy remains unchanged.
 
 As of ADR-007, this desktop flow no longer runs AssetInventory or computes
 SHA-256 for audio. `CurrentPathBindingResult v0.1` records current path and
@@ -504,28 +534,377 @@ safe Type 3 under Samples/... -> preserve placement, change Path only
 unsupported context, type or unsafe relative path blocks before staging
 ```
 
-## 8. Next Decision
+## 8. Active Next Work
 
-Before merging this branch or widening rewrite support:
+The user accepted Project discovery, simple selection and sequential batch
+execution. The complete implemented branch is:
 
-1. use the updated desktop bundle to generate a fresh Type 3 project copy and
-   open it manually in Ableton Live 11.3 with no missing media;
-2. review generated manifests and diagnostic reports from those manual runs;
-3. install the private Windows x64 Alpha artifact using
-   `docs/setup/WINDOWS_ALPHA_INSTALL_AND_TEST.md`, run its diagnostic checklist,
-   and keep Live 9/10 rewrite disabled in the strict build;
-4. install the separate Compatibility Lab artifact on the private Windows test
-   host, test copied Live 10 and 11.2 projects one at a time, manually open only
-   the generated copies in the matching Ableton versions, and return the
-   redacted `Kopiuj raport dla Codexa` JSON for review;
-5. add persistent incremental indexing only after the one-project desktop copy
-   flow is accepted end to end.
+```text
+020 ALSProjectScanner
+-> 021 ProjectCatalogBuilder
+-> 022 ProjectCatalogStore
+-> 023 ProjectCatalogApplicationService
+-> 024 BatchCopyApplicationService
+```
+
+Modules 020 through 024 passed the normal spec, contract, guard, test,
+implementation and review gates. The Desktop now exposes the path-redacted
+Project list, explicit multi-selection, manual multi-ALS fallback and
+sequential batch execution. This branch still does not parse every discovered
+ALS, scan audio, compute audio hashes, search for missing samples or change the
+current one-project copy policy.
+
+A fresh macOS debug bundle was built on 2026-08-03 and opened successfully. It
+loaded the private catalog and rendered 407 concrete Live Sets grouped by their
+physical Project folders. Automated service tests prove multi-selection,
+all-previews-before-write, collision handling, sequential execution, failure
+isolation, cancellation boundaries and path-redacted diagnostics. On
+2026-08-05 the owner reported a real macOS batch run with 11 jobs: 10 complete,
+one incomplete, no blocked or failed jobs. The generated project copies opened
+successfully in Ableton. This is field evidence for the macOS journey, while
+the one incomplete result and Windows behavior remain separate review targets.
+
+Module 025 QuickCopyAssistant is now implemented. A macOS `Open With` launch for
+one explicit ALS opens a separate 300 by 250 pixel surface near the cursor,
+while normal launch still opens the existing main application. The adapter
+registers ALS Rescue as `Viewer` / `Alternate`, keeps Ableton as the default
+handler and routes warm launches into one process through the single-instance
+plugin.
+
+The compact React surface uses a pure tested state machine and the unchanged
+module-018 `suggest_target_project_root`, `prepare_copy` and `execute_copy`
+boundaries. It contains no ALS parsing, copy or rewrite policy. An original
+opaque pixel-art worker provides deterministic state animations and respects
+reduced motion.
+
+Packaged macOS evidence on 2026-08-05 includes normal launch, cold and warm ALS
+launch, one-process reuse, complete and incomplete real copy runs, unchanged
+source hashes/inventories and a generated complete project opened successfully
+in Ableton Live 11. The local `.app` is ad-hoc signed for development and is not
+yet a notarized commercial release.
+
+Module 026 ExternalFolderHandoff is implemented for macOS. A packaged-app
+regression run on 2026-08-05 confirmed that `W` arms the worker, shows the parcel
+state and opens `https://wetransfer.com/` in the default browser. It accepts only
+the latest successful module-018 result, opens a
+closed `wetransfer_web` provider mapping in the system default browser and arms
+one native AppKit directory drag with copy-only semantics. React cannot supply
+an arbitrary provider URL or replace the backend candidate path. Missing,
+stale, mismatched and symlink targets fail closed; dropped, cancelled and
+failed drags all consume the session.
+
+The first owner run exposed a real integration defect: beginning AppKit drag
+after a React pointer event could lose the native mouse event, leave the worker
+stationary and keep the session busy. The corrected adapter installs a native
+input surface over the worker before opening the browser, accepts the browser-
+focus first click and starts from its real AppKit `mouseDown`. New copy attempts,
+new QuickCopy ALS launches and quick-window teardown now clear any stale session
+and native surface, so a failed attempt cannot block the next `W` action.
+The first corrected package then exposed an IPC naming defect before provider
+opening: Tauri expected camel-case multi-word arguments while React sent
+snake-case fields. Both handoff commands now declare `rename_all = "snake_case"`
+and a source-level regression test locks that boundary.
+
+QuickCopyAssistant now shows a pixel `W` control only after complete or
+incomplete copy success. Its worker carries a parcel while armed, says
+`Zabierz to ode mnie!`, disables ordinary window dragging during handoff and
+restores the exact prior copy outcome after every terminal drag result. The
+feature does not archive, upload, automate a browser, inspect a remote page or
+claim remote transfer completion.
+
+Automated evidence before the responsibility split included 22 Tauri unit tests, 21
+frontend tests, TypeScript checking, frontend production build, full Rust
+workspace tests and warning-free workspace Clippy. A corrected local arm64 DMG was
+built at `target/release/bundle/dmg/ALS Rescue_0.1.0_aarch64.dmg`. The owner has
+explicitly retained two manual tests: confirm WeTransfer's native drag-hover
+treatment and confirm a downloaded transfer preserves the Project tree. Those
+checks are not yet claimed as passed.
+
+Controlled macOS and Windows runs with real Project folders remain valuable
+parallel evidence. Resumable queues, background filesystem watching,
+version-family inference, Finder selection watching and parallel copy remain
+deferred until measurements justify them.
+
+The active accepted work is now a behavior-preserving cleanup of the compact
+assistant before any new character capability is added:
+
+```text
+025 QuickCopy job
+-> 027 AssistantHost presentation
+-> 028 TransferPayload private candidate and attempt lifecycle
+-> 026 current WeTransfer/native-drag coordinator
+```
+
+ADR-014 owns this separation. The refactor must keep module 018, visible copy
+behavior, the one current courier and the one current `wetransfer_web` action
+unchanged. It advances the handoff request to v0.2 by removing the redundant
+UI-supplied native target path. Provider catalogs, inbound ALS drop,
+parcel-only drag presentation, delivered/reload UX, character catalogs,
+multiple visible characters and licensing remain explicitly deferred until the
+foundation passes regression, package and manual smoke verification.
+
+The code-level split is now implemented. QuickCopy uses independent copy-job
+and frontend payload reducers; AssistantHost receives one presentation model;
+and the backend owns the private target path through TransferPayloadState.
+`ExternalFolderHandoffRequest v0.2` carries only request, provider and copy-result
+identities. Module guards 025-028, 24 Tauri tests, 26 frontend tests, TypeScript
+checking, the frontend production build, full locked Rust workspace tests and
+warning-free workspace Clippy pass. A fresh arm64 DMG was built and mounted;
+its QuickCopy launch accepted `first new_3.als`, created a complete Project in a
+fresh temporary root, emitted a manifest whose source ALS hash matched the
+post-run source hash, opened WeTransfer and armed the courier without accepting
+a React-nominated payload path. The run stopped before folder drop, so no
+upload or remote-completion claim is made. This behavior-preserving cleanup is
+accepted; provider drop verification and all deferred character capabilities
+remain separate later work.
+
+Manual macOS/Windows/Ableton compatibility runs remain valuable parallel
+evidence but do not block the read-only Project catalog foundation. Rewrite
+support for Live 9/10/12 remains unchanged and laboratory-only where already
+specified.
 
 Read next:
 
 ```text
 PRODUCT_SPINE.md
-docs/experiments/overnight-safe-vertical-slice-2026-07-27.md
 docs/architecture/traceability.md
-the active module specification
+docs/architecture/adr/ADR-011-project-catalog-identity-and-boundaries.md
+specs/023-project-catalog-application/spec.md
+specs/024-batch-copy-application/spec.md
+specs/025-quick-copy-assistant/spec.md
+specs/026-external-folder-handoff/spec.md
+docs/architecture/adr/ADR-013-external-folder-handoff-boundary.md
+docs/architecture/adr/ADR-014-assistant-host-and-transfer-payload.md
+specs/027-assistant-host/spec.md
+specs/028-transfer-payload/spec.md
 ```
+
+## 9. Active Accepted Increment: Courier Collection V1
+
+The owner accepted the next compact-assistant increment on 2026-08-05.
+ADR-015 is the durable decision. Implementation must preserve module 024 and
+compose it through immutable waves:
+
+```text
+029 CourierWorkQueue
+-> 030 CourierCollectionOrchestrator
+-> unchanged 024 BatchCopyApplicationService
+-> collection snapshot
+-> 028 TransferPayload v0.2
+-> 031 UniversalPayloadDrag
+   or 032 CollectionDelivery
+-> 027 AssistantHost v0.2 presentation
+```
+
+The user can add ALS files before or during processing. Files accepted during
+an active wave are processed automatically in a later immutable wave. Files
+added after the collection becomes ready return it to collecting and require a
+new Play action. Successful outputs from every wave remain in one logical
+collection. No physical batch wrapper directory is required in v0.1.
+
+The first configured output parent is `$HOME/Downloads/sexy_testy`. The first
+configured local delivery target is the owner's Google Drive Projects folder.
+Both values are private local settings selected or seeded on the owner's Mac;
+neither value may be hard-coded into source or exported diagnostics.
+
+Modules 029 through 032 and the v0.2 updates to modules 025, 027 and 028 are now
+implemented. Module 024 copy, rewrite, validation and naming policy remains the
+single-project execution engine and was not duplicated in React or the Courier
+coordinator.
+
+The packaged macOS debug application was exercised on 2026-08-06 with real
+copied project inputs. Evidence includes one complete single-project copy, one
+generic unable outcome for an unsupported input, one two-project collection
+processed by a single Play action, and one successful local delivery of both
+result Project directories to the configured Google Drive filesystem folder.
+The collection UI retained ordered queue display, bounded expansion/removal,
+stable character scale, separate parcel drag geometry and context-menu close /
+reload actions.
+
+Automated acceptance passed the frontend TypeScript check, 25 Vitest tests,
+frontend production build, full Rust workspace tests, Tauri library tests,
+`cargo fmt --check`, and all 32 workflow-guard module contracts. The current
+local ad-hoc-signed debug application is available at:
+
+```text
+target/debug/bundle/macos/ALS Rescue.app
+```
+
+`codesign --verify --deep --strict` passes for this local artifact. It is still
+not Developer ID signed or notarized and must not be presented as a commercial
+distribution build.
+
+Two external-provider claims remain deliberately open. The owner still needs
+to confirm that native parcel dragging shows WeTransfer's own drop affordance
+and that a downloaded transfer preserves every Project directory. Until then,
+the product claims only a copy-only native folder drag attempt, not a remote
+upload result.
+
+During a final run, the destination directory `$HOME/Downloads/sexy_testy`
+stopped responding to ordinary directory enumeration. A process sample showed
+the application waiting in the operating system's `hard_link` call while
+writing a private ledger; Terminal directory listing blocked independently
+after the application was stopped. macOS live APFS verification detected the
+volume as needing repair and completed a deferred repair. This is recorded as a
+host-filesystem incident rather than a Courier state-machine failure; the Mac
+should be restarted before that exact directory is used again.
+
+## 10. Terminal Courier Delivery
+
+The courier delivery lifecycle was corrected on 2026-08-06 after owner testing
+showed that the old `No. Zabrane.` presentation did not define whether a task
+was still active, delivered or ready for another project. The durable behavior
+is now owned by the backend collection orchestrator rather than inferred by the
+React presentation.
+
+Preparation and delivery are separate state axes. A ready immutable collection
+can begin exactly one `native_drag` or `local_google_drive` handoff. A successful
+handoff is terminal for the active order: the held parcel and delivery controls
+disappear. An accepted native drop displays exactly `Dostarczone pod drzwi`.
+Successful local Google Drive delivery displays
+`Gotowe. Zlecenie wyslane do folderu Google Drive.` Partial or failed local
+delivery remains retryable and retains the package.
+
+After terminal delivery, a new ALS automatically starts a fresh collection with
+one visible item; completed projects from the previous order are not carried
+into that list. Intake arriving while a handoff is still in progress is held for
+the next order and is promoted only after the current delivery succeeds. A
+cancelled or failed handoff returns that deferred intake to the current order.
+`Wyslij ponownie` explicitly reopens the same immutable completed package without
+running ALS processing again. Opening WeTransfer alone never completes an order.
+
+The parcel keeps a 48 by 48 logical-pixel hit surface while the character keeps
+the same scale in every state. Folder and Play use complete 44 by 44 hit targets.
+The van arrival duration is 1300 ms. The quick-window policy remains isolated in
+its platform adapter and is reapplied whenever the window is shown; macOS uses
+all-spaces and full-screen auxiliary behavior in addition to floating-window
+level.
+
+Automated acceptance passed the complete locked Rust workspace check, tests and
+warning-free Clippy, 33 Tauri tests, 32 frontend tests, TypeScript checking,
+frontend production build, formatting, semantic diff checks and module guards
+025, 030, 031 and 032. The ad-hoc-signed debug bundle was rebuilt, strict
+signature verification passed and the installed application opened a copied ALS
+in the compact courier entry state. Automated macOS accessibility control cannot
+reliably perform the final drag from the frameless transparent window, so one
+packaged owner test remains: drop the parcel into Finder, confirm
+`Dostarczone pod drzwi`, then add another ALS and confirm a fresh one-item order.
+
+The current local ad-hoc-signed application is installed at:
+
+```text
+/Applications/ALS Rescue.app
+```
+
+Successful Finder/WeTransfer drop and visible layering over the owner's exact
+full-screen Safari arrangement remain owner-observable compatibility checks.
+The application reports the native operating-system drop result; it still never
+claims that WeTransfer completed a remote upload.
+
+## 11. Full-Screen Presence And Integrated Held Parcel
+
+The quick courier presentation was tightened on 2026-08-06 without changing the
+copy pipeline. In the ready state the courier and held parcel are now painted as
+one stable 96 by 128 sprite. The separate 48 by 48 payload surface is invisible
+hit geometry only. Native drag start switches the character to the empty-hands
+sprite while AppKit owns the parcel image under the pointer. A cancelled or
+failed drag restores the integrated held-parcel sprite; a successful handoff
+keeps it absent.
+
+The first packaged macOS attempt used status window level and passed its unit
+contract, but a runtime full-screen test disproved it: the courier disappeared
+after Safari entered its own full-screen Space. The corrected adapter switches
+quick mode to accessory application policy, removes incompatible inherited
+window behaviors, joins all eligible Spaces/applications, uses full-screen
+auxiliary behavior and AppKit screen-saver window level, and restores regular
+application policy when the main window is opened. Active-Space reassertion
+never calls `set_focus`.
+
+The rebuilt and ad-hoc-signed application passed the runtime check with Safari
+frontmost, ALS Rescue inactive and the courier still on screen at Core Graphics
+layer 1000. The evidence and the failed first attempt are recorded in
+`docs/experiments/macos-courier-fullscreen-overlay-2026-08-06.md`.
+
+The owner then found that an ALS dragged from Finder passed through the visible
+overlay. The platform adapter had applied AppKit's `NonactivatingPanel` style to
+the ordinary `NSWindow` created by Tauri, although Apple defines that style only
+for `NSPanel` and its subclasses. The correction removes that unsupported style
+while retaining accessory application policy, first-mouse acceptance, explicit
+no-focus ordering, all-Spaces/full-screen behavior and screen-saver level. The
+standard Wry/WebKit drag destination remains the only inbound file-drop adapter.
+
+The correction passes 39 Tauri tests, warning-free Clippy, formatting, module
+guard 025, the production frontend build and strict code-signature verification.
+The packaged owner check must still confirm both facts together: the courier
+remains visible above Safari and one copied ALS dropped from Finder becomes the
+second queued item. The current local test application remains:
+
+```text
+/Applications/ALS Rescue.app
+```
+
+## 12. Idle Courier Session Close
+
+Owner testing found that `Zamknij kuriera` destroyed only the quick window while
+the process-level collection remained alive. Opening another ALS therefore
+appended it to abandoned queued work. The close lifecycle now cancels an armed
+native payload attempt, resets every idle collection in the backend, and only
+then closes the window. Copy waves and local delivery already in progress are
+preserved so closing the presentation cannot silently cancel filesystem work.
+
+The correction is covered by frontend policy and orchestration tests, 41
+frontend tests, TypeScript checking, the production frontend build and module
+guard 025. A fresh ad-hoc-signed debug application was installed at
+`/Applications/ALS Rescue.app`; closing an idle test order and reopening the
+courier completed through the new lifecycle without retaining the prior window.
+
+## 13. Requested Versus Packaged Project Count
+
+A real four-project courier run demonstrated that the native parcel correctly
+contained only the two projects whose copy jobs completed. One loose ALS was
+blocked by `PIPELINE_PROJECT_ROOT_UNCONFIRMED`; another job was blocked by
+`PIPELINE_OUTPUT_ALREADY_EXISTS`. The expanded list exposed those statuses, but
+its compact `4 projekty` label incorrectly suggested that all four outputs were
+inside the parcel. Ready collections now show packaged results against requested
+work, for example `2 z 4 projektów`, while retaining every attempted item and
+its status in the expanded list.
+
+The correction passes 42 frontend tests, TypeScript checking, the production
+frontend build and module guard 025. The refreshed ad-hoc-signed application is
+installed at `/Applications/ALS Rescue.app`.
+
+## 14. Repeatable Finder Intake After Native Handoff
+
+Owner testing found a second-cycle macOS defect: the first Finder intake,
+processing and native handoff succeeded, but after `Nowe zlecenie` the courier
+could no longer accept another ALS drop. Logical collection reset was correct.
+Removing consumed outbound parcel surfaces did not solve the defect. A later
+attempt re-registered dragged types on both Wry hierarchy levels, but the
+owner's exact runtime check disproved that hypothesis as well.
+
+The corrected investigation combined Apple documentation, the exact installed
+Tauri/Wry source and a live LLDB hierarchy inspection. AppKit delivers a drag
+only to a registered object that also implements the destination callbacks.
+Wry implements those callbacks on its nested `WryWebView`; its
+`WryWebViewParent` is only a wrapper view. The custom adapter registered both
+objects, which created a second, silent destination on the parent. Static tests
+had verified the register/unregister sequence rather than proving that a second
+Finder drop reached the Tauri event handler.
+
+Tauri/Wry is now the sole owner of inbound Finder drop registration. The custom
+AppKit inbound adapter and its lifecycle calls were removed. `Nowe zlecenie`
+resets the collection and outbound payload only, while Tauri's window-wide drop
+event continues to pass paths through the shared regular-file `.als` validator.
+Outbound parcel dragging remains isolated in its existing AppKit source.
+
+Architecture tests now reject custom inbound registration and require the
+Tauri/Wry event to use the shared Finder route. The owner's exact handoff ->
+`Nowe zlecenie` -> Finder drop remains the final packaged acceptance check and
+must not be marked complete from static tests alone.
+
+The correction passes 46 Tauri tests, 42 frontend tests, `cargo check`, Rust
+formatting and all 32 module guards. A fresh ad-hoc-signed debug bundle is
+installed at `/Applications/ALS Rescue.app` and passes strict signature
+verification. Post-change LLDB inspection confirms empty dragged-type lists on
+the Wry parent views while the nested Wry WebViews retain
+`NSFilenamesPboardType` and their regular WebKit destination types.

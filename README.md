@@ -85,7 +85,7 @@ or Windows read-only laboratory handoff.
 The default guard checks the staged index and untracked worktree. It checks
 private home paths, private-corpus identifiers, UTF-8 and UTF-16 path dumps, and
 rejects unscannable tracked binary content except for an exact allowlist of
-required Tauri application icons. It also rejects tracked Ableton and
+required application icons and product-owned visual assets. It also rejects tracked Ableton and
 common audio extensions case-insensitively before decoding payloads, including
 OGG, AAC, and SD2. Eligible objects are size-checked before their contents are
 streamed, and oversized objects fail closed without loading their payloads. No

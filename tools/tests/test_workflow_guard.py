@@ -33,6 +33,12 @@ class WorkspaceTestDiscoveryTest(unittest.TestCase):
                     "fn helper_is_not_a_test() {}\n",
                     encoding="utf-8",
                 )
+                tauri_source = root / "apps" / "desktop" / "src-tauri" / "src"
+                tauri_source.mkdir(parents=True)
+                (tauri_source / "entry.rs").write_text(
+                    "#[test]\nfn tauri_contract_is_kept() {}\n",
+                    encoding="utf-8",
+                )
 
                 guard.ROOT = root
 
@@ -42,6 +48,7 @@ class WorkspaceTestDiscoveryTest(unittest.TestCase):
                         "core_contract_is_kept",
                         "analyzer_contract_is_kept",
                         "cli_contract_is_kept",
+                        "tauri_contract_is_kept",
                     },
                 )
         finally:
@@ -111,6 +118,37 @@ class ModuleDependencyScopeTest(unittest.TestCase):
             )
 
             self.assertEqual(guard.cargo_dependency_names([manifest]), {"sha2"})
+
+    def test_explicit_manifest_does_not_pull_in_workspace_manifest(self) -> None:
+        original_root = guard.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                app = root / "apps" / "desktop"
+                app.mkdir(parents=True)
+                (root / "Cargo.toml").write_text(
+                    "[dependencies]\nworkspace_only = \"1\"\n",
+                    encoding="utf-8",
+                )
+                (app / "Cargo.toml").write_text(
+                    "[dependencies]\napp_only = \"1\"\n",
+                    encoding="utf-8",
+                )
+                source = app / "src" / "entry.rs"
+                source.parent.mkdir()
+                source.write_text("pub fn entry() {}\n", encoding="utf-8")
+                guard.ROOT = root
+                contract = {
+                    "expected_source_files": ["apps/desktop/src/entry.rs"],
+                    "dependency_manifest_paths": ["apps/desktop/Cargo.toml"],
+                }
+
+                manifests = guard.module_cargo_manifest_paths(contract)
+
+                self.assertEqual(manifests, {app / "Cargo.toml"})
+                self.assertEqual(guard.cargo_dependency_names(manifests), {"app_only"})
+        finally:
+            guard.ROOT = original_root
 
 
 class QualitySourceCoverageTest(unittest.TestCase):

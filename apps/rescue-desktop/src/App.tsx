@@ -11,7 +11,6 @@ import {
   ExternalLink,
   FileAudio,
   FolderOutput,
-  FolderOpen,
   LoaderCircle,
   Play,
   Search,
@@ -27,6 +26,9 @@ import type {
   DesktopCopyResult,
   PreflightRequirement,
 } from "./contracts/desktop";
+import { ProjectCatalogPanel } from "./catalog/ProjectCatalogPanel";
+import type { ProjectSelection } from "./catalog/contracts";
+import { BatchCopyPanel } from "./batch/BatchCopyPanel";
 import "./App.css";
 
 function fileName(path: string) {
@@ -72,8 +74,12 @@ function App() {
     experimental_compatibility_available: false,
   });
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [batchSelections, setBatchSelections] = useState<ProjectSelection[] | null>(null);
   const [result, setResult] = useState<DesktopAnalyzeResult | null>(null);
-  const [busyStage, setBusyStage] = useState<"analysis" | "preview" | "copy" | null>(null);
+  const [busyStage, setBusyStage] = useState<
+    "catalog_load" | "catalog_scan" | "selection" | "batch_preview" | "batch_copy"
+    | "analysis" | "preview" | "copy" | null
+  >(null);
   const [uiError, setUiError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copyReportCopied, setCopyReportCopied] = useState(false);
@@ -115,6 +121,11 @@ function App() {
   }, [busyStage]);
 
   const status = useMemo(() => {
+    if (busyStage === "catalog_load") return { label: "Wczytuję projekty", tone: "working" };
+    if (busyStage === "catalog_scan") return { label: "Skanuję projekty", tone: "working" };
+    if (busyStage === "selection") return { label: "Przygotowuję wybór", tone: "working" };
+    if (busyStage === "batch_preview") return { label: "Planuję kopie", tone: "working" };
+    if (busyStage === "batch_copy") return { label: "Tworzę kopie", tone: "working" };
     if (busyStage === "analysis") return { label: "Analiza trwa", tone: "working" };
     if (busyStage === "preview") return { label: "Przygotowuję plan", tone: "working" };
     if (busyStage === "copy") return { label: "Tworzę kopię", tone: "working" };
@@ -130,33 +141,39 @@ function App() {
     return { label: "Gotowy", tone: "idle" };
   }, [busyStage, copyResult, result, uiError]);
 
-  async function chooseAls() {
-    setUiError(null);
-    try {
-      const path = await open({
-        multiple: false,
-        directory: false,
-        filters: [{ name: "Ableton Live Set", extensions: ["als"] }],
-      });
-      if (typeof path === "string") {
-        setSelectedPath(path);
-        setResult(null);
-        setCopied(false);
-        setCopyReportCopied(false);
-        setCopyPreview(null);
-        setCopyResult(null);
-        setExperimentalConsent(false);
-        setManualOutcome("not_checked");
-        setTestedAbletonVersion("");
-        setCompatibilityReportCopied(false);
-      }
-    } catch {
-      setUiError("Nie udało się otworzyć wyboru pliku.");
-    }
+  function resetProject(path: string) {
+    setSelectedPath(path);
+    setResult(null);
+    setCopied(false);
+    setCopyReportCopied(false);
+    setCopyPreview(null);
+    setCopyResult(null);
+    setExperimentalConsent(false);
+    setManualOutcome("not_checked");
+    setTestedAbletonVersion("");
+    setCompatibilityReportCopied(false);
   }
 
-  async function runAnalysis() {
-    if (!selectedPath) return;
+  function handleResolvedSelection(selections: ProjectSelection[]) {
+    if (selections.length > 1) {
+      setBatchSelections(selections);
+      setSelectedPath(null);
+      setResult(null);
+      setCopyPreview(null);
+      setCopyResult(null);
+      setUiError(null);
+      return;
+    }
+    if (selections.length === 0) return;
+    setBatchSelections(null);
+    const path = selections[0].native_als_path;
+    resetProject(path);
+    void runAnalysis(path);
+  }
+
+  async function runAnalysis(pathOverride?: string) {
+    const sourcePath = pathOverride ?? selectedPath;
+    if (!sourcePath) return;
     setBusyStage("analysis");
     setUiError(null);
     setCopied(false);
@@ -170,7 +187,7 @@ function App() {
     try {
       const requestId = globalThis.crypto?.randomUUID?.() ?? `desktop-${Date.now()}`;
       const next = await invoke<DesktopAnalyzeResult>("analyze_project", {
-        request: { request_id: requestId, source_als_path: selectedPath },
+        request: { request_id: requestId, source_als_path: sourcePath },
       });
       setResult(next);
     } catch (error) {
@@ -287,37 +304,26 @@ function App() {
         </div>
       </header>
 
-      <section className="project-bar" aria-label="Wybrany projekt">
-        <div className="project-file">
-          <div className="file-icon"><FileAudio size={20} /></div>
-          <div className="file-copy">
-            <strong>{selectedPath ? fileName(selectedPath) : "Nie wybrano projektu"}</strong>
-            <span title={selectedPath ?? undefined}>
-              {selectedPath ?? "Plik Ableton Live Set (.als)"}
-            </span>
-          </div>
-        </div>
-        <div className="project-actions">
-          <button className="button secondary" onClick={chooseAls} disabled={busy}>
-            <FolderOpen size={17} />Wybierz ALS
-          </button>
-          <button className="button primary" onClick={runAnalysis} disabled={!selectedPath || busy}>
-            {busy ? <LoaderCircle className="spin" size={17} /> : <Play size={17} />}
-            {busy ? "Analizuję" : "Analizuj"}
-          </button>
-        </div>
-      </section>
-
       {busyStage ? (
         <section className="operation-progress" role="status" aria-live="polite">
           <LoaderCircle className="spin" size={20} aria-hidden="true" />
           <div>
             <strong>
-              {busyStage === "analysis"
-                ? "Analizuję projekt"
-                : busyStage === "preview"
-                  ? "Przygotowuję bezpieczny plan kopii"
-                  : "Tworzę i sprawdzam kopię projektu"}
+              {busyStage === "catalog_load"
+                ? "Wczytuję zapisany katalog projektów"
+                : busyStage === "catalog_scan"
+                  ? "Szukam projektów Ableton na komputerze"
+                  : busyStage === "selection"
+                    ? "Sprawdzam wybrane projekty"
+                    : busyStage === "batch_preview"
+                      ? "Przygotowuję plany wszystkich projektów"
+                      : busyStage === "batch_copy"
+                        ? "Tworzę i sprawdzam kopie kolejno"
+                        : busyStage === "analysis"
+                          ? "Analizuję projekt"
+                          : busyStage === "preview"
+                            ? "Przygotowuję bezpieczny plan kopii"
+                            : "Tworzę i sprawdzam kopię projektu"}
             </strong>
             <span>Program pracuje. Upłynęło {elapsedSeconds} s.</span>
           </div>
@@ -342,6 +348,44 @@ function App() {
           </div>
         </section>
       ) : null}
+
+      {batchSelections ? (
+        <BatchCopyPanel
+          selections={batchSelections}
+          experimentalCompatibilityAvailable={applicationProfile.experimental_compatibility_available}
+          onBusyChange={setBusyStage}
+          onError={setUiError}
+          onClose={() => {
+            setBatchSelections(null);
+            setUiError(null);
+          }}
+        />
+      ) : (
+        <>
+          <ProjectCatalogPanel
+            disabled={busy}
+            onBusyChange={setBusyStage}
+            onError={setUiError}
+            onSelectionResolved={handleResolvedSelection}
+          />
+
+          <section className="project-bar" aria-label="Wybrany projekt">
+        <div className="project-file">
+          <div className="file-icon"><FileAudio size={20} /></div>
+          <div className="file-copy">
+            <strong>{selectedPath ? fileName(selectedPath) : "Nie wybrano projektu"}</strong>
+            <span title={selectedPath ?? undefined}>
+              {selectedPath ?? "Plik Ableton Live Set (.als)"}
+            </span>
+          </div>
+        </div>
+        <div className="project-actions">
+          <button className="button primary" onClick={() => runAnalysis()} disabled={!selectedPath || busy}>
+            {busy ? <LoaderCircle className="spin" size={17} /> : <Play size={17} />}
+            {busy ? "Analizuję" : "Analizuj"}
+          </button>
+        </div>
+          </section>
 
       {report ? (
         <>
@@ -520,6 +564,8 @@ function App() {
           <strong>Oczekiwanie na projekt</strong>
           <span>Wybierz plik .als, aby rozpocząć analizę.</span>
         </section>
+      )}
+        </>
       )}
 
       <footer><span>Praca lokalna</span><span>Oryginalne pliki pozostają bez zmian</span></footer>

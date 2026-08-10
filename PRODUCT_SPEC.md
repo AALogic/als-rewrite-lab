@@ -147,11 +147,32 @@ template ALS
 orphan ALS outside a normal project folder
 ```
 
-### 5.3 Main ALS
+### 5.3 Catalog Project And Live Set
 
-The main ALS is the set that should appear in the user's project list.
+The project catalog keeps physical containers and concrete ALS files separate:
 
-Backup ALS files should be hidden by default but recorded as related metadata.
+```text
+ProjectFolder
+  one physical folder supported by structural Project evidence
+
+LiveSet
+  one concrete ALS file observed at one native path and scan time
+
+BackupSet
+  one LiveSet under an Ableton Backup directory
+
+ProjectWork
+  a future logical musical work or version family supported by separate
+  relationship evidence
+```
+
+The catalog must preserve every discovered Live Set. A presentation layer may
+recommend or preselect a Set only through an explicit, versioned policy and may
+never delete the alternatives from the model.
+
+Several main ALS files in one physical Project Folder are not automatically
+versions of the same work. Same-folder placement, filename similarity and
+modification time are evidence, not identity.
 
 ### 5.4 Backup ALS
 
@@ -324,7 +345,9 @@ refactors.
 Initial contract names:
 
 ```text
-ProjectRecord v0.1
+ProjectScanResult v0.1
+ProjectCatalogSnapshot v0.1
+ProjectSelection v0.1
 ALSReadModel v0.2
 DependencyRef v0.1
 AssetRecord v0.1
@@ -343,9 +366,11 @@ own detailed module specification before implementation.
 | Module | Primary Responsibility | Input | Output | Does Not Do |
 | --- | --- | --- | --- | --- |
 | PermissionAndScanScope | Explain scan scope and obtain user permission. | User request, platform permissions. | Approved scan scope. | Does not scan files or analyze projects. |
-| FullDiskScanner | Walk approved local locations and find candidate files. | Approved scan scope. | Raw file candidates and scan events. | Does not decide project grouping or dependency meaning. |
-| ProjectDiscovery | Detect and group Ableton projects from `.als` files. | Raw `.als` candidates and filesystem context. | `ProjectRecord` list. | Does not parse ALS internals or analyze dependencies. |
-| ProjectRegistry | Persist discovered project metadata. | `ProjectRecord` updates. | Stored project registry records. | Does not own discovery rules or package decisions. |
+| ALSProjectScanner | Observe `.als` files and exact Project markers under approved roots. | Approved roots and bounded traversal policy. | `ProjectScanResult`. | Does not parse ALS, group projects, select Sets, hash audio or write. |
+| ProjectCatalogBuilder | Build a physical ProjectFolder / LiveSet / BackupSet catalog from observations. | `ProjectScanResult`. | `ProjectCatalogSnapshot`. | Does not access the filesystem, infer version families or select a Set. |
+| ProjectCatalogStore | Persist catalog snapshots, scan coverage and freshness. | Versioned catalog updates. | Stored catalog records. | Does not own scan, grouping, UI or package policy. |
+| ProjectCatalogApplicationService | Expose a small desktop list and create explicit Set selections. | Catalog snapshot and user choices. | `ProjectListItem` / `ProjectSelection`. | Does not expose storage internals or run dependency policy in the UI. |
+| ProjectDiscovery | Establish structural Project root context for one explicitly selected ALS. | One selected ALS path. | `ProjectDiscoveryResult`. | Does not recursively scan the computer, group a catalog or parse ALS. |
 | ALSReader | Read ALS bytes and extract raw active reference facts. | `.als` path or bytes, project root context. | `ALSReadModel` / raw dependency facts. | Does not classify storage policy, match files, copy, rewrite or validate packages. |
 | DependencyExtractor | Convert raw ALS facts into dependency records. | `ALSReadModel`. | `DependencyRef` list. | Does not check disk existence or decide package actions. |
 | PathVerifier | Check whether referenced paths resolve to existing files. | `DependencyRef`, project root, filesystem adapter. | Updated dependency existence state. | Does not classify product risk beyond existence facts. |
@@ -358,7 +383,7 @@ own detailed module specification before implementation.
 | ALSRewriter | Rewrite only the copied ALS according to approved operations. | Copied ALS, accepted `RewriteOperation` list. | Rewritten copied ALS. | Does not rewrite originals, match samples, copy files or modify unrelated XML. |
 | Validator / SemanticDiff | Verify copied files, rewritten ALS and package integrity. | Package output, manifest draft, original hashes. | Validation result. | Does not fix errors silently or change the package. |
 | ManifestWriter | Persist operation evidence and decisions. | Plan, copy results, rewrite results, validation result. | `Manifest`. | Does not make domain decisions after the fact. |
-| BatchRunner | Orchestrate the same workflow for many projects later. | Project list and per-project workflow inputs. | Per-project results and aggregate report. | Does not introduce separate business rules for batch mode. |
+| BatchCopyApplicationService | Orchestrate the existing one-project preview and copy flow for many explicit selections. | `ProjectSelection` list, destination parent and consent. | Per-project results and aggregate report. | Does not introduce separate package, rewrite or validation rules. |
 
 Preflight is a product stage, not a single large domain module.
 
@@ -538,7 +563,7 @@ should produce the same output.
 Required behavior:
 
 ```text
-same ALS + same ProjectRecord + same AssetIndex + same ruleset
+same ALS + same ProjectDiscoveryResult + same AssetIndex + same ruleset
   -> same DependencyRef set
   -> same MatchCandidate scores
   -> same PackagePlan
@@ -898,9 +923,11 @@ scan may take time
 index can be reused later
 ```
 
-### 6.2 Full Disk Scan
+### 6.2 Approved Local Project Scan
 
-The product performs a broad local scan.
+The product can perform a broad local scan after explicit user permission, but
+the scanner always receives explicit approved roots. It never derives an
+unbounded root by walking upward from a known project.
 
 The scan should include:
 
@@ -931,48 +958,92 @@ temporary caches
 If the user explicitly enables an advanced exhaustive scan, the product can
 include more locations.
 
-### 6.3 Project Discovery
-
-The product finds `.als` files and groups them into projects.
-
-For each discovered project, store:
+The first project-catalog pass observes only:
 
 ```text
-project_id
-project_name
+.als file paths and basic file metadata
+exact Ableton Project Info directory markers
+scan coverage, exclusions, denied paths and cancellation state
+```
+
+It does not:
+
+```text
+decompress every ALS
+scan or hash audio
+search for missing samples
+infer Live Set version families
+write into source projects
+```
+
+The result must distinguish `complete`, `partial` and `cancelled` coverage.
+Denied or skipped locations are aggregated and reported; they never silently
+become a claim that the computer was fully scanned.
+
+### 6.3 Project Discovery
+
+The scanner finds `.als` observations. The catalog builder then groups physical
+Project evidence without inventing musical-work identity.
+
+For each physical Project Folder, store:
+
+```text
+project_folder_id
 project_root_path
-main_als_path
-all_als_paths
-backup_als_paths
-latest_modified_time
 ableton_project_info_present
 samples_folder_present
 backup_folder_present
-project_size_estimate
 discovery_confidence
+main_set_ids
+backup_set_ids
+latest_observed_time
+source_scan_run_id
+coverage_status
 ```
 
-The user-facing project list should show grouped projects, not every raw ALS.
+For each concrete Live Set, store:
+
+```text
+live_set_id
+project_folder_id or ungrouped
+native_als_path
+display_name
+location_kind
+file_size
+modified_time
+observation_fingerprint
+last_observed_scan_id
+```
+
+The user-facing list should show understandable grouped projects, not every raw
+Backup ALS. Every main Set remains individually selectable.
 
 Backups are hidden by default but counted and available in details.
 
+If a physical Project Folder contains several main Sets, the product must show
+that fact and require a concrete Set selection. It must not silently label them
+as versions of one work.
+
 ### 6.4 User Selects Project
 
-The user selects one or more projects for analysis.
+The user selects one or more concrete Live Sets for analysis.
 
-Product goal supports many projects, but first high-quality workflow should
-handle one selected project very well.
+Automatic catalog selection and manual `Add ALS` must produce the same
+`ProjectSelection` contract. The desktop must pass opaque catalog identifiers
+and display data; it must not become the owner of filesystem grouping rules.
 
-Future multi-project mode should reuse:
+Multi-project mode reuses:
 
 ```text
-same project registry
-same asset index
-same dependency extraction
-same matcher
-same planner
-batch orchestration
+same one-project read-only analysis
+same one-project preview
+same PackagePlanner
+same staging/rewrite/validation/manifest/promotion pipeline
+one sequential application-level batch orchestrator
 ```
+
+Every selected Set is an isolated job. One blocked or failed job does not
+invalidate completed jobs or prevent independent queued jobs from continuing.
 
 ### 6.5 Working Copy / Analysis Snapshot
 
@@ -1462,19 +1533,28 @@ The user's verification result is recorded in the manifest or project registry.
 
 ## 7. Data Models
 
-### 7.1 ProjectRecord
+### 7.1 Project Catalog Contracts
 
 ```text
-project_id
-project_name
-project_root_path
-main_als_path
-backup_als_paths
-all_als_paths
-latest_modified_time
-discovery_confidence
-project_status
-last_scan_time
+ProjectScanResult
+  scan metadata
+  ALS observations
+  Project marker observations
+  warnings and errors
+  coverage status
+
+ProjectCatalogSnapshot
+  physical Project Folders
+  concrete Live Sets
+  Backup Sets
+  ungrouped Sets
+  source scan and coverage
+
+ProjectSelection
+  selected Live Set identity
+  optional Project Folder identity
+  catalog or manual origin
+  source observation fingerprint
 ```
 
 ### 7.2 DependencyRef
@@ -1715,14 +1795,19 @@ Write manifest.
 User verifies in Ableton.
 ```
 
-### 9.4 Future Batch Mode
+### 9.4 Sequential Batch Mode
 
 ```text
-Run audit/package workflows for many projects.
-Reuse asset index.
-Avoid repeated scans.
-Surface per-project status and blockers.
+Resolve one or many explicit Project selections.
+Prepare every one-project preview before the first write.
+Block target collisions and surface per-project readiness.
+Execute ready one-project transactions sequentially.
+Isolate blocked, failed, cancelled and completed results.
+Write per-project manifests and a path-redacted aggregate report.
 ```
+
+Persisted resume, parallel analysis and reuse of a future audio asset index are
+later optimizations. They are not part of the v0.1 batch contract.
 
 ### 9.5 Future Cleanup Mode
 
@@ -1954,18 +2039,20 @@ incremental.
 Recommended build order:
 
 ```text
-1. ALSReader contract review and v0.2 data model.
-2. ProjectDiscovery for local ALS/project grouping.
-3. ProjectAnalyzer / Preflight for one selected project.
-4. PathVerifier for existing/missing dependencies.
-5. AssetIndexer for local audio files.
-6. SampleMatcher with scoring.
-7. PackagePlanner.
-8. CopyStager.
-9. ALSRewriter for copied ALS only.
-10. Validator / SemanticDiff.
-11. Manifest writer.
-12. Batch mode and later cleanup only after safe core is proven.
+Completed foundation:
+  ALSReader through one-project Desktop copy, validation and manifests.
+
+Active continuation:
+1. ALSProjectScanner for approved roots.
+2. ProjectCatalogBuilder for physical ProjectFolder / LiveSet grouping.
+3. ProjectCatalogStore for local snapshots and freshness.
+4. ProjectCatalogApplicationService and simple multi-select list.
+5. BatchCopyApplicationService using the existing one-project pipeline.
+
+Later:
+  whole-computer audio index and moved-file matching
+  Live Set version families and semantic diff
+  cleanup and library management
 ```
 
 First meaningful user-visible slice:
@@ -2019,15 +2106,17 @@ This document describes the full product. MVP is a smaller, controlled slice.
 MVP goal:
 
 ```text
-Analyze one selected Ableton project, understand its managed audio dependencies,
-find missing samples when possible, create a safe portable package for supported
-cases, validate the result, and write a manifest.
+Analyze one or more explicitly selected Ableton projects, understand their
+managed audio dependencies, create safe portable packages for supported cases,
+validate each result, and write manifests.
 ```
 
 In MVP:
 
 ```text
-one selected project at a time
+one or many explicitly selected concrete Live Sets
+lightweight Project catalog and manual Add ALS fallback
+all batch previews before writes and sequential isolated execution
 read-only ALS analysis
 active audio dependency extraction
 project/dependency preflight report
@@ -2045,7 +2134,6 @@ manual Ableton verification by user
 Not in MVP:
 
 ```text
-batch mode for many projects
 safe cleanup / garbage collection
 automatic deletion of unused files
 Windows migration as a complete supported workflow

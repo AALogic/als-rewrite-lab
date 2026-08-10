@@ -2,6 +2,7 @@
 /target/
 **/.DS_Store
 *.log
+/.lavish/
 
 # Local archives and generated bundles
 /Archiwum.zip

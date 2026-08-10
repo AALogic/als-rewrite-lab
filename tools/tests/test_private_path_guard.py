@@ -397,25 +397,48 @@ class PrivatePathGuardTest(unittest.TestCase):
             set(payloads),
         )
 
-    def test_allows_only_required_tauri_application_icons(self) -> None:
+    def test_allows_only_explicit_product_binary_assets(self) -> None:
         with tempfile.TemporaryDirectory() as raw_repository:
             repository = Path(raw_repository)
             self.initialize_repository(repository)
-            allowed = repository / "apps/rescue-desktop/src-tauri/icons/icon.png"
+            allowed_icon = repository / "apps/rescue-desktop/src-tauri/icons/icon.png"
+            allowed_courier = (
+                repository / "apps/rescue-desktop/public/quick-worker/ready.png"
+            )
             rejected = repository / "docs/icon.png"
-            allowed.parent.mkdir(parents=True)
+            allowed_icon.parent.mkdir(parents=True)
+            allowed_courier.parent.mkdir(parents=True)
             rejected.parent.mkdir(parents=True)
-            allowed.write_bytes(b"\x89PNG\r\n\x1a\n\0fixture")
+            allowed_icon.write_bytes(b"\x89PNG\r\n\x1a\n\0fixture")
+            allowed_courier.write_bytes(b"\x89PNG\r\n\x1a\n\0fixture")
             rejected.write_bytes(b"\x89PNG\r\n\x1a\n\0fixture")
             subprocess.run(
-                ["git", "add", "--", allowed.relative_to(repository), rejected.relative_to(repository)],
+                [
+                    "git",
+                    "add",
+                    "--",
+                    allowed_icon.relative_to(repository),
+                    allowed_courier.relative_to(repository),
+                    rejected.relative_to(repository),
+                ],
                 cwd=repository,
                 check=True,
             )
 
             violations = private_path_guard.scan_repository(repository)
 
-        self.assertFalse(any(violation.path == allowed.relative_to(repository) for violation in violations))
+        self.assertFalse(
+            any(
+                violation.path == allowed_icon.relative_to(repository)
+                for violation in violations
+            )
+        )
+        self.assertFalse(
+            any(
+                violation.path == allowed_courier.relative_to(repository)
+                for violation in violations
+            )
+        )
         self.assertTrue(
             any(
                 violation.path == rejected.relative_to(repository)
@@ -473,10 +496,12 @@ class PrivatePathGuardTest(unittest.TestCase):
         self.assertEqual(private_path_guard.ALLOWED_TRACKED_MEDIA_FIXTURES, frozenset())
         self.assertTrue(private_path_guard.ALLOWED_TRACKED_BINARY_FILES)
         self.assertTrue(
-            all(
-                path.startswith("apps/rescue-desktop/src-tauri/icons/")
-                for path in private_path_guard.ALLOWED_TRACKED_BINARY_FILES
-            )
+            "apps/rescue-desktop/public/quick-worker/ready.png"
+            in private_path_guard.ALLOWED_TRACKED_BINARY_FILES
+        )
+        self.assertNotIn(
+            "docs/icon.png",
+            private_path_guard.ALLOWED_TRACKED_BINARY_FILES,
         )
         self.assertEqual(private_path_guard.scan_repository(repository), [])
 

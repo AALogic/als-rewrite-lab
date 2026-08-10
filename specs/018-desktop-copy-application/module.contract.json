@@ -24,6 +24,6 @@
   "quality_source_globs": ["crates/rescue_application/src/desktop_copy*.rs"],
   "guarded_source_globs": ["crates/rescue_application/src/desktop_copy*.rs"],
   "forbidden_guarded_source_patterns": [{"literal": "remove_file", "label": "file deletion"}, {"literal": "remove_dir", "label": "directory deletion"}, {"literal": "unwrap(", "label": "unwrap"}, {"literal": "expect(", "label": "expect"}],
-  "allowed_dependency_names": ["flate2", "rescue_analyzer", "rescue_core", "rescue_pipeline", "serde", "serde_json", "sha2", "tempfile"],
+  "allowed_dependency_names": ["flate2", "rescue_analyzer", "rescue_catalog", "rescue_core", "rescue_pipeline", "serde", "serde_json", "sha2", "tempfile"],
   "quality_limits": {"max_source_file_lines": 280, "max_function_lines": 80}
 }

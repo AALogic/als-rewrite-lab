@@ -1,21 +1,66 @@
+mod batch_copy;
+mod batch_copy_execute;
+mod batch_copy_operations;
+mod batch_copy_prepare;
+mod batch_copy_result;
+mod batch_copy_validation;
+mod collection_delivery;
+mod collection_delivery_io;
 mod compatibility_report;
+mod courier_collection;
+mod courier_collection_result;
+mod courier_work_queue;
 mod desktop_analysis;
 mod desktop_copy;
 mod desktop_copy_diagnostic;
 mod desktop_copy_impl;
 mod desktop_copy_result;
 mod desktop_diagnostic;
+mod project_catalog_application;
+mod project_catalog_groups;
+mod project_catalog_projection;
+mod project_catalog_refresh;
+mod project_selection;
 
+pub use batch_copy::{
+    execute_batch_copy, execute_batch_copy_controlled, execute_batch_copy_with_operations,
+    prepare_batch_copy, prepare_batch_copy_with_operations, BatchCopyDiagnosticReport,
+    BatchCopyJobResult, BatchCopyObserver, BatchCopyOperations, BatchCopyPreview, BatchCopyResult,
+    BatchCopySummary, BatchExecuteCopyRequest, BatchPrepareCopyRequest, BatchPreviewJob,
+    BatchProgressEvent, BATCH_COPY_DIAGNOSTIC_SCHEMA_VERSION, BATCH_COPY_SERVICE_VERSION,
+};
+pub(crate) use collection_delivery::delivery_error;
+pub use collection_delivery::{
+    execute_collection_delivery, plan_collection_delivery, CollectionDeliveryError,
+    CollectionDeliveryItemResult, CollectionDeliveryOperation, CollectionDeliveryPlan,
+    CollectionDeliveryRequest, CollectionDeliveryResult, COLLECTION_DELIVERY_SCHEMA_VERSION,
+};
 pub use compatibility_report::{
     application_profile, finalize_compatibility_test_report, CompatibilityTestReport,
     CompatibilityTestReportRequest, DesktopApplicationProfile,
     COMPATIBILITY_TEST_REPORT_SCHEMA_VERSION, DESKTOP_APPLICATION_PROFILE_SCHEMA_VERSION,
+};
+pub use courier_collection::{
+    CourierBatchWave, CourierCollectionError, CourierCollectionItem, CourierCollectionOrchestrator,
+    CourierCollectionSnapshot, CourierHandoffSnapshot, DeliveryCollectionSnapshot,
+    COURIER_COLLECTION_SCHEMA_VERSION,
+};
+pub use courier_work_queue::{
+    CourierQueueError, CourierQueueSnapshot, CourierWorkItem, CourierWorkQueue,
+    COURIER_QUEUE_SCHEMA_VERSION,
 };
 pub use desktop_copy::{
     default_target_project_root, execute_copy, prepare_copy, DesktopCopyDiagnosticReport,
     DesktopCopyPreview, DesktopCopyResult, DesktopDiagnosticError, DesktopExecuteCopyRequest,
     DesktopPrepareCopyRequest, DESKTOP_COPY_DIAGNOSTIC_SCHEMA_VERSION,
     DESKTOP_COPY_SERVICE_VERSION,
+};
+pub use project_catalog_application::{
+    list_project_catalog, refresh_project_catalog, resolve_project_selection,
+    ProjectCatalogApplicationError, ProjectCatalogApplicationWarning, ProjectCatalogListMetadata,
+    ProjectCatalogListRequest, ProjectCatalogListResult, ProjectCatalogRefreshRequest,
+    ProjectCatalogRefreshResult, ProjectListGroup, ProjectListItem, ProjectSelection,
+    ProjectSelectionRequest, ProjectSelectionResult, PROJECT_CATALOG_APPLICATION_SERVICE_VERSION,
 };
 
 use rescue_analyzer::{PreflightReport, PreflightSummary};

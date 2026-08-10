@@ -2,7 +2,7 @@
 
 Status: active responsibility map
 
-Date: 2026-08-03
+Date: 2026-08-05
 
 ## Purpose
 
@@ -29,6 +29,13 @@ Windows support is not claimed until native CI and laboratory evidence pass
 ## Current Flow
 
 ```text
+approved scan roots
+-> observe ALS files and Project markers
+-> build physical ProjectFolder / LiveSet catalog
+-> persist catalog freshness
+-> create explicit ProjectSelection records
+-> select one or many concrete Live Sets
+
 discovery/read
 -> extract reference occurrences
 -> observe paths
@@ -86,9 +93,23 @@ Does not search globally, select files, or write.
 
 ### `rescue_catalog`
 
-Owns bounded filesystem inventory, exact-file snapshotting, stable full-file
-SHA-256, content records, and distinct file occurrences. It does not decide
-which occurrence satisfies a project requirement.
+Owns two separate catalog responsibilities behind separate contracts:
+
+```text
+lightweight Project catalog discovery
+  bounded observation of ALS files and exact Project markers
+  physical ProjectFolder / LiveSet / BackupSet catalog construction
+  scan coverage, denied locations and deterministic ordering
+
+audio asset inventory
+  bounded filesystem inventory
+  exact-file snapshotting and stable full-file SHA-256
+  content records and distinct file occurrences
+```
+
+Project catalog discovery does not parse ALS, scan audio, infer version
+families or select a Set. Audio inventory does not decide which occurrence
+satisfies a project requirement.
 
 ### `rescue_resolution`
 
@@ -165,10 +186,51 @@ source-bound copy preview, explicit write consent, desktop-facing results and
 safe derivation of private staging paths. It contains no ALS parsing, matching,
 copy, completeness or rewrite policy.
 
+For the Project catalog increment it also owns:
+
+```text
+small desktop-facing Project list projections
+manual Add ALS and catalog selection converging on ProjectSelection
+sequential batch orchestration above the unchanged one-project services
+per-project status isolation and aggregate reporting
+```
+
 ### Desktop UI
 
 May display reports, collect user choices, start plans, show progress, and
 request validation. It must never parse or rewrite ALS directly.
+
+The Project list UI receives display contracts and opaque identifiers. It does
+not group paths, infer version families, choose a Set from a multi-Set folder,
+or implement batch/package policy.
+
+QuickCopy is a second workflow in the same application. Its copy-job state owns
+only destination choice, preview, execution and the resulting complete or
+incomplete outcome. It reuses DesktopCopyApplicationService and never
+implements copy, rewrite, validation, completeness or target-naming policy.
+
+AssistantHost renders the compact courier, speech, controls and separate
+window-move / payload-interaction geometry from an explicit presentation
+model. It owns no Tauri effects, provider policy, private native path or copy
+state.
+
+After a successful quick copy, TransferPayload privately binds the exact final
+Project directory to the copy-result identity and issues one validated,
+one-shot native attempt at a time. ExternalFolderHandoff coordinates the
+current closed `wetransfer_web` route, browser opening and platform drag-source
+port. Neither module uploads, automates the browser, moves files or interprets
+remote completion.
+
+CourierWorkQueue owns ordered, deduplicated ALS intake and pending-item
+lifecycle. CourierCollectionOrchestrator freezes pending items into immutable
+module-024 waves and merges successful output directories into a versioned
+logical collection. It never mutates an active batch request and owns no copy,
+rewrite or validation policy.
+
+UniversalPayloadDrag owns platform-native copy-only dragging of one immutable
+collection snapshot. CollectionDelivery owns plan-first, validated local copies
+of that snapshot to a configured destination. Provider opening remains a
+separate closed adapter. AssistantHost only projects these states visually.
 
 ### Tauri Adapter
 
@@ -177,12 +239,38 @@ blocking workers so filesystem and parsing work cannot freeze the webview. It
 does not own domain policy. Versioned JSON fixtures verify its Rust/TypeScript
 wire boundary.
 
-### Future Persistent Index
+For quick copy it also owns opened-file event translation, one-ALS launch
+validation, single-instance routing, quick-window lifecycle and
+cursor-relative placement. Platform entry adapters produce one shared launch
+contract; they do not call the domain pipeline directly.
 
-Will own incremental scan state, project registry, content cache, verification
-timestamps, reachability, and later redirect history. It does not exist yet.
-Persistent audio hashes and reusable `ContentIdentity` are introduced here,
-not retrofitted into the metadata-only current-path flow.
+For Courier Collection it owns local file-drop translation, process-lifetime
+queue state, background scheduling of immutable waves, local settings I/O and
+platform effect adapters. Product ordering, collection revision and snapshot
+rules remain typed application contracts rather than React state.
+
+For external folder handoff it owns the system-default browser opener and
+platform `FolderDragSourcePort`. The macOS adapter uses AppKit; React supplies
+only an opaque copy-result identity and presentation geometry, never a native
+path payload or arbitrary provider URL.
+
+CollectionDelivery uses a separate narrow filesystem adapter. It may copy only
+from backend-owned validated collection items into a configured local root and
+must never modify, merge or delete a source Project copy.
+
+### Persistent Local Stores
+
+Project catalog persistence owns Project scan runs, physical catalog snapshots,
+coverage and freshness. A partial scan may not mark unseen records missing or
+delete prior history.
+
+A later audio asset index will own content cache, verification timestamps,
+reachability and redirect history. Persistent audio hashes and reusable
+`ContentIdentity` are introduced there, not retrofitted into the metadata-only
+current-path flow.
+
+Storage schemas are private adapter details. Domain and UI modules consume
+versioned contracts, not SQLite table shapes.
 
 ## One-Way Dependency Rule
 
@@ -212,8 +300,9 @@ domain safety rules that exist only in chat or prose
 ## Open Boundaries
 
 ```text
-persistent index and cache schema
-progress/cancellation and resumable batch orchestration
+Project catalog persistence schema and freshness migration
+continuous filesystem watching and incremental refresh
+resumable batch execution after the first sequential batch
 native Windows path and promotion adapters
 plugin, preset, Factory Pack, cross-platform Core Library, and Max for Live dependencies
 commercial release packaging and signing

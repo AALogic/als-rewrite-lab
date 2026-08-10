@@ -1,7 +1,7 @@
 # Product Spine
 
 Status: active product spine  
-Date: 2026-08-03
+Date: 2026-08-05
 Scope: global product promise, use cases, capability map and gates from vision to code
 
 ## 1. Purpose
@@ -51,6 +51,8 @@ dependencies across messy local folders.
 The product should help users:
 
 ```text
+discover Ableton Project folders and Live Sets across approved local roots
+choose one or many concrete Sets without exposing filesystem complexity
 inspect which audio files Ableton projects depend on
 understand where those files live
 detect external, missing, risky or shared dependencies
@@ -115,7 +117,50 @@ The parent of an ALS file is not automatically the Ableton Project root.
 Facts, observations, evidence and decisions must not share one catch-all model.
 ```
 
+Project catalog concepts are also distinct:
+
+```text
+ProjectFolder
+  one physical filesystem container supported by Ableton Project structure
+  evidence
+
+LiveSet
+  one concrete .als file observed at one native path and time
+
+BackupSet
+  one LiveSet observed under an Ableton Backup directory; hidden by default
+  in the ordinary list but never discarded
+
+ProjectWork
+  a future logical musical work or version family supported by separate
+  relationship evidence; it is not inferred by the scanner or physical catalog
+```
+
 ## 4. Primary Use Cases
+
+### UC0: Discover And Select Ableton Projects
+
+User asks:
+
+```text
+Show me the Ableton projects on this computer so I can choose one or many Sets
+to inspect or copy.
+```
+
+Required flow:
+
+```text
+obtain explicit local scan scope
+-> observe ALS files and Project markers without parsing every ALS
+-> build a physical ProjectFolder / LiveSet catalog
+-> hide but retain Backup Sets
+-> present a simple selectable list
+-> create an explicit ProjectSelection for every selected LiveSet
+```
+
+The catalog must not silently infer that several Live Sets in one folder are
+versions of the same musical work. Version-family analysis is a separate later
+capability.
 
 ### UC1: Inspect Project Dependencies
 
@@ -162,6 +207,20 @@ scan/read
 -> write manifest
 -> user verifies in Ableton
 ```
+
+The same capability may be entered through more than one presentation surface.
+The first compact entry is one explicit `.als` opened with ALS Rescue on macOS:
+
+```text
+Open With ALS Rescue
+-> compact assistant near the cursor
+-> choose destination parent
+-> reuse the ordinary one-project preview and execute contracts
+-> show complete, incomplete or unable outcome
+```
+
+This surface does not create a second copy policy, watch Finder selections or
+replace Ableton as the default `.als` opener.
 
 ### UC3: Relocate Self-Contained Project
 
@@ -230,6 +289,18 @@ multi-project scan
 ## 5. Capability Map
 
 ```text
+Observe ALS candidates and Project markers under approved roots
+  -> ALSProjectScanner
+
+Build a physical ProjectFolder / LiveSet / BackupSet catalog
+  -> ProjectCatalogBuilder
+
+Persist catalog snapshots and freshness
+  -> ProjectCatalogStore
+
+Expose catalog selection to the desktop
+  -> ProjectCatalogApplicationService
+
 Read ALS facts
   -> ALSReader
 
@@ -277,6 +348,18 @@ Promote a validated fresh package
 
 Compose the bounded laboratory flow
   -> LaboratoryPipeline
+
+Run the existing one-project application flow for many explicit selections
+  -> BatchCopyApplicationService
+
+Hand one completed Project folder to a trusted browser destination
+  -> ExternalFolderHandoff
+
+Render a compact character without giving presentation ownership of work
+  -> AssistantHost
+
+Bind the latest completed Project folder to private native drag attempts
+  -> TransferPayload
 ```
 
 ### 5.1 Current MVP Boundary
@@ -298,11 +381,24 @@ promote to an absent target
 require manual Ableton verification
 ```
 
+Active next MVP increment:
+
+```text
+lightweight read-only discovery of ALS files under approved roots
+physical ProjectFolder / LiveSet / BackupSet catalog
+local persistent catalog with explicit scan coverage and freshness
+simple project list and manual Add ALS fallback using one ProjectSelection
+sequential multi-project preview and copy using the existing one-project flow
+per-project isolation, manifests and aggregate batch reporting
+```
+
 Still outside the current MVP:
 
 ```text
-automatic full-disk UX and persistent incremental index
-batch execution and resume
+whole-computer audio sample indexing and moved-file matching
+continuous filesystem watching and automatic incremental refresh
+parallel project copy execution
+automatic Live Set version-family inference and semantic version diff
 plugin, preset, Pack and Max for Live portability
 cleanup or deletion
 Live 9/10/12 and Windows rewrite support claims
@@ -338,9 +434,36 @@ use only audio that still exists at paths recorded by the selected ALS
 -> show whether the result is complete or still has missing files
 ```
 
-Whole-computer indexing, moved-file matching and candidate selection remain a
-later product stage. They are not prerequisites for the first write-capable
-Desktop workflow.
+Project catalog discovery and sequential batch copy are implemented Desktop
+increments. They remain separate from whole-computer audio indexing: the first
+pass observes ALS files and Project markers only, and performs deep ALS analysis
+only for explicit user selections. One or many concrete Sets can be selected;
+many Sets reuse the unchanged one-project pipeline sequentially. Moved-file
+matching and whole-computer audio candidate indexing remain a later product
+stage.
+
+The compact quick surface may also expose the exact latest successful Project
+folder as a one-shot native copy drag after an explicit provider action. This
+handoff does not upload data itself, automate the browser, create archives or
+claim that a remote transfer completed.
+
+The compact surface is being refactored into three explicit responsibilities
+without changing the one-project copy policy:
+
+```text
+QuickCopy job
+  owns destination, preview, execution and copy outcome
+
+TransferPayload
+  privately owns the eligible completed Project folder and drag attempts
+
+AssistantHost
+  renders speech, character, controls and interaction geometry
+```
+
+This foundation still has one courier and one `wetransfer_web` action. Provider
+catalogs, inbound ALS drop, visible delivered/reload behavior, character
+catalogs, multiple visible characters and licensing are later increments.
 
 Diagnostic exports are local and user-initiated. A shareable export must omit
 ALS bytes, audio bytes and private absolute paths by default. The unredacted

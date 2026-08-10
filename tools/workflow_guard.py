@@ -101,6 +101,10 @@ def rust_test_cases() -> Dict[str, RustTestCase]:
         if area_root.exists():
             test_paths.update(area_root.glob("*/tests/**/*.rs"))
             test_paths.update(area_root.glob("*/src/**/*.rs"))
+    apps_root = ROOT / "apps"
+    if apps_root.exists():
+        test_paths.update(apps_root.glob("*/src-tauri/src/**/*.rs"))
+        test_paths.update(apps_root.glob("*/src-tauri/tests/**/*.rs"))
     for path in sorted(test_paths):
         text = read_text(path)
         for match in re.finditer(
@@ -264,6 +268,9 @@ def module_cargo_manifest_paths(contract: Dict[str, Any]) -> Set[Path]:
         candidate = ROOT / str(configured_path)
         if candidate.exists():
             manifests.add(candidate)
+
+    if manifests:
+        return manifests
 
     source_paths: Set[Path] = set()
     for key in ("expected_source_files", "quality_source_globs", "guarded_source_globs"):

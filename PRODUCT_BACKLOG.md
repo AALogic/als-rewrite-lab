@@ -135,6 +135,114 @@ multi-project discovery
 -> impact analysis for future move/cleanup workflows
 ```
 
+## 5B. Live Set Version Families And Semantic Diff
+
+Classification:
+
+```text
+Later product capability
+Build after lightweight multi-project discovery and versioned Set snapshots
+Not part of the current project scanner or batch-copy MVP
+```
+
+Product idea:
+
+```text
+Group ALS snapshots that are confirmed or likely to be versions of the same
+musical work. Show a simple timeline or family view and let the user compare
+two selected versions using a semantic, producer-friendly diff.
+```
+
+The product must distinguish:
+
+```text
+confirmed relationship
+  official Ableton Backup sequence, explicit user confirmation, or a change
+  directly observed and recorded by this application
+
+probable relationship
+  multiple independent similarity signals support the same Set family
+
+unknown relationship
+  evidence is insufficient or conflicting
+```
+
+Static ALS research on 2026-08-03 did not find a reliable embedded parent or
+project-lineage identifier. In the local corpus:
+
+```text
+Revision was shared by hundreds of unrelated ALS files created by the same
+Ableton build and must be treated as build metadata, not project identity.
+
+OverwriteProtectionNumber was also massively reused and must not be treated as
+project identity or inheritance evidence.
+```
+
+Candidate evidence for probable families may include:
+
+```text
+same confirmed Ableton Project Folder
+normalized Set-name similarity
+official Backup filename stem and embedded timestamp
+filesystem chronology, with copy/move caveats
+overlap of referenced sample paths or names
+overlap of track, clip, device and pointee identifiers
+track names and structural layout
+plugin/device-chain similarity
+tempo, scenes, locators and arrangement characteristics
+Ableton creator/document compatibility
+```
+
+No single similarity signal may silently create a confirmed parent-child edge.
+Templates can preserve object IDs, track layouts and devices across unrelated
+songs. Same-folder placement is also evidence, not proof. The relationship
+record should retain every supporting and conflicting observation, confidence,
+ruleset version and any user confirmation.
+
+Preferred presentation:
+
+```text
+confirmed Ableton backups -> chronological history
+probable Save As variants -> probable family/timeline
+uncertain ordering -> flat family ordered by observed time, without fake arrows
+```
+
+The diff should be semantic rather than a raw XML diff. Candidate user-facing
+changes include:
+
+```text
+tempo and Ableton version changes
+tracks, scenes and locators added or removed
+track renames and structural changes
+clips added, removed or materially changed
+sample dependencies added, removed or made missing
+plugins and devices added, removed or changed
+project completeness changes
+```
+
+Likely future module boundaries:
+
+```text
+SetFingerprintExtractor
+  produces a versioned, normalized structural fingerprint for one ALS snapshot
+
+VersionRelationshipAnalyzer
+  ranks family and chronology hypotheses while preserving evidence status
+
+SemanticSetDiffer
+  compares two snapshots and returns producer-facing changes
+```
+
+Do not enlarge ALSReader into a version-history engine. Fingerprints and diffs
+should be computed lazily when project details are opened or as background
+catalog work, then cached by ALS snapshot hash and extractor version. This does
+not require hashing referenced audio files.
+
+Domain evidence to retain:
+
+- [Ableton: Backup Sets](https://help.ableton.com/hc/en-us/articles/360000377870-Backup-Sets)
+- [Ableton: Saving Projects](https://help.ableton.com/hc/en-us/articles/115000915804-Saving-Projects)
+
 ## 6. Ryzyka
 
 ```text
@@ -412,4 +520,67 @@ Create small Live Sets using:
   one Max for Live device
 Run Collect All and Save.
 Compare project folder contents and ALS FileRef/device references before/after.
+```
+
+### ALP Inspection And Optional Export Research
+
+Status:
+
+```text
+Later / Research
+Not part of the current MVP
+No ALP writer implementation approved
+```
+
+Purpose:
+
+```text
+Investigate Ableton Live Pack (.alp) as an optional transport/archive format
+after Rescue has already created and validated a self-contained Ableton Project.
+Potential future value includes read-only Pack inspection, Pack dependency
+reporting and an optional final export or Live-assisted handoff.
+```
+
+Known evidence:
+
+```text
+.alp is an undocumented proprietary binary container, not a renamed ZIP.
+Observed official Pack structure includes a pl-a header, FolderConfigData,
+concatenated payload data and a trailing serialized file/directory index with
+offsets, sizes, names, versions and package metadata.
+Official licensed Packs may contain .eflac / Encrypted FLAC assets and must not
+be treated as equivalent to user-created project Packs without experiments.
+```
+
+Guardrails:
+
+```text
+Rescue continues to produce a normal validated Ableton Project folder.
+Do not make ALP generation a requirement for portable project creation.
+Do not implement licensed Pack decryption, authorization bypass or repackaging.
+Do not write ALP until a read-only parser, version matrix and round-trip corpus
+have established the supported user-created Pack format.
+Prefer Ableton Live's own Create Pack operation when Live-assisted export is
+sufficient.
+```
+
+Required experiments:
+
+```text
+1. Create minimal user-owned Projects and Packs in available Live 10/11/12 versions.
+2. Vary one input at a time: ALS, WAV, AIF, preset, ASD and nested directories.
+3. Compare Pack headers, payloads, trailing indexes and version metadata.
+4. Unpack each Pack through Live and compare restored files with source hashes.
+5. Separate user-created Pack behavior from official licensed Pack behavior.
+6. Build a bounded read-only ALP inspector before considering extraction or writing.
+7. Validate every experimental writer output by installing it in matching Live versions.
+```
+
+Promotion gate:
+
+```text
+Return to this topic only after the normal Project-folder package flow is stable
+and there is a concrete product need for ALP inspection or one-file export.
+Any writer requires a dedicated module spec, security limits for archive input,
+cross-version fixtures and manual Ableton round-trip verification.
 ```

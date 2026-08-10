@@ -59,6 +59,6 @@
     {"literal": "unwrap(", "label": "unwrap"},
     {"literal": "expect(", "label": "expect"}
   ],
-  "allowed_dependency_names": ["serde", "sha2"],
+  "allowed_dependency_names": ["serde", "serde_json", "sha2", "tempfile"],
   "quality_limits": {"max_source_file_lines": 260, "max_function_lines": 70}
 }

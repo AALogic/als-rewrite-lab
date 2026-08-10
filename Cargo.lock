@@ -36,6 +36,10 @@ dependencies = [
 name = "als-rescue-desktop"
 version = "0.1.0"
 dependencies = [
+ "block2",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
  "rescue_application",
  "serde",
  "serde_json",
@@ -43,6 +47,9 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
+ "tauri-plugin-single-instance",
+ "tempfile",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2853,6 +2860,7 @@ version = "0.1.0"
 dependencies = [
  "flate2",
  "rescue_analyzer",
+ "rescue_catalog",
  "rescue_core",
  "rescue_pipeline",
  "serde",
@@ -2866,7 +2874,10 @@ name = "rescue_catalog"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
  "sha2",
+ "tempfile",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3778,6 +3789,22 @@ dependencies = [
  "thiserror 2.0.19",
  "url",
  "windows",
+ "zbus",
+]
+
+[[package]]
+name = "tauri-plugin-single-instance"
+version = "2.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3214becf9ef5783c0ae99a3bb25adf5353a7a16ebf53e74b909e29205735c6c"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+ "windows-sys 0.60.2",
  "zbus",
 ]
 

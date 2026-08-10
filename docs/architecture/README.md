@@ -1,10 +1,27 @@
 # Architecture Notes
 
 Status: active architectural index  
-Date: 2026-08-03
+Date: 2026-08-05
 
 This directory preserves durable module boundaries, safety decisions, and the
 trace from product capabilities to executable contracts.
+
+## Active Project Catalog Branch
+
+```text
+approved roots
+-> ALSProjectScanner
+-> ProjectCatalogBuilder
+-> ProjectCatalogStore
+-> ProjectCatalogApplicationService
+-> explicit ProjectSelection
+-> existing one-project application flow
+-> BatchCopyApplicationService
+```
+
+The catalog branch keeps physical Project folders, concrete Live Sets, Backup
+Sets and future logical version families separate. It does not parse every ALS,
+index audio, or introduce a second package/rewrite policy.
 
 ## Current Laboratory Pipeline
 
@@ -101,6 +118,22 @@ adr/ADR-008-core-library-system-dependencies.md
 adr/ADR-009-windows-x64-alpha-filesystem-boundary.md
   Windows Alpha uses bounded native write adapters for local NTFS and rejects
   unsupported path and filesystem environments.
+
+adr/ADR-011-project-catalog-identity-and-boundaries.md
+  Separates ProjectFolder, LiveSet, BackupSet and future ProjectWork identity,
+  and keeps batch orchestration above the unchanged one-project pipeline.
+
+adr/ADR-012-quick-copy-entry-and-ui-boundary.md
+  Adds a compact Open With entry as a second presentation surface over the
+  unchanged one-project Desktop copy service.
+
+adr/ADR-013-external-folder-handoff-boundary.md
+  Adds a trusted provider action and native copy-only folder drag above the
+  latest successful Desktop copy result.
+
+adr/ADR-014-assistant-host-and-transfer-payload.md
+  Separates copy-job state, reusable character presentation, private payload
+  ownership and provider-specific handoff coordination.
 
 traceability.md
   Product capability to module, contract, and test evidence.

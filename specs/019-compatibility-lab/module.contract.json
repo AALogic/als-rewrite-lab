@@ -15,6 +15,6 @@
   "quality_source_globs": ["crates/rescue_core/src/rewrite_compatibility.rs", "crates/rescue_application/src/compatibility_report.rs"],
   "guarded_source_globs": ["crates/rescue_core/src/rewrite_compatibility.rs", "crates/rescue_application/src/compatibility_report.rs"],
   "forbidden_guarded_source_patterns": [{"literal": "remove_file", "label": "file deletion"}, {"literal": "remove_dir", "label": "directory deletion"}, {"literal": "unwrap(", "label": "unwrap"}, {"literal": "expect(", "label": "expect"}],
-  "allowed_dependency_names": ["flate2", "rescue_analyzer", "rescue_core", "rescue_pipeline", "roxmltree", "serde", "serde_json", "sha2", "tempfile", "thiserror"],
+  "allowed_dependency_names": ["flate2", "rescue_analyzer", "rescue_catalog", "rescue_core", "rescue_pipeline", "roxmltree", "serde", "serde_json", "sha2", "tempfile", "thiserror"],
   "quality_limits": {"max_source_file_lines": 300, "max_function_lines": 80}
 }

@@ -9,6 +9,7 @@ compatibility-lab = []
 
 [dependencies]
 rescue_analyzer = { path = "../rescue_analyzer" }
+rescue_catalog = { path = "../rescue_catalog" }
 rescue_core = { path = "../rescue_core" }
 rescue_pipeline = { path = "../rescue_pipeline" }
 serde = { version = "1", features = ["derive"] }

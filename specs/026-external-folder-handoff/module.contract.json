@@ -1,0 +1,48 @@
+{
+  "id": "026-external-folder-handoff",
+  "status": "ready",
+  "guard_version": "0.2",
+  "engineering_rules": {"document": "ENGINEERING_RULES.md", "version": "0.1", "required_sections": ["Purpose", "Clean Code", "Modularity", "Testability", "Error Handling", "Data Safety", "Project Hard Rules"]},
+  "required_docs": ["spec.md", "plan.md", "tasks.md", "fixture-contract.md"],
+  "required_spec_literals": ["ExternalProviderOpenRequest v0.1", "wetransfer_web", "system default browser", "no upload claim", "independently prepares the generic payload drag"],
+  "blocking_markers": ["BLOCKING_UNKNOWN", "Gate Status: UNKNOWN", "Gate Status: AMBIGUOUS", "Gate Status: CONFLICTING"],
+  "hidden_uncertainty_gate": true,
+  "required_checked_obligations": true,
+  "required_obligations": [
+    "DOCUMENTED_ONLY: provider opening is independent from payload drag",
+    "DOCUMENTED_ONLY: drop does not claim remote upload success",
+    "DOCUMENTED_ONLY: live WeTransfer checks remain manual verification pending",
+    "REVIEW_ONLY: provider command receives no collection identity or path",
+    "REVIEW_ONLY: module 018 behavior and contracts remain unchanged",
+    "ENFORCED_BY_TEST: unsupported_provider_is_rejected_before_effects",
+    "ENFORCED_BY_TEST: trusted_provider_opens_without_arming_payload",
+    "ENFORCED_BY_TEST: provider_open_wire_contract_is_path_free",
+    "ENFORCED_BY_TYPE: ExternalProviderOpenRequest",
+    "ENFORCED_BY_TYPE: ExternalProviderOpenResult",
+    "ENFORCED_BY_TYPE: ExternalProviderOpenError"
+  ],
+  "required_tests": ["unsupported_provider_is_rejected_before_effects", "trusted_provider_opens_without_arming_payload", "provider_open_wire_contract_is_path_free"],
+  "required_tests_must_not_be_ignored": true,
+  "required_tests_must_have_substance": true,
+  "public_contract_mode": "exact",
+  "public_contract": {
+    "ExternalProviderOpenRequest": ["request_id", "provider_id"],
+    "ExternalProviderOpenResult": ["schema_version", "request_id", "provider_id", "state"],
+    "ExternalProviderOpenError": ["error_code", "stage", "message"]
+  },
+  "expected_source_files": ["apps/rescue-desktop/src-tauri/src/external_folder_handoff.rs", "apps/rescue-desktop/src-tauri/src/external_folder_handoff_commands.rs", "apps/rescue-desktop/src/quick/externalFolderHandoff.ts"],
+  "dependency_manifest_paths": ["apps/rescue-desktop/src-tauri/Cargo.toml"],
+  "quality_source_globs": ["apps/rescue-desktop/src-tauri/src/external_folder_handoff.rs", "apps/rescue-desktop/src-tauri/src/external_folder_handoff_commands.rs"],
+  "guarded_source_globs": ["apps/rescue-desktop/src-tauri/src/external_folder_handoff.rs", "apps/rescue-desktop/src-tauri/src/external_folder_handoff_commands.rs", "apps/rescue-desktop/src/quick/externalFolderHandoff.ts"],
+  "forbidden_output_fields": ["provider_url", "collection_id", "collection_revision", "final_target_root", "upload_status", "share_link"],
+  "forbidden_guarded_source_patterns": [
+    {"literal": "std::fs::copy", "label": "folder copy policy"},
+    {"literal": "remove_dir", "label": "deletion"},
+    {"literal": "remove_file", "label": "deletion"},
+    {"literal": "TransferPayloadState", "label": "payload coupling"},
+    {"literal": "unwrap(", "label": "unwrap"},
+    {"literal": "expect(", "label": "expect"}
+  ],
+  "allowed_dependency_names": ["rescue_application", "serde", "serde_json", "tauri", "tauri-build", "tauri-plugin-dialog", "tauri-plugin-opener", "tauri-plugin-single-instance", "tempfile", "windows-sys"],
+  "quality_limits": {"max_source_file_lines": 220, "max_function_lines": 70}
+}

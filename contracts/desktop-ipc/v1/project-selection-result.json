@@ -1,0 +1,18 @@
+{
+  "service_version": "0.1.0",
+  "request_id": "selection-fixture",
+  "selection_status": "resolved",
+  "selections": [
+    {
+      "selection_id": "selection-1",
+      "selection_source": "catalog",
+      "live_set_id": "set-1",
+      "native_als_path": "/Users/example/Test Project/Test.als",
+      "catalog_revision": 4,
+      "observation_fingerprint": "fingerprint-1",
+      "freshness_status": "observed_in_latest_scan"
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}

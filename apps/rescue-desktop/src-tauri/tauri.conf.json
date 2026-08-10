@@ -10,14 +10,17 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
+        "label": "main",
         "title": "ALS Rescue",
         "width": 1120,
         "height": 760,
         "minWidth": 760,
         "minHeight": 580,
-        "resizable": true
+        "resizable": true,
+        "visible": false
       }
     ],
     "security": {
@@ -33,6 +36,14 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["als"],
+        "name": "Ableton Live Set",
+        "role": "Viewer",
+        "rank": "Alternate"
+      }
     ],
     "windows": {
       "webviewInstallMode": {

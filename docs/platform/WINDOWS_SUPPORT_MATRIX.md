@@ -31,7 +31,7 @@ Date: 2026-08-03
 | Live 9/10 read-only analysis | Laboratory use only |
 | Live 9/10 rewrite | Blocked |
 | Full-disk sample search | Deferred |
-| Batch projects | Deferred |
+| Project catalog and sequential batch | Implemented; native Windows runtime proof pending |
 | Code signing | Deferred; unsigned Alpha warning expected |
 
 ## Claim Rule
@@ -40,3 +40,10 @@ Passing Windows CI proves compilation and synthetic behavior on the hosted
 runner. It does not prove installation, SmartScreen behavior, physical NTFS
 behavior, or Ableton acceptance on the user's computer. Those claims require
 the manual checklist in `docs/setup/WINDOWS_TEST_LAB.md`.
+
+The macOS cross-check for `rescue_catalog` and `rescue_application` passes for
+`x86_64-pc-windows-msvc`. A full local Tauri cross-check reaches the Windows
+resource build script and then stops because the macOS toolchain has no
+`llvm-rc`. This is a host-tool limitation, not Windows runtime evidence. The
+full adapter and NSIS package must therefore be compiled by the existing
+`windows-latest` CI job or on the Windows test computer.

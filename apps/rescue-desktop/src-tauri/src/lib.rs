@@ -1,3 +1,20 @@
+mod batch_commands;
+mod catalog_commands;
+mod catalog_roots;
+mod collection_delivery_commands;
+mod courier_commands;
+mod courier_preferences;
+mod external_folder_handoff;
+mod external_folder_handoff_commands;
+mod macos_folder_drag;
+mod quick_als_intake;
+mod quick_copy_entry;
+mod quick_window_layout;
+mod quick_window_policy;
+mod transfer_payload;
+mod universal_payload_drag;
+mod universal_payload_drag_commands;
+
 #[tauri::command]
 async fn analyze_project(
     request: rescue_application::DesktopAnalyzeRequest,
@@ -59,17 +76,76 @@ fn background_task_error(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            quick_copy_entry::route_secondary_args(app, &args);
+        }))
+        .manage(batch_commands::BatchCancellationState::default())
+        .manage(courier_commands::CourierRuntimeState::default())
+        .manage(transfer_payload::TransferPayloadState::default())
+        .manage(quick_copy_entry::QuickCopyEntryState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            quick_copy_entry::schedule_normal_main_window(app.handle());
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
+            batch_commands::cancel_batch_copy,
+            batch_commands::execute_batch_copy,
+            batch_commands::prepare_batch_copy,
+            catalog_commands::list_project_catalog,
+            catalog_commands::refresh_project_catalog,
+            catalog_commands::resolve_project_selection,
+            collection_delivery_commands::deliver_courier_collection,
+            collection_delivery_commands::get_courier_preferences,
+            collection_delivery_commands::set_courier_delivery_root,
+            courier_commands::add_courier_sources,
+            courier_commands::get_courier_snapshot,
+            courier_commands::remove_courier_item,
+            courier_commands::reopen_courier_handoff,
+            courier_commands::reset_courier_collection,
+            courier_commands::set_courier_destination,
+            courier_commands::start_courier_processing,
             get_application_profile,
+            external_folder_handoff_commands::open_external_provider,
+            quick_copy_entry::get_quick_copy_launch_context,
+            quick_window_layout::set_quick_window_footprint,
             finalize_compatibility_report,
             analyze_project,
             suggest_target_project_root,
             prepare_copy,
-            execute_copy
+            execute_copy,
+            universal_payload_drag_commands::cancel_universal_payload_drag,
+            universal_payload_drag_commands::prepare_universal_payload_drag,
+            universal_payload_drag_commands::reset_universal_payload_attempt
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+    app.run(|app_handle, event| match event {
+        tauri::RunEvent::Opened { urls } => {
+            quick_copy_entry::route_opened_urls(app_handle, &urls, "macos_open_with");
+        }
+        tauri::RunEvent::Reopen {
+            has_visible_windows: false,
+            ..
+        } => quick_copy_entry::show_main_window(app_handle),
+        tauri::RunEvent::WindowEvent {
+            label,
+            event: tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }),
+            ..
+        } if label == quick_copy_entry::QUICK_WINDOW_LABEL => {
+            let _ = quick_als_intake::route_finder_drop(app_handle, &paths);
+        }
+        tauri::RunEvent::WindowEvent { label, event, .. }
+            if label == quick_copy_entry::QUICK_WINDOW_LABEL
+                && matches!(
+                    event,
+                    tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed
+                ) =>
+        {
+            universal_payload_drag_commands::reset_universal_payload_drag(app_handle);
+        }
+        _ => {}
+    });
 }

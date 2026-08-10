@@ -80,6 +80,19 @@ PROHIBITED_TRACKED_MEDIA_EXTENSIONS = frozenset(
 ALLOWED_TRACKED_MEDIA_FIXTURES: frozenset[str] = frozenset()
 ALLOWED_TRACKED_BINARY_FILES = frozenset(
     {
+        "apps/rescue-desktop/public/quick-worker/appearing.png",
+        "apps/rescue-desktop/public/quick-worker/complete.png",
+        "apps/rescue-desktop/public/quick-worker/destination-required.png",
+        "apps/rescue-desktop/public/quick-worker/incomplete.png",
+        "apps/rescue-desktop/public/quick-worker/parcel.png",
+        "apps/rescue-desktop/public/quick-worker/preparing.png",
+        "apps/rescue-desktop/public/quick-worker/ready.png",
+        "apps/rescue-desktop/public/quick-worker/share-armed.png",
+        "apps/rescue-desktop/public/quick-worker/unable.png",
+        "apps/rescue-desktop/public/quick-worker/van-arrival.png",
+        "apps/rescue-desktop/public/quick-worker/working.png",
+        "apps/rescue-desktop/src-tauri/assets/quick-parcel-drag.png",
+        "apps/rescue-desktop/src-tauri/assets/quick-worker-share-drag.png",
         "apps/rescue-desktop/src-tauri/icons/128x128.png",
         "apps/rescue-desktop/src-tauri/icons/128x128@2x.png",
         "apps/rescue-desktop/src-tauri/icons/32x32.png",
@@ -96,6 +109,8 @@ ALLOWED_TRACKED_BINARY_FILES = frozenset(
         "apps/rescue-desktop/src-tauri/icons/icon.icns",
         "apps/rescue-desktop/src-tauri/icons/icon.ico",
         "apps/rescue-desktop/src-tauri/icons/icon.png",
+        "docs/design/quick-copy-worker/quick-worker-master-alpha.png",
+        "docs/design/quick-copy-worker/quick-worker-share-source.png",
     }
 )
 GIT_BLOB_MODES = frozenset({"100644", "100755", "120000"})

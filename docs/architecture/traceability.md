@@ -1,7 +1,7 @@
 # Product Traceability
 
 Status: active trace map  
-Date: 2026-07-27
+Date: 2026-08-05
 
 ## Capability Map
 
@@ -25,6 +25,25 @@ Date: 2026-07-27
 | PC-016 | Expose one read-only desktop analysis flow without duplicating domain policy | 016 DesktopApplicationService | valid project, redaction, failure, read-only and determinism tests |
 | PC-017 | Create a complete or incomplete copy from files still present at recorded ALS paths | 017 CurrentPathCopyPipeline | complete, partial, all-missing, rewrite and source-read-only integration tests |
 | PC-018 | Expose preview, consent and copy execution to the desktop without moving policy into UI | 018 DesktopCopyApplicationService | preview, consent, stale-source, complete and incomplete application tests |
+| PC-020 | Observe ALS files and Project markers under approved roots without parsing or writing | 020 ALSProjectScanner | bounded walk, exclusion, partial coverage, symlink/reparse, cancellation, determinism and read-only tests plus controlled macOS scan |
+| PC-021 | Build a physical ProjectFolder / LiveSet / BackupSet catalog without family inference | 021 ProjectCatalogBuilder | 15 pure grouping, duplicate-name, multi-Set, backup-boundary, ambiguity, determinism and contract-validation tests |
+| PC-022 | Persist Project catalog snapshots without treating partial absence as deletion | 022 ProjectCatalogStore | 14 round-trip, idempotency, complete/partial freshness, changed-scope preservation, corruption, symlink and atomic-write tests plus Windows x64 compile check |
+| PC-023 | Expose a simple desktop list and explicit ProjectSelection contract | 023 ProjectCatalogApplicationService | 14 refresh, projection, revision, privacy, manual/catalog convergence and wire-contract tests plus frontend contract tests |
+| PC-024 | Run the unchanged one-project flow sequentially for many selections | 024 BatchCopyApplicationService | 13 all-previews-before-write, collision, boundary-revalidation, isolation, cancellation, sequential-write, privacy and wire-contract tests plus frontend contract tests |
+| PC-025 | Launch one-project copy from one explicit ALS through a compact assistant without duplicating copy policy | 025 QuickCopyAssistant | Rust launch/contract tests, pure frontend state tests, packaged cold/warm macOS launch, complete/incomplete real copy evidence and source-safety comparison |
+| PC-026 | Coordinate one trusted browser destination and native copy-only drag for a validated payload attempt | 026 ExternalFolderHandoff | trusted-provider, path-free IPC, copy-only adapter, geometry and frontend transfer-state tests; live WeTransfer behavior remains owner verification |
+| PC-027 | Render the compact courier without giving presentation ownership of copy or payload policy | 027 AssistantHost | static presentation, control projection and separate interaction-geometry frontend tests |
+| PC-028 | Keep the latest completed Project folder private and issue validated one-shot native drag attempts | 028 TransferPayload | candidate identity, retry, concurrency, stale attempt, symlink, reset and path-privacy tests |
+| PC-029 | Accept and maintain an ordered ALS work queue without parsing or copying | 029 CourierWorkQueue | validation, ordering, deduplication, removal and path-redaction tests |
+| PC-030 | Turn a live queue into immutable module-024 waves and one versioned collection | 030 CourierCollectionOrchestrator | wave immutability, during-run intake, drain-boundary, merge, revision and result-isolation tests |
+| PC-031 | Expose one validated collection snapshot as a native copy-only multi-directory drag | 031 UniversalPayloadDrag | multi-path validation, copy-only adapter, one-shot attempt, retry, stale revision and path-privacy tests |
+| PC-032 | Deliver one collection snapshot to an explicitly configured local directory without overwrite | 032 CollectionDelivery | plan, collision, staging, validation, repeat-delivery, source-immutability and path-redaction tests |
+
+## Next Capability Rule
+
+No later capability becomes active merely because it appears in a backlog.
+The next module still requires an accepted product boundary, specification,
+machine contract and readiness gate.
 
 ## Handoff Map
 
@@ -41,6 +60,21 @@ DependencyAssessmentResult
 -> PackagePlan v0.4
 -> CurrentPathCopyResult
 -> DesktopCopyPreview / DesktopCopyResult
+
+ProjectScanResult
+-> ProjectCatalogSnapshot
+-> ProjectListItem / ProjectSelection
+-> one-project DesktopAnalyze / DesktopCopy services
+-> BatchCopyResult
+
+macOS opened ALS URL
+-> QuickCopyLaunchContext
+-> CourierWorkQueue
+-> immutable BatchWave
+-> existing BatchCopyResult
+-> CourierCollectionSnapshot
+-> private TransferPayload
+-> native collection drag or local collection delivery
 
 DependencyAssessmentResult + AssetInventoryResult
 -> AssetResolutionResult
@@ -75,6 +109,16 @@ implementation state from upstream modules.
 | INV-014 | A missing recorded-path asset may be omitted without authorizing search or rewrite | modules 009, 013, 017 tests and manifest omission records |
 | INV-015 | Desktop execution is bound to the previewed ALS hash and explicit consent | module 018 stale-preview and consent tests |
 | INV-016 | Current-path audio is copied without inventing content identity or repeatedly hashing audio | ADR-007, modules 008-014 and 017 policy-specific tests |
+| INV-017 | Physical ProjectFolder, concrete LiveSet and future ProjectWork identity remain separate | ADR-011, modules 020-023 contracts and tests |
+| INV-018 | Partial Project scan coverage cannot silently remove or hide previously known projects | ADR-011, modules 020-022 contracts and tests |
+| INV-019 | Batch mode reuses one-project policy and isolates every selected Set as a separate job | ADR-011, module 024 contract and tests |
+| INV-020 | Quick mode is presentation and launch routing only; it reuses module 018 preview and execution policy | ADR-012, module 025 contract and tests |
+| INV-021 | External handoff can expose only the latest successful final Project folder, uses copy-only native drag and never claims remote upload success | ADR-013, module 026 contract and tests |
+| INV-022 | Character presentation cannot own capability effects, private payload paths or provider policy | ADR-014, modules 025/027 contracts and tests |
+| INV-023 | React cannot nominate the native folder payload; each drag attempt is revalidated and one-shot | ADR-014, modules 026/028 contracts and tests |
+| INV-024 | A live queue never mutates an active module-024 request; new intake becomes a later immutable wave | ADR-015, modules 029/030 contracts and tests |
+| INV-025 | Delivery binds one immutable collection revision and never consumes or mutates source Project copies | ADR-015, modules 028/031/032 contracts and tests |
+| INV-026 | Local cloud-folder delivery proves only a validated local copy, never remote synchronization | ADR-015, module 032 contract and tests |
 
 ## Review Rule
 
