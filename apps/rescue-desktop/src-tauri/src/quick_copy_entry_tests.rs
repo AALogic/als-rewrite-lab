@@ -149,6 +149,19 @@ fn quick_window_accepts_inactive_finder_interaction_without_forcing_focus() {
 }
 
 #[test]
+fn startup_completion_precedes_normal_window_schedule() {
+    let source = include_str!("lib.rs");
+    let setup = source
+        .split(".setup(|app|")
+        .nth(1)
+        .and_then(|value| value.split(".invoke_handler").next())
+        .unwrap_or_default();
+    let finish = setup.find("quick_copy_entry::finish_startup(app.handle())");
+    let schedule = setup.find("quick_copy_entry::schedule_normal_main_window(app.handle())");
+    assert!(matches!((finish, schedule), (Some(a), Some(b)) if a < b));
+}
+
+#[test]
 fn quick_launch_context_wire_contract_is_stable() {
     let context = QuickCopyLaunchContext {
         request_id: "quick-test".to_string(),

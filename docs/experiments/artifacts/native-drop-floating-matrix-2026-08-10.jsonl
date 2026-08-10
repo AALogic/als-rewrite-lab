@@ -1,0 +1,13 @@
+{"schema_version":"0.1","window_level":3,"collection_behavior":337,"elapsed_ms":66,"window_key":false,"sequence":1,"window_visible":true,"app_active":false,"window_class":"NSWindow","on_active_space":true,"stage":"probe_started","ignores_mouse_events":false,"window_main":false}
+{"source_operation_mask":55,"y":187,"sequence":2,"x":13,"elapsed_ms":10870,"stage":"dragging_entered","schema_version":"0.1"}
+{"elapsed_ms":11334,"source_operation_mask":55,"x":40,"stage":"prepare_for_drag_operation","y":167,"sequence":3,"schema_version":"0.1"}
+{"x":40,"elapsed_ms":11336,"stage":"perform_drag_operation","sequence":4,"y":167,"schema_version":"0.1","source_operation_mask":55,"file_count":1}
+{"sequence":5,"schema_version":"0.1","stage":"conclude_drag_operation","elapsed_ms":11339}
+{"window_key":false,"schema_version":"0.1","window_main":false,"ignores_mouse_events":false,"elapsed_ms":27910,"on_active_space":true,"window_visible":true,"app_active":false,"window_level":3,"collection_behavior":337,"stage":"workspace_application_activated","window_class":"NSWindow","sequence":6}
+{"window_level":3,"window_main":false,"app_active":false,"on_active_space":true,"collection_behavior":337,"schema_version":"0.1","stage":"active_space_changed","window_key":false,"window_visible":true,"elapsed_ms":28447,"window_class":"NSWindow","sequence":7,"ignores_mouse_events":false}
+{"window_key":false,"schema_version":"0.1","window_main":false,"elapsed_ms":30013,"on_active_space":true,"ignores_mouse_events":false,"window_visible":true,"app_active":false,"window_level":3,"collection_behavior":337,"stage":"workspace_application_activated","window_class":"NSWindow","sequence":8}
+{"schema_version":"0.1","elapsed_ms":30596,"window_main":false,"window_level":3,"collection_behavior":337,"ignores_mouse_events":false,"on_active_space":true,"sequence":9,"app_active":false,"window_class":"NSWindow","stage":"active_space_changed","window_visible":true,"window_key":false}
+{"source_operation_mask":55,"schema_version":"0.1","sequence":10,"y":187,"elapsed_ms":34354,"stage":"dragging_entered","x":13}
+{"sequence":11,"elapsed_ms":34824,"schema_version":"0.1","x":40,"source_operation_mask":55,"stage":"prepare_for_drag_operation","y":167}
+{"elapsed_ms":34826,"file_count":1,"sequence":12,"stage":"perform_drag_operation","x":40,"y":167,"schema_version":"0.1","source_operation_mask":55}
+{"sequence":13,"elapsed_ms":34829,"schema_version":"0.1","stage":"conclude_drag_operation"}

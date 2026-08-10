@@ -107,7 +107,7 @@ Date: 2026-08-05
 - [x] Reduce the transparent native mouse target through compact and expanded footprints.
 - [x] Raise the quick window through the isolated macOS adapter.
 - [x] Reassert presence after active-Space transitions without polling.
-- [x] RUNTIME_TEST: packaged app remained an on-screen layer-1000 window while Safari was frontmost in full screen.
+- [x] HISTORICAL_RUNTIME_TEST (superseded by v0.8): packaged app remained an on-screen layer-1000 window while Safari was frontmost in full screen.
 
 ## Session Close Lifecycle v0.5
 
@@ -136,3 +136,21 @@ Date: 2026-08-05
 - [x] Route Tauri/Wry Finder drops through the shared ALS validation.
 - [x] Remove the competing AppKit inbound destination and rearm lifecycle.
 - [ ] RUNTIME_TEST: after one completed native handoff and `Nowe zlecenie`, dropping a copied ALS on the courier creates a fresh one-item order
+
+## Finder-Compatible Overlay And Startup Lifecycle v0.8
+
+- [x] DOCUMENTED_ONLY: quick mode uses a Finder-compatible floating overlay policy and restores regular policy for the main window
+- [x] DOCUMENTED_ONLY: cold Open With requests are buffered until setup completes
+- [x] REVIEW_ONLY: production does not include the Lab panic hook or drop logger
+- [x] REVIEW_ONLY: Tauri/Wry remains the sole inbound Finder-drop owner
+- [x] ENFORCED_BY_TEST: startup_open_urls_are_deferred_until_runtime_is_ready
+- [x] ENFORCED_BY_TEST: startup_completion_precedes_normal_window_schedule
+- [x] ENFORCED_BY_TEST: quick_window_presence_policy_is_fullscreen_and_finder_drop_capable
+- [ ] RUNTIME_TEST: five cold Open With launches preserve the requested ALS without a crash
+- [ ] RUNTIME_TEST: five Finder drops after Safari transitions are accepted exactly once
+- [x] RUNTIME_TEST: full-screen Safari keeps the Courier visible and one subsequent Finder drop is accepted exactly once
+- [ ] RUNTIME_TEST: handoff then `Nowe zlecenie` accepts a fresh one-item order
+- [ ] RUNTIME_TEST: outbound parcel drag and Regular main-window policy do not regress
+- [x] RUNTIME_TEST: one packaged cold Open With launch preserves the requested ALS in the visible queue
+- [x] RUNTIME_TEST: `Nowe zlecenie` followed by one Finder drop creates a fresh one-item order
+- [x] RUNTIME_TEST: ordinary launch still opens the Regular main application window

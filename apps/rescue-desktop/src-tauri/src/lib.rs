@@ -9,6 +9,7 @@ mod external_folder_handoff_commands;
 mod macos_folder_drag;
 mod quick_als_intake;
 mod quick_copy_entry;
+mod quick_startup_buffer;
 mod quick_window_layout;
 mod quick_window_policy;
 mod transfer_payload;
@@ -84,9 +85,11 @@ pub fn run() {
         .manage(courier_commands::CourierRuntimeState::default())
         .manage(transfer_payload::TransferPayloadState::default())
         .manage(quick_copy_entry::QuickCopyEntryState::default())
+        .manage(quick_startup_buffer::StartupOpenUrlBuffer::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            quick_copy_entry::finish_startup(app.handle());
             quick_copy_entry::schedule_normal_main_window(app.handle());
             Ok(())
         })

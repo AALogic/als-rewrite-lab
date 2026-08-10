@@ -1,7 +1,7 @@
 # Module Spec 025: QuickCopyAssistant
 
-Status: v0.4 accepted for terminal delivery and macOS overlay presence
-Date: 2026-08-06
+Status: v0.8 accepted for Finder-compatible macOS overlay and startup lifecycle
+Date: 2026-08-10
 Parent capability: PC-025 / quick entry to UC2 self-contained copy
 Upstream contracts: module 018 `DesktopCopyPreview` and `DesktopCopyResult`
 Presentation host: module 027 `AssistantHost`
@@ -107,7 +107,7 @@ dragging the character body moves the complete quick surface
 always visible above ordinary application windows while the session is active
 does not steal keyboard focus when its native level is reasserted
 joins ordinary Spaces and eligible full-screen application Spaces on macOS
-uses the AppKit full-screen overlay level only while the quick surface is active
+uses the tested AppKit floating level only while the quick surface is active
 uses accessory application policy in quick mode and restores regular policy for the main window
 one quick window reused for later launch requests
 ```
@@ -128,9 +128,13 @@ the application below it. Leaving the quick surface dismisses hover-only speech
 and restores the compact footprint. This is bounded-area reduction, not a claim
 that individual transparent pixels are click-through.
 
-The macOS adapter owns the full-screen overlay policy. It combines accessory
+The macOS adapter owns the Finder-compatible floating overlay policy. It combines accessory
 application policy, all-Spaces/all-applications/full-screen-auxiliary collection
-behavior, the AppKit screen-saver window level and non-activating front ordering.
+behavior, the AppKit floating window level and non-activating front ordering.
+The screen-saver level is prohibited for the Courier because controlled native
+and Tauri tests showed that Finder drag callbacks stop at that level. Floating
+level with the same collection behavior remained visible above Safari and
+accepted Finder drops, including after a full-screen Space transition.
 The elevated level is an AppKit window-ordering mechanism, not permission to
 interact with login, lock-screen or other security surfaces. It registers at
 most one active-Space observer and reasserts the policy after a Space transition
@@ -139,7 +143,11 @@ application policy. Other platforms keep a no-op platform adapter behind the
 same boundary. The login window, screen lock and Mission Control remain explicit
 exclusions from the always-visible product claim.
 
-The existing main window must not flash during a cold quick launch. A normal
+The existing main window must not flash during a cold quick launch. On macOS,
+an opened-file event may arrive before Tauri setup completes. The entry adapter
+therefore buffers startup Open URLs in arrival order, marks the runtime ready
+during setup and drains the buffered requests before scheduling the normal main
+window. Warm requests continue through the same ready-state route immediately. A normal
 application launch still opens the main window. If the main application is
 already running, the quick request is routed to the same process and does not
 replace, resize or hide the main window.
@@ -398,6 +406,11 @@ write-capable operation merely because the compact surface lost focus.
 - Character animation is pixel-sharp, opaque, bounded and respects reduced
   motion; no rectangular surface is visible around the assistant.
 - Dragging the character body moves the complete assistant across the desktop.
+- The packaged Courier accepts repeated Finder drops after Safari activation,
+  a full-screen Space transition and a completed handoff followed by `Nowe zlecenie`.
+- The quick window uses AppKit floating level and never screen-saver level.
+- Cold Open With preserves every startup URL until setup is ready and does not
+  flash the normal main window.
 - No technical stage label or invented percentage is displayed.
 
 ## 11. Gate Status
@@ -474,6 +487,28 @@ been started, and clears its in-memory collection before the window closes. A
 later Open With or Finder drop therefore starts with item one. Closing while a
 copy wave or local handoff is actively running may hide the window but must not
 discard that operation; reopening the courier resumes the same active state.
+
+## 14. Finder-Compatible Overlay And Startup Lifecycle v0.8
+
+The macOS Courier uses `NSFloatingWindowLevel`, not
+`NSScreenSaverWindowLevel`. The rest of the tested presence contract remains
+unchanged: Accessory activation, `CanJoinAllSpaces`, `FullScreenAuxiliary`,
+`CanJoinAllApplications`, `Stationary`, `IgnoresCycle`,
+`hidesOnDeactivate(false)` and `orderFrontRegardless()`.
+
+Tauri/Wry remains the sole inbound Finder-drop destination. No collection
+reset, outbound handoff or presentation transition may register, unregister or
+rearm an AppKit drop destination.
+
+Cold macOS Open URLs are buffered behind a startup-ready boundary and drained
+before normal-main-window scheduling. This lifecycle hardening does not alter
+`QuickCopyLaunchContext`, ALS validation, queue ordering or copy behavior.
+
+Acceptance requires a packaged macOS run, because unit tests cannot prove
+WindowServer and Finder drag routing. The runtime matrix covers cold Open With,
+repeated Finder drops, Safari activation, Safari full screen, `Nowe zlecenie`,
+outbound parcel dragging and restoration of Regular activation for the main
+window.
 
 Before processing completes, the compact queue summary reports the number of
 requested projects. Once the collection is ready, it reports packaged results

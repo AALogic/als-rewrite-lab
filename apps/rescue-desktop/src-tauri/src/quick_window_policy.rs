@@ -2,7 +2,7 @@ use tauri::AppHandle;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum NativeWindowLevel {
-    ScreenSaver,
+    Floating,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,7 +26,7 @@ const fn presence_contract() -> WindowPresenceContract {
         join_all_applications: true,
         accessory_application: true,
         front_without_focus: true,
-        native_level: NativeWindowLevel::ScreenSaver,
+        native_level: NativeWindowLevel::Floating,
     }
 }
 
@@ -77,7 +77,7 @@ mod macos_presence {
     use objc2::rc::Retained;
     use objc2::{define_class, msg_send, sel, DefinedClass, MainThreadOnly};
     use objc2_app_kit::{
-        NSApplication, NSApplicationActivationPolicy, NSScreenSaverWindowLevel, NSWindow,
+        NSApplication, NSApplicationActivationPolicy, NSFloatingWindowLevel, NSWindow,
         NSWindowCollectionBehavior, NSWorkspace, NSWorkspaceActiveSpaceDidChangeNotification,
     };
     use objc2_foundation::{MainThreadMarker, NSNotification, NSObject, NSObjectProtocol};
@@ -205,7 +205,7 @@ mod macos_presence {
         }
         window.setCollectionBehavior(behavior);
         window.setHidesOnDeactivate(false);
-        window.setLevel(NSScreenSaverWindowLevel);
+        window.setLevel(NSFloatingWindowLevel);
         if policy.front_without_focus {
             window.orderFrontRegardless();
         }
@@ -244,7 +244,7 @@ mod tests {
         assert!(policy.join_all_applications);
         assert!(policy.accessory_application);
         assert!(policy.front_without_focus);
-        assert_eq!(policy.native_level, NativeWindowLevel::ScreenSaver);
+        assert_eq!(policy.native_level, NativeWindowLevel::Floating);
     }
 
     #[test]

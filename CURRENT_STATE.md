@@ -908,3 +908,38 @@ installed at `/Applications/ALS Rescue.app` and passes strict signature
 verification. Post-change LLDB inspection confirms empty dragged-type lists on
 the Wry parent views while the nested Wry WebViews retain
 `NSFilenamesPboardType` and their regular WebKit destination types.
+
+## 15. Finder-Compatible Floating Overlay Migration
+
+The isolated diagnostics Lab disproved the remaining screen-saver-level
+hypothesis. AppKit screen-saver level kept the Courier visible but prevented
+Tauri/Wry from receiving Finder drag-destination callbacks after the relevant
+Safari and Space transitions. A native comparison matrix showed that an
+ordinary Tauri window at AppKit floating level retained both overlay presence
+and Finder drops. The Lab also reproduced a separate cold `Open With` timing
+failure: macOS can deliver `RunEvent::Opened` before Tauri setup has installed
+all managed state.
+
+Production module 025 now uses a Finder-compatible floating overlay while
+preserving accessory application policy, all-Spaces/full-screen auxiliary
+behavior, no-focus ordering and restoration of Regular policy for the main
+window. Tauri/Wry remains the sole inbound Finder-drop owner. A new narrow
+startup buffer retains pre-setup Open With URLs and drains them in order before
+the normal main-window schedule. Lab panic hooks, diagnostic loggers and native
+drop probes were deliberately not migrated.
+
+The migrated source passes the locked Rust workspace check, tests and
+warning-free Clippy, Rust formatting, 48 desktop Rust tests, 42 frontend tests,
+TypeScript checking, the frontend production build and module 025 readiness and
+verification guards. A release macOS bundle was built, ad-hoc signed, strictly
+verified and installed at `/Applications/ALS Rescue.app`; its executable hash
+matches the tested release candidate.
+
+Packaged runtime smoke tests confirm one cold Open With fixture in the visible
+queue, warm append, deterministic Finder intake, continued Courier visibility
+with full-screen Safari frontmost, successful Finder intake after that Safari
+transition, successful intake after `Nowe zlecenie`, and unaffected ordinary
+main-window launch. The stricter five-repeat matrices and complete outbound
+parcel handoff remain open acceptance work. Evidence and rollback details are
+recorded in
+`docs/experiments/macos-courier-production-floating-migration-2026-08-10.md`.

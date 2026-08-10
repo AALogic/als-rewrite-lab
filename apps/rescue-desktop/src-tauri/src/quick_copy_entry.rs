@@ -75,6 +75,25 @@ pub(crate) fn schedule_normal_main_window(app: &AppHandle) {
 }
 
 pub(crate) fn route_opened_urls(app: &AppHandle, urls: &[Url], launch_source: &str) {
+    if app
+        .state::<crate::quick_startup_buffer::StartupOpenUrlBuffer>()
+        .defer_if_not_ready(urls, launch_source)
+    {
+        return;
+    }
+    route_ready_opened_urls(app, urls, launch_source);
+}
+
+pub(crate) fn finish_startup(app: &AppHandle) {
+    let pending = app
+        .state::<crate::quick_startup_buffer::StartupOpenUrlBuffer>()
+        .mark_ready_and_drain();
+    for (urls, launch_source) in pending {
+        route_ready_opened_urls(app, &urls, &launch_source);
+    }
+}
+
+fn route_ready_opened_urls(app: &AppHandle, urls: &[Url], launch_source: &str) {
     let paths = local_paths_from_urls(urls)
         .into_iter()
         .filter(|path| crate::quick_als_intake::is_supported_als_path(path))
