@@ -28,6 +28,8 @@ The uncommitted product work was divided by evidence and responsibility:
    run events.
 5. `2559342` aligns the native-path normalization test with Windows
    case-insensitive queue keys and removes a platform-specific unused import.
+6. `85b3ba7` replaces Unix-only batch-copy fixture paths with one shared native
+   path factory, preserving the same test scenarios on macOS and Windows.
 
 The immutable `v0.1.0-courier-macos-alpha` tag remains the first validated macOS
 recovery point. It is not moved. The preferred

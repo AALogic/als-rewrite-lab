@@ -975,7 +975,9 @@ The Windows dependency now enables the exact additional Win32 feature, the
 constants come from their generated namespace, and the macOS-only run-event
 arms are explicitly target-gated. A second CI pass exposed a unit-test
 expectation that preserved path letter case even though Windows queue keys are
-intentionally case-insensitive; the expectation is now platform-aware. Domain,
+intentionally case-insensitive; the expectation is now platform-aware. The
+batch-copy integration fixtures also used Unix-rooted source and destination
+paths, so they now derive native absolute paths from one test helper. Domain,
 copy, rewrite and Courier contracts are unchanged. GitHub Windows compilation,
 tests and installer creation are the acceptance tests for this platform
 boundary.
