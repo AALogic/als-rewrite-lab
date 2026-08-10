@@ -978,6 +978,8 @@ expectation that preserved path letter case even though Windows queue keys are
 intentionally case-insensitive; the expectation is now platform-aware. The
 batch-copy integration fixtures also used Unix-rooted source and destination
 paths, so they now derive native absolute paths from one test helper. Domain,
-copy, rewrite and Courier contracts are unchanged. GitHub Windows compilation,
-tests and installer creation are the acceptance tests for this platform
-boundary.
+copy, rewrite and Courier contracts are unchanged. macOS-only native drag
+internals are target-gated while the Windows unsupported-platform adapters stay
+available, allowing warning-free Clippy on both systems. GitHub Windows
+compilation, tests and installer creation are the acceptance tests for this
+platform boundary.

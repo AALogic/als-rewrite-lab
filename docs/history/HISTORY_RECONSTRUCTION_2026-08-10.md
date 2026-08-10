@@ -30,6 +30,8 @@ The uncommitted product work was divided by evidence and responsibility:
    case-insensitive queue keys and removes a platform-specific unused import.
 6. `85b3ba7` replaces Unix-only batch-copy fixture paths with one shared native
    path factory, preserving the same test scenarios on macOS and Windows.
+7. `7c6b6d6` makes the compile boundary around macOS-only Courier drag internals
+   explicit so warning-free Clippy remains enforceable on Windows.
 
 The immutable `v0.1.0-courier-macos-alpha` tag remains the first validated macOS
 recovery point. It is not moved. The preferred
